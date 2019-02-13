@@ -1,0 +1,15 @@
+This code originates from lambda, which can be found on
+https://github.com/seqan/lambda
+
+Name: lambda
+Author: Hannes Hauswedell <hannes.hauswedell@fu-berlin.de>
+Maintainer: Hannes Hauswedell <hannes.hauswedell@fu-berlin.de>
+License: GPL v3
+Copyright: 2013-2017, Hannes Hauswedell; 2016-2017 Knut Reinert, FU-Berlin
+Status: under development
+Description: Lambda is a biological sequence aligner optimized for many
+query sequences and searches in protein space. It is highly compatible
+to BLAST (bitscore and e-value statistics, tab separated and verbose
+output formats), much faster than BLAST and many other comparable tools
+and supports many other input and output formats, including standards-
+conformant .sam and .bam and many compression types
