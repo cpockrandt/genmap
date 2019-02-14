@@ -7,7 +7,6 @@
 #include <seqan/seq_io.h>
 #include <seqan/index.h>
 
-using namespace std;
 using namespace seqan;
 
 static constexpr bool outputProgress = true;
@@ -17,30 +16,45 @@ static constexpr bool outputProgress = true;
 
 struct Options
 {
-    unsigned errors;
     bool mmap;
     bool indels;
     bool high;
     bool wigFile;
+    bool directory;
     CharString indexPath;
     CharString outputPath;
     CharString alphabet;
     uint32_t seqNoWidth;
     uint32_t maxSeqLengthWidth;
     uint32_t totalLengthWidth;
+    unsigned errors;
+    unsigned sampling;
 };
 
-string get_output_path(Options const & opt, SearchParams const & searchParams)
+template <typename TSpec>
+std::string retrieve(StringSet<CharString, TSpec> const & info, std::string const & key)
 {
-    return string(toCString(opt.outputPath)) + "_" +
-           to_string(opt.errors) + "_" +
-           to_string(searchParams.length) + ".map" + (opt.high ? "16" : "8");
+    for (uint32_t i = 0; i < length(info); ++i)
+    {
+        std::string row = toCString(static_cast<CharString>(info[i]));
+        if (row.substr(0, length(key)) == key)
+            return row.substr(length(key));
+    }
+    std::cout << "ERROR: Malformed .info file! Could not find key '" << key << "'.\n";
+    exit(1);
+}
+
+std::string get_output_path(Options const & opt, SearchParams const & searchParams)
+{
+    return std::string(toCString(opt.outputPath)) + "_" +
+           std::to_string(opt.errors) + "_" +
+           std::to_string(searchParams.length) + ".map" + (opt.high ? "16" : "8");
 }
 
 template <typename T>
-inline void save(vector<T> const & c, string const & output_path)
+inline void save(std::vector<T> const & c, std::string const & output_path)
 {
-    ofstream outfile(output_path, ios::out | ios::binary);
+    std::ofstream outfile(output_path, std::ios::out | std::ios::binary);
     outfile.write((const char*) &c[0], c.size() * sizeof(T));
     outfile.close();
 }
@@ -48,7 +62,7 @@ inline void save(vector<T> const & c, string const & output_path)
 template <typename TDistance, typename value_type, typename TIndex, typename TText>
 inline void run(TIndex & index, TText const & text, Options const & opt, SearchParams const & searchParams)
 {
-    vector<value_type> c(length(text) - searchParams.length + 1, 0);
+    std::vector<value_type> c(length(text) - searchParams.length + 1, 0);
 
     switch (opt.errors)
     {
@@ -62,16 +76,15 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
                  break;
         case 4:  computeMappability<4>(index, text, c, searchParams);
                  break;
-        default: cerr << "E = " << opt.errors << " not yet supported.\n";
+        default: std::cerr << "E = " << opt.errors << " not yet supported.\n";
                  exit(1);
     }
 
     if (outputProgress)
         std::cout << '\r';
-    std::cout << "Progress: 100.00%\n" << std::flush;
-    cout.flush();
+    std::cout << "Progress: 100.00%" << std::endl;
 
-    string output_path = get_output_path(opt, searchParams);
+    std::string output_path = get_output_path(opt, searchParams);
     save(c, output_path);
 
     if (opt.wigFile)
@@ -84,7 +97,7 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
         // for each sequence in the string set
         for (uint64_t i = 0; i < length(stringset); ++i)
         {
-            stringstream ss;
+            std::stringstream ss;
 
             uint16_t current_val = c[pos];
             uint64_t occ = 0;
@@ -118,8 +131,8 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
                 value = 1.0/(float)(current_val);
             ss << (pos - occ + 1 - begin_pos_string) << ' ' << value << '\n'; // pos in wig start at 1
 
-            string wig_path = toCString(opt.outputPath);
-            wig_path += "_" + to_string(opt.errors) + "_" + to_string(searchParams.length) + "_seq" + to_string(i);
+            std::string wig_path = toCString(opt.outputPath);
+            wig_path += "_" + std::to_string(opt.errors) + "_" + std::to_string(searchParams.length) + "_seq" + std::to_string(i);
 
             // .chrom.sizes file
             std::ofstream chromSizesFile;
@@ -148,6 +161,7 @@ inline void run(Options const & opt, SearchParams const & searchParams)
     typedef StringSet<TString, Owner<ConcatDirect<SizeSpec_<TSeqNo, TSeqPos> > > > TStringSet;
 
     using TFMIndexConfig = TGemMapFastFMIndexConfig<TBWTLen>;
+    TFMIndexConfig::SAMPLING = opt.sampling;
 
     using TIndex = Index<TStringSet, TBiIndexConfig<TFMIndexConfig> >;
 
@@ -266,17 +280,17 @@ int mappabilityMain(int argc, char const ** argv)
     if (isSet(parser, "overlap"))
         getOptionValue(searchParams.overlap, parser, "overlap");
     // TODO: add verbose flag
-    cout << "INFO: overlap = " << searchParams.overlap << '\n';
+    std::cout << "INFO: overlap = " << searchParams.overlap << '\n';
 
     if (searchParams.overlap > searchParams.length - 1)
     {
-        cerr << "ERROR: overlap cannot be larger than K - 1.\n";
+        std::cerr << "ERROR: overlap cannot be larger than K - 1.\n";
         return ArgumentParser::PARSE_ERROR;
     }
 
     if (!(searchParams.length - searchParams.overlap >= opt.errors + 2))
     {
-        cerr << "ERROR: overlap should be at least K - E - 2. "
+        std::cerr << "ERROR: overlap should be at least K - E - 2. "
                 "(K - O >= E + 2 must hold since common overlap has length K - O and will be split into E + 2 parts).\n";
         return ArgumentParser::PARSE_ERROR;
     }
@@ -286,7 +300,7 @@ int mappabilityMain(int argc, char const ** argv)
 
     if (opt.indels)
     {
-        cerr << "ERROR: Indels are not supported yet.\n";
+        std::cerr << "ERROR: Indels are not supported yet.\n";
         return ArgumentParser::PARSE_ERROR;
     }
 
@@ -296,13 +310,14 @@ int mappabilityMain(int argc, char const ** argv)
         opt.indexPath += "/";
     opt.indexPath += "index";
 
-    CharString info;
+    StringSet<CharString, Owner<ConcatDirect<> > > info;
     open(info, toCString(std::string(toCString(opt.indexPath)) + ".info"));
-    string infoStr(toCString(info));
-    opt.alphabet = infoStr.substr(0, 4);
-    opt.seqNoWidth = std::stoi(infoStr.substr(5, 2));
-    opt.maxSeqLengthWidth = std::stoi(infoStr.substr(8, 2));
-    opt.totalLengthWidth = std::stoi(infoStr.substr(11, 2));
+    opt.alphabet = "dna" + retrieve(info, "alphabet_size");
+    opt.seqNoWidth = std::stoi(retrieve(info, "sa_dimensions_i1"));
+    opt.maxSeqLengthWidth = std::stoi(retrieve(info, "sa_dimensions_i2"));
+    opt.totalLengthWidth = std::stoi(retrieve(info, "bwt_dimensions"));
+    opt.sampling = std::stoi(retrieve(info, "sampling_rate"));
+    opt.directory = retrieve(info, "fasta_directory") == "true";
 
     StringSet<CharString, Owner<ConcatDirect<> > > ids;
     open(ids, toCString(std::string(toCString(opt.indexPath)) + ".ids"));
@@ -313,9 +328,8 @@ int mappabilityMain(int argc, char const ** argv)
     }
     else
     {
-        // run<Dna5>(opt, searchParams);
-        std::cerr << "TODO: Dna5 alphabet has not been tested yet. Please do so and remove this error message afterwards.\n";
-        exit(1);
+        std::cerr << "WARNING: Dna5 is still in beta-phase!\n";
+        run<Dna5>(opt, searchParams);
     }
 
     return 0;

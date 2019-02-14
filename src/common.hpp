@@ -4,14 +4,14 @@
 #include "../include/lambda/src/mkindex_misc.hpp"
 #include "../include/lambda/src/mkindex_algo.hpp"
 
-template <typename TSpec = void, typename TLengthSum = size_t, unsigned LEVELS = 1, unsigned WORDS_PER_BLOCK = 1>
+template <typename TSpec = void, typename TLengthSum = size_t, unsigned LEVELS = 2, unsigned WORDS_PER_BLOCK = 1>
 struct GemMapFastFMIndexConfig
 {
     typedef TLengthSum                                                                          LengthSum;
     typedef Levels<TSpec, LevelsPrefixRDConfig<LengthSum, Alloc<>, LEVELS, WORDS_PER_BLOCK> >   Bwt;
     typedef Levels<TSpec, LevelsRDConfig<LengthSum, Alloc<>, LEVELS, WORDS_PER_BLOCK> >         Sentinels;
 
-    static constexpr unsigned SAMPLING = 10;
+    static unsigned SAMPLING;
 };
 
 template <typename TLengthSum>
@@ -48,7 +48,7 @@ inline bool open(Index<TText, BidirectionalIndex<FMIndex<TSpec, TConfig> > > & i
 
     setFibre(getFibre(index.fwd, FibreSA()), getFibre(index.fwd, FibreLF()), FibreLF());
 
-    // rev index (only need the BWT)
+    // rev index (only requires the BWT)
     name = fileName;    append(name, ".rev.lf");
     if (!open(getFibre(index.rev, FibreLF()), toCString(name), openMode)) return false;
 
@@ -61,28 +61,18 @@ inline bool open(Index<TText, BidirectionalIndex<FMIndex<TSpec, TConfig> > > & i
 }
 
 template <typename TText, typename TSpec, typename TConfig>
-inline bool save(Index<TText, BidirectionalIndex<FMIndex<TSpec, TConfig> > > const & index, const char * fileName, int openMode)
+inline bool saveRev(Index<TText, FMIndex<TSpec, TConfig> > const & index, const char * fileName, int openMode = OPEN_RDWR | OPEN_CREATE | OPEN_APPEND)
 {
     String<char> name;
 
-    // fwd index
-    name = fileName;    append(name, ".txt");
-    if (!save(getFibre(index.fwd, FibreText()), toCString(name), openMode)) return false;
-
-    name = fileName;    append(name, ".sa");
-    if (!save(getFibre(index.fwd, FibreSA()), toCString(name), openMode)) return false;
-
+    // rev index (only requires the BWT)
     name = fileName;    append(name, ".lf");
-    if (!save(getFibre(index.fwd, FibreLF()), toCString(name), openMode)) return false;
-
-    // rev index (only need the BWT)
-    name = fileName;    append(name, ".rev.lf");
-    if (!save(getFibre(index.rev, FibreLF()), toCString(name), openMode)) return false;
+    if (!save(getFibre(index, FibreLF()), toCString(name), openMode)) return false;
 
     return true;
 }
 
-}
+} // namespace seqan
 
 struct SearchParams
 {

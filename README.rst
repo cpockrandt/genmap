@@ -1,5 +1,8 @@
-GenMap - Fast and Exact Computation of Genome Mappability
+GenMap - Fast and Exact Computation of Genome Mappability |buildstatus|
 ---------------------------------------------------------
+
+.. |BUILDSTATUS| image:: https://travis-ci.org/cpockrandt/genmap.svg?branch=master
+    :target: https://travis-ci.org/cpockrandt/genmap
 
 GenMap is a tool to compute the mappability of nucleotide sequences.
 In particular, it computes the (k,e)-frequency, i.e., how often each k-mer from the sequence occurs with up to e errors in the sequence itself.
@@ -8,9 +11,6 @@ Hence, a mappability value of 1 at position i indicates that the k-mer in the se
 A low mappability value indicates that this k-mer belongs to a repetitive region.
 
 A small example is listed below, for detailed examples such as marker sequence computation on multiple fasta files, please check out the GitHub wiki (coming soon).
-
-.. .. image:: https://travis-ci.org/cpockrandt/genmap.svg?branch=master
-..     :target: https://travis-ci.org/cpockrandt/genmap
 
 Binaries
 ^^^^^^^^
@@ -66,7 +66,7 @@ This step only has to performed once.
 
 ::
 
-    $ ./genmap index -G /path/to/fasta.fa(sta/stq) -I /path/to/index/folder
+    $ ./genmap index -G /path/to/fasta.fasta -I /path/to/index/folder
 
 There are two algorithms that can be chosen for index construction.
 One uses RAM (radixsort), one uses secondary memory (skew).
@@ -80,7 +80,9 @@ For skew you can change the location of the temp directory via the environment v
 Computing the mappability
 """""""""""""""""""""""""
 
-TODO
+::
+
+    $ ./genmap mappability ...
 
 Help pages and examples
 """""""""""""""""""""""

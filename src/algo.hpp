@@ -263,7 +263,7 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                 ModifiedString<ModifiedString<typename std::remove_reference<decltype(needlesOverlap)>::type, ModComplementDna>, ModReverse> needlesRevComplOverlap(needlesOverlap);
                 using TNeedlesRevComplOverlap = decltype(needlesRevComplOverlap);
 
-                uint64_t const bb = std::min(textLength - 1, params.length - 1 + params.length - overlap);
+                // uint64_t const bb = std::min(textLength - 1, params.length - 1 + params.length - overlap);
 
                 auto delegateRevCompl = [&hitsRevCompl, &itExact, bb, overlap, &params, &needlesRevCompl](
                     TBiIter it, TNeedlesRevComplOverlap const & /*read*/, unsigned const errors_spent)

@@ -37,30 +37,30 @@ matrix:
           packages: ['clang-3.9', 'g++-7', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip'] # g++ required for newer libstdc++
       install: export CXX="clang++-3.9"
 
-    - os: linux
-      compiler: clang-5
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip'] # g++ required for newer libstdc++
-      install: export CXX="/usr/local/clang-5.0.0/bin/clang++"
-      env: CMAKE_ARGS="-DCMAKE_BUILD_TYPE=RelWithDebInfo" LD_LIBRARY_PATH="/usr/local/clang-5.0.0/lib/:${LD_LIBRARY_PATH}"
-
-    - os: osx
-      compiler: gcc-4.9
-      before_install:
-        - brew update
-        - brew install gcc@4.9
-      install: export CXX="g++-4.9"
-      env: CMAKE_ARGS="-DGENMAP_STATIC_BUILD=1"
-
-    - os: osx
-      compiler: gcc-7
-      before_install:
-        - brew update
-        - brew install gcc@7
-      install: export CXX="g++-7"
-      env: CMAKE_ARGS=""
+    # - os: linux
+    #   compiler: clang-5
+    #   addons:
+    #     apt:
+    #       sources: ['ubuntu-toolchain-r-test']
+    #       packages: ['g++-7', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip'] # g++ required for newer libstdc++
+    #   install: export CXX="/usr/local/clang-5.0.0/bin/clang++"
+    #   env: CMAKE_ARGS="-DCMAKE_BUILD_TYPE=RelWithDebInfo" LD_LIBRARY_PATH="/usr/local/clang-5.0.0/lib/:${LD_LIBRARY_PATH}"
+    #
+    # - os: osx
+    #   compiler: gcc-4.9
+    #   before_install:
+    #     - brew update
+    #     - brew install gcc@4.9
+    #   install: export CXX="g++-4.9"
+    #   env: CMAKE_ARGS="-DGENMAP_STATIC_BUILD=1"
+    #
+    # - os: osx
+    #   compiler: gcc-7
+    #   before_install:
+    #     - brew update
+    #     - brew install gcc@7
+    #   install: export CXX="g++-7"
+    #   env: CMAKE_ARGS=""
 
 script:
   - mkdir -p build && cd build

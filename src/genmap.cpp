@@ -5,6 +5,9 @@
 #include "indexing.hpp"
 #include "mappability.hpp"
 
+template <typename TSpec, typename TLengthSum, unsigned LEVELS, unsigned WORDS_PER_BLOCK>
+unsigned GemMapFastFMIndexConfig<TSpec, TLengthSum, LEVELS, WORDS_PER_BLOCK>::SAMPLING = 10;
+
 using namespace seqan;
 
 ArgumentParser::ParseResult parseCommandLineMain(int const argc, char const ** argv);
@@ -13,12 +16,11 @@ int main(int const argc, char const ** argv)
 {
     if (std::string(CMAKE_BUILD_TYPE) != "Release")
     {
-        cerr << "WARNING: This binary was not built in Release mode "
-                "and is expected to be much slower.\n";
+        std::cerr << "WARNING: This binary was not built in Release mode"
+                     " and is expected to be much slower.\n";
     }
 
     // TODO: warning if no SSE4 and popcount support is used, that is might crash. use newer CPU
-    // TODO: allow for different sampling rates
 
     // --version-check expects a parameter, the others (--copyright, --version) don't.
     int until = argc;
