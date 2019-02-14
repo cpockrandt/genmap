@@ -6,6 +6,10 @@
 #include <seqan/seq_io.h>
 #include <seqan/index.h>
 
+#include "../include/lambda/src/mkindex_saca.hpp"
+#include "../include/lambda/src/mkindex_misc.hpp"
+#include "../include/lambda/src/mkindex_algo.hpp"
+
 #include "common.hpp"
 
 using namespace seqan;

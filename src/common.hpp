@@ -1,9 +1,5 @@
 #pragma once
 
-#include "../include/lambda/src/mkindex_saca.hpp"
-#include "../include/lambda/src/mkindex_misc.hpp"
-#include "../include/lambda/src/mkindex_algo.hpp"
-
 template <typename TSpec = void, typename TLengthSum = size_t, unsigned LEVELS = 2, unsigned WORDS_PER_BLOCK = 1>
 struct GemMapFastFMIndexConfig
 {

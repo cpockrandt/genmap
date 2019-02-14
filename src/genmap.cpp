@@ -82,11 +82,11 @@ ArgumentParser::ParseResult parseCommandLineMain(int const argc, char const ** a
 
     addArgument(parser, ArgParseArgument(ArgParseArgument::STRING, "COMMAND"));
     setHelpText(parser, 0, "The sub-program to execute. See below.");
-    setValidValues(parser, 0, "index mappability");
+    setValidValues(parser, 0, "index map");
 
     addTextSection(parser, "Available commands");
     addText(parser, "\\fBindex  \\fP– Creates an index for mappability computation.");
-    addText(parser, "\\fBmappability  \\fP– Computes the mappability.");
+    addText(parser, "\\fBmap  \\fP– Computes the mappability (requires a pre-built index).");
     addText(parser, "To view the help page for a specific command, simply run 'genmap command --help'.");
 
     return parse(parser, argc, argv);

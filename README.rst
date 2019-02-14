@@ -82,7 +82,7 @@ Computing the mappability
 
 ::
 
-    $ ./genmap mappability ...
+    $ ./genmap map ...
 
 Help pages and examples
 """""""""""""""""""""""

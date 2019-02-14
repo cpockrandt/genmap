@@ -7,12 +7,12 @@
 #include <seqan/seq_io.h>
 #include <seqan/index.h>
 
-using namespace seqan;
-
-static constexpr bool outputProgress = true;
+static constexpr bool outputProgress = true; // TODO: remove global variable
 
 #include "common.hpp"
 #include "algo.hpp"
+
+using namespace seqan;
 
 struct Options
 {
@@ -21,6 +21,7 @@ struct Options
     bool high;
     bool wigFile;
     bool directory;
+    bool verbose;
     CharString indexPath;
     CharString outputPath;
     CharString alphabet;
@@ -38,9 +39,10 @@ std::string retrieve(StringSet<CharString, TSpec> const & info, std::string cons
     {
         std::string row = toCString(static_cast<CharString>(info[i]));
         if (row.substr(0, length(key)) == key)
-            return row.substr(length(key));
+            return row.substr(length(key) + 1);
     }
-    std::cout << "ERROR: Malformed .info file! Could not find key '" << key << "'.\n";
+    // This should never happen unless the index file is corrupted or manipulated.
+    std::cout << "ERROR: Malformed index.info file! Could not find key '" << key << "'.\n";
     exit(1);
 }
 
@@ -243,7 +245,7 @@ int mappabilityMain(int argc, char const ** argv)
         "Output wig-files for adding a custom feature track to genome browsers. Mappability values will be stored as frequencies, i.e., 1/mappability. For each sequence (e.g., chromosome) a separate wig-file and chrom.size file is created"));
 
     addOption(parser, ArgParseOption("o", "overlap", "Number of overlapping reads (o + 1 Strings will be searched at once beginning with their overlap region). Default: K * (0.7^e * MIN(MAX(K,30),100) / 100)", ArgParseArgument::INTEGER, "INT"));
-    //setRequired(parser, "overlap");
+    hideOption(parser, "overlap");
 
     addOption(parser, ArgParseOption("m", "mmap",
         "Turns memory-mapping on, i.e. the index is not loaded into RAM but accessed directly in secondary-memory. "
@@ -252,6 +254,8 @@ int mappabilityMain(int argc, char const ** argv)
 
     addOption(parser, ArgParseOption("t", "threads", "Number of threads", ArgParseArgument::INTEGER, "INT"));
     setDefaultValue(parser, "threads", omp_get_max_threads());
+
+    addOption(parser, ArgParseOption("v", "verbose", "Outputs some additional information."));
 
     ArgumentParser::ParseResult res = parse(parser, argc, argv);
     if (res != ArgumentParser::PARSE_OK)
@@ -267,6 +271,7 @@ int mappabilityMain(int argc, char const ** argv)
     opt.indels = isSet(parser, "indels");
     opt.high = isSet(parser, "high");
     opt.wigFile = isSet(parser, "wig");
+    opt.verbose = isSet(parser, "verbose");
 
     getOptionValue(searchParams.length, parser, "length");
     getOptionValue(searchParams.threads, parser, "threads");
@@ -279,8 +284,8 @@ int mappabilityMain(int argc, char const ** argv)
 
     if (isSet(parser, "overlap"))
         getOptionValue(searchParams.overlap, parser, "overlap");
-    // TODO: add verbose flag
-    std::cout << "INFO: overlap = " << searchParams.overlap << '\n';
+
+    // std::cout << "INFO: overlap = " << searchParams.overlap << '\n';
 
     if (searchParams.overlap > searchParams.length - 1)
     {
@@ -298,12 +303,6 @@ int mappabilityMain(int argc, char const ** argv)
     // searchParams.overlap - length of common overlap
     searchParams.overlap = searchParams.length - searchParams.overlap;
 
-    if (opt.indels)
-    {
-        std::cerr << "ERROR: Indels are not supported yet.\n";
-        return ArgumentParser::PARSE_ERROR;
-    }
-
     // TODO: error message if output files already exist or directory is not writeable
     // TODO: nice error messages if index is incorrect or doesnt exist
     if (back(opt.indexPath) != '/')
@@ -311,7 +310,8 @@ int mappabilityMain(int argc, char const ** argv)
     opt.indexPath += "index";
 
     StringSet<CharString, Owner<ConcatDirect<> > > info;
-    open(info, toCString(std::string(toCString(opt.indexPath)) + ".info"));
+    std::string infoPath = std::string(toCString(opt.indexPath)) + ".info";
+    open(info, toCString(infoPath));
     opt.alphabet = "dna" + retrieve(info, "alphabet_size");
     opt.seqNoWidth = std::stoi(retrieve(info, "sa_dimensions_i1"));
     opt.maxSeqLengthWidth = std::stoi(retrieve(info, "sa_dimensions_i2"));
@@ -321,6 +321,19 @@ int mappabilityMain(int argc, char const ** argv)
 
     StringSet<CharString, Owner<ConcatDirect<> > > ids;
     open(ids, toCString(std::string(toCString(opt.indexPath)) + ".ids"));
+
+    if (opt.verbose)
+    {
+        std::cout << "Index was loaded (" << opt.alphabet << " alphabet, sampling rate of " << opt.sampling << ").\n"
+                     "The BWT is represented by " << opt.totalLengthWidth << " bit values.\n"
+                     "The sampled suffix array is represented by pairs of " << opt.seqNoWidth <<
+                     " and " << opt.maxSeqLengthWidth  << " bit values.\n";
+
+        if (opt.directory)
+            std::cout << "Index was built on an entire directory (" << length(ids) << " fasta file(s))." << std::endl;
+        else
+            std::cout << "Index was built on a single fasta file." << std::endl;
+    }
 
     if (opt.alphabet == "dna4")
     {
