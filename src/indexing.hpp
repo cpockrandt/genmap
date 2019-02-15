@@ -26,6 +26,19 @@ struct IndexOptions
     bool verbose;
 };
 
+std::string extractFileName(std::string const & path)
+{
+    // ./file.fa
+    // file.fa
+    // ../file.fa
+    // /path/to/file.fa
+    auto const pos = path.find_last_of('/');
+    if (pos == std::string::npos) // no slash found, i.e. file.fa
+        return path;
+    else
+        return path.substr(pos + 1);
+}
+
 bool hasEnding(std::string const & fullString, std::string ending)
 {
     if (fullString.length() >= ending.length())
@@ -37,7 +50,7 @@ bool hasEnding(std::string const & fullString, std::string ending)
 template <typename TSeqNo, typename TSeqPos, typename TBWTLen,
           typename TString, typename TStringSetConfig, typename TRadixSortTag>
 void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, IndexOptions const & options,
-                TRadixSortTag const & /**/)
+                       TRadixSortTag const & /**/)
 {
     using TText = StringSet<TString, Owner<ConcatDirect<SizeSpec_<TSeqNo, TSeqPos> > > > ;
     using TFMIndexConfig = TGemMapFastFMIndexConfig<TBWTLen>;
@@ -110,7 +123,7 @@ void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, In
 
 template <typename TString, typename TStringSetConfig, typename TRadixSortTag>
 void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, IndexOptions const & options,
-                TRadixSortTag const & /**/)
+                       TRadixSortTag const & /**/)
 {
     constexpr uint64_t max16bitUnsignedValue = std::numeric_limits<uint16_t>::max();
     constexpr uint64_t max32bitUnsignedValue = std::numeric_limits<uint32_t>::max();
@@ -166,13 +179,13 @@ int indexMain(int const argc, char const ** argv)
 
     addOption(parser, ArgParseOption("v", "verbose", "Outputs some additional information on the constructed index."));
 
-    addOption(parser, ArgParseOption("xA", "seqno", "Number of sequences", ArgParseArgument::INTEGER, "INT"));
+    addOption(parser, ArgParseOption("xa", "seqno", "Number of sequences", ArgParseArgument::INTEGER, "INT"));
     hideOption(parser, "seqno");
 
-    addOption(parser, ArgParseOption("xB", "seqpos", "Max length of sequences", ArgParseArgument::INTEGER, "INT"));
+    addOption(parser, ArgParseOption("xb", "seqpos", "Max length of sequences", ArgParseArgument::INTEGER, "INT"));
     hideOption(parser, "seqpos");
 
-    addOption(parser, ArgParseOption("xC", "bwtlen", "Total length of all sequences", ArgParseArgument::INTEGER, "INT"));
+    addOption(parser, ArgParseOption("xc", "bwtlen", "Total length of all sequences", ArgParseArgument::INTEGER, "INT"));
     hideOption(parser, "bwtlen");
 
     ArgumentParser::ParseResult res = parse(parser, argc, argv);
@@ -211,18 +224,17 @@ int indexMain(int const argc, char const ** argv)
 
     // Read fasta input file(s)
     StringSet<Dna5String> chromosomes;
+    StringSet<CharString> directoryInformation;
+
     if (options.directory)
     {
         uint32_t filesLoaded = 0;
-        StringSet<CharString> directoryInformation;
-
         std::stringstream filenames;
-
         DIR * dirp = opendir(toCString(genomePath));
         struct dirent * dp;
         while ((dp = readdir(dirp)) != NULL)
         {
-            std::string file(dp->d_name);
+            std::string const file(dp->d_name);
             if (hasEnding(file, ".fa") || hasEnding(file, ".fasta") || hasEnding(file, ".fastq"))
             {
                 ++filesLoaded;
@@ -236,50 +248,74 @@ int indexMain(int const argc, char const ** argv)
                 StringSet<CharString, Owner<ConcatDirect<> > > ids;
                 StringSet<Dna5String> chromosomes2;
                 readRecords(ids, chromosomes2, seqFileIn);
+                if (lengthSum(chromosomes2) == 0)
+                {
+                    std::cerr << "WARNING: The fasta file " << file << " seems to be empty. Excluded from indexing.\n";
+                    continue;
+                }
+
                 for (uint64_t i = 0; i < length(chromosomes2); ++i)
                 {
-                    std::string id = toCString(static_cast<CharString>(ids[i]));
-                    std::string len = std::to_string(length(chromosomes2[i]));
-                    // TODO: would need this for single fasta files as well!
-                    // if (length(chromosomes2[i]) == 0)
-                    // {
-                    //     std::cerr << "WARNING: Found empty sequence in " << file << ". Sequence will be skipped.\n";
-                    //     continue;
-                    // }
+                    // skip empty sequences
+                    if (length(chromosomes2[i]) == 0)
+                        continue;
+
+                    std::string const id = toCString(static_cast<CharString>(ids[i]));
+                    std::string const len = std::to_string(length(chromosomes2[i]));
                     appendValue(directoryInformation, file + ";" + len + ";" + id); // toCString(id.substr(0, id.find(" ")))
                     appendValue(chromosomes, chromosomes2[i]);
                 }
+
                 clear(ids);
             }
         }
         closedir(dirp);
 
-        save(directoryInformation, toCString(std::string(toCString(options.indexPath)) + ".ids"));
+        if (length(chromosomes) == 0)
+        {
+            // TODO: rmdir
+            std::cerr << "ERROR: No non-empty fasta file found!\n";
+            return ArgumentParser::PARSE_ERROR;
+        }
 
         std::cout << filesLoaded << " fasta files have been loaded";
         if (options.verbose)
             std::cout << ":\n" << filenames.str();
         else
-            std::cout << " (run with --verbose to list the files)" << '\n';
+            std::cout << " (run with --verbose to list the files)\n";
     }
     else
     {
         StringSet<CharString, Owner<ConcatDirect<> > > ids;
+        StringSet<Dna5String> chromosomes2;
+
         SeqFileIn seqFileIn(toCString(genomePath));
-        readRecords(ids, chromosomes, seqFileIn);
+        readRecords(ids, chromosomes2, seqFileIn);
         if (options.verbose)
             std::cout << "Number of sequences in the fasta file: " << length(chromosomes) << '\n';
 
-        // Store ids from fasta.
-        save(ids, toCString(std::string(toCString(options.indexPath)) + ".ids"));
+        for (uint64_t i = 0; i < length(chromosomes2); ++i)
+        {
+            // skip empty sequences
+            if (length(chromosomes2[i]) == 0)
+                continue;
+
+            std::string const id = toCString(static_cast<CharString>(ids[i]));
+            std::string const len = std::to_string(length(chromosomes2[i]));
+            std::string const file = extractFileName(toCString(genomePath));
+            appendValue(directoryInformation, file + ";" + len + ";" + id); // toCString(id.substr(0, id.find(" ")))
+            appendValue(chromosomes, chromosomes2[i]);
+        }
+
+        if (length(chromosomes) == 0)
+        {
+            // TODO: rmdir
+            std::cerr << "ERROR: The fasta file seems to be empty.\n";
+            return ArgumentParser::PARSE_ERROR;
+        }
     }
 
-    if (length(chromosomes) == 0)
-    {
-        // TODO: rmdir
-        std::cerr << "ERROR: The fasta file seems to be empty.\n";
-        return ArgumentParser::PARSE_ERROR;
-    }
+    save(directoryInformation, toCString(std::string(toCString(options.indexPath)) + ".ids"));
 
     // check whether it can be converted to Dna4 and analyze the data for determining the index dimensions later.
     bool canConvert = true; // TODO: test this code block

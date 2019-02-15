@@ -21,8 +21,6 @@ set (MINIMUM_SEQAN_VERSION "2.4.0")
 find_package(OpenMP QUIET)
 find_package(SeqAn  QUIET REQUIRED CONFIG)
 
-set (CMAKE_CXX_COMPILER "g++-6")
-
 message(STATUS "These dependencies where found:")
 message(   "     OPENMP     ${OPENMP_FOUND}      ${OpenMP_CXX_FLAGS}")
 message(   "     SEQAN      ${SEQAN_FOUND}      ${SEQAN_VERSION_STRING}")
@@ -176,7 +174,8 @@ set (GENMAP_SOURCE_FILES
                 common.hpp
                 indexing.hpp
                 mappability.hpp
-                algo.hpp)
+                algo.hpp
+                output.hpp)
 
 add_executable (genmap ${GENMAP_SOURCE_FILES})
 target_link_libraries (genmap ${SEQAN_LIBRARIES})

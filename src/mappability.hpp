@@ -9,17 +9,22 @@
 
 static constexpr bool outputProgress = true; // TODO: remove global variable
 
-#include "common.hpp"
-#include "algo.hpp"
-
-using namespace seqan;
+enum OutputType
+{
+    mappability,     // float (32 bit)
+    frequency_large, // uint16_t (16 bit)
+    frequency_small  // uint8_t (8 bit)
+};
 
 struct Options
 {
     bool mmap;
     bool indels;
-    bool high;
-    bool wigFile;
+    bool wigFile; // group files into mergable flags, i.e., BED | WIG, etc.
+    bool bedFile;
+    bool rawFile;
+    bool txtFile;
+    OutputType outputType;
     bool directory;
     bool verbose;
     CharString indexPath;
@@ -32,8 +37,14 @@ struct Options
     unsigned sampling;
 };
 
+#include "common.hpp"
+#include "algo.hpp"
+#include "output.hpp"
+
+using namespace seqan;
+
 template <typename TSpec>
-std::string retrieve(StringSet<CharString, TSpec> const & info, std::string const & key)
+inline std::string retrieve(StringSet<CharString, TSpec> const & info, std::string const & key)
 {
     for (uint32_t i = 0; i < length(info); ++i)
     {
@@ -44,21 +55,6 @@ std::string retrieve(StringSet<CharString, TSpec> const & info, std::string cons
     // This should never happen unless the index file is corrupted or manipulated.
     std::cout << "ERROR: Malformed index.info file! Could not find key '" << key << "'.\n";
     exit(1);
-}
-
-std::string get_output_path(Options const & opt, SearchParams const & searchParams)
-{
-    return std::string(toCString(opt.outputPath)) + "_" +
-           std::to_string(opt.errors) + "_" +
-           std::to_string(searchParams.length) + ".map" + (opt.high ? "16" : "8");
-}
-
-template <typename T>
-inline void save(std::vector<T> const & c, std::string const & output_path)
-{
-    std::ofstream outfile(output_path, std::ios::out | std::ios::binary);
-    outfile.write((const char*) &c[0], c.size() * sizeof(T));
-    outfile.close();
 }
 
 template <typename TDistance, typename value_type, typename TIndex, typename TText>
@@ -87,7 +83,28 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
     std::cout << "Progress: 100.00%" << std::endl;
 
     std::string output_path = get_output_path(opt, searchParams);
-    save(c, output_path);
+    if (opt.rawFile)
+    {
+        if (opt.outputType == OutputType::mappability)
+            saveRawMap(c, output_path + ".map");
+        if (opt.outputType == OutputType::frequency_small)
+            saveRawFreq(c, output_path + ".freq8");
+        if (opt.outputType == OutputType::frequency_large)
+            saveRawFreq(c, output_path + ".freq16");
+    }
+
+    if (opt.txtFile)
+    {
+        if (opt.outputType == OutputType::mappability)
+            saveTxtMap(c, output_path + ".txt");
+        if (opt.outputType == OutputType::frequency_small || opt.outputType == OutputType::frequency_large)
+            saveTxtFreq(c, output_path + ".txt");
+    }
+
+    if (opt.bedFile)
+    {
+        std::cerr << "ERROR: bed file export is comming soon (in 1-2 days)!\n";
+    }
 
     if (opt.wigFile)
     {
@@ -192,9 +209,9 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 template <typename TChar, typename TAllocConfig, typename TDistance>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
-    if (opt.high)
+    if (opt.outputType == OutputType::frequency_large || opt.outputType == OutputType::mappability) // TODO: document precision for mappability
         run<TChar, TAllocConfig, TDistance, uint16_t>(opt, searchParams);
-    else
+    else // if (opt.outputType == OutputType::frequency_small)
         run<TChar, TAllocConfig, TDistance, uint8_t>(opt, searchParams);
 }
 
@@ -221,12 +238,12 @@ int mappabilityMain(int argc, char const ** argv)
     // Argument parser
     ArgumentParser parser("GenMap");
     addDescription(parser,
-        "Tool for computing the mappability on nucleotide sequences. It supports multi-fasta files with Dna4 and Dna5 alphabets.");
+        "Tool for computing the mappability/frequency on nucleotide sequences. It supports multi-fasta files with Dna4 and Dna5 alphabets. Frequency is the absolute number of occurrences, mappability is the inverse, i.e., 1 / frequency-value.");
 
     addOption(parser, ArgParseOption("I", "index", "Path to the index", ArgParseArgument::INPUT_FILE, "IN"));
 	setRequired(parser, "index");
 
-    addOption(parser, ArgParseOption("O", "output", "Path to output directory (error number, length and overlap will be appended to the output file)", ArgParseArgument::OUTPUT_FILE, "OUT"));
+    addOption(parser, ArgParseOption("O", "output", "Path to output directory and prefix filename (error number and length will be appended to the output file)", ArgParseArgument::OUTPUT_FILE, "OUT"));
     setRequired(parser, "output");
 
     addOption(parser, ArgParseOption("E", "errors", "Number of errors", ArgParseArgument::INTEGER, "INT"));
@@ -234,28 +251,38 @@ int mappabilityMain(int argc, char const ** argv)
     addOption(parser, ArgParseOption("K", "length", "Length of k-mers", ArgParseArgument::INTEGER, "INT"));
     setRequired(parser, "length");
 
-    addOption(parser, ArgParseOption("C", "reversecomplement", "Searches each k-mer on the reverse strand as well."));
+    addOption(parser, ArgParseOption("c", "reverse-complement", "Searches each k-mer on the reverse strand as well."));
 
     addOption(parser, ArgParseOption("i", "indels", "Turns on indels (EditDistance). "
         "If not selected, only mismatches will be considered."));
 
-    addOption(parser, ArgParseOption("hi", "high", "Stores the mappability vector in 16 bit unsigned integers instead of 8 bit (max. value 65535 instead of 255)"));
+    addOption(parser, ArgParseOption("fs", "frequency-small", "Stores frequencies using 8 bit per value (max. value 255) instead of the mappbility using a float per value (32 bit). Applies to all formats (raw, txt, wig, bed)."));
+    addOption(parser, ArgParseOption("fl", "frequency-large", "Stores frequencies using 16 bit per value (max. value 65535) instead of the mappbility using a float per value (32 bit). Applies to all formats (raw, txt, wig, bed)."));
+
+    addOption(parser, ArgParseOption("r", "raw",
+        "Output raw files, i.e., the binary format of std::vector<T> with T = float, uint8_t or uint16_t (depending on whether -fs or -fl is set). For each fasta file that was indexed a separate file is created. File type is .map, .freq8 or .freq16."));
+
+    addOption(parser, ArgParseOption("t", "txt",
+        "Output human readable text files, i.e., the mappability respectively frequency values separated by spaces (depending on whether -fs or -fl is set). For each fasta file that was indexed a separate txt file is created. WARNING: This output is significantly larger that raw files."));
 
     addOption(parser, ArgParseOption("w", "wig",
-        "Output wig-files for adding a custom feature track to genome browsers. Mappability values will be stored as frequencies, i.e., 1/mappability. For each sequence (e.g., chromosome) a separate wig-file and chrom.size file is created"));
+        "Output wig files, e.g., for adding a custom feature track to genome browsers. For each fasta file that was indexed a separate wig file and chrom.size file is created."));
 
-    addOption(parser, ArgParseOption("o", "overlap", "Number of overlapping reads (o + 1 Strings will be searched at once beginning with their overlap region). Default: K * (0.7^e * MIN(MAX(K,30),100) / 100)", ArgParseArgument::INTEGER, "INT"));
-    hideOption(parser, "overlap");
+    addOption(parser, ArgParseOption("b", "bed",
+        "Output bed files. For each fasta file that was indexed a separate bed-file is created."));
 
     addOption(parser, ArgParseOption("m", "mmap",
         "Turns memory-mapping on, i.e. the index is not loaded into RAM but accessed directly in secondary-memory. "
         "This makes the algorithm only slightly slower but the index does not have to be loaded into main memory "
         "(which takes some time)."));
 
-    addOption(parser, ArgParseOption("t", "threads", "Number of threads", ArgParseArgument::INTEGER, "INT"));
+    addOption(parser, ArgParseOption("T", "threads", "Number of threads", ArgParseArgument::INTEGER, "INT"));
     setDefaultValue(parser, "threads", omp_get_max_threads());
 
     addOption(parser, ArgParseOption("v", "verbose", "Outputs some additional information."));
+
+    addOption(parser, ArgParseOption("xo", "overlap", "Number of overlapping reads (o + 1 Strings will be searched at once beginning with their overlap region). Default: K * (0.7^e * MIN(MAX(K,30),100) / 100)", ArgParseArgument::INTEGER, "INT"));
+    hideOption(parser, "overlap");
 
     ArgumentParser::ParseResult res = parse(parser, argc, argv);
     if (res != ArgumentParser::PARSE_OK)
@@ -269,13 +296,37 @@ int mappabilityMain(int argc, char const ** argv)
     getOptionValue(opt.outputPath, parser, "output");
     opt.mmap = isSet(parser, "mmap");
     opt.indels = isSet(parser, "indels");
-    opt.high = isSet(parser, "high");
     opt.wigFile = isSet(parser, "wig");
+    opt.bedFile = isSet(parser, "bed");
+    opt.rawFile = isSet(parser, "raw");
+    opt.txtFile = isSet(parser, "txt");
     opt.verbose = isSet(parser, "verbose");
+
+    if (!opt.wigFile && !opt.bedFile && !opt.rawFile && !opt.txtFile)
+    {
+        std::cerr << "ERROR: Please choose at least one output format (i.e., --wig, --bed, --raw, --txt).\n";
+        return ArgumentParser::PARSE_ERROR;
+    }
+
+    opt.outputType = OutputType::mappability; // default value
+    if (isSet(parser, "frequency-small") && !isSet(parser, "frequency-large"))
+    {
+        opt.outputType = OutputType::frequency_small;
+    }
+    else if (!isSet(parser, "frequency-small") && isSet(parser, "frequency-large"))
+    {
+        opt.outputType = OutputType::frequency_large;
+    }
+    else if (isSet(parser, "frequency-small") && isSet(parser, "frequency-large"))
+    {
+        std::cerr << "ERROR: Cannot use both --frequency-small and --frequency-large. Please choose one.\n";
+        return ArgumentParser::PARSE_ERROR;
+    }
+
 
     getOptionValue(searchParams.length, parser, "length");
     getOptionValue(searchParams.threads, parser, "threads");
-    searchParams.revCompl = isSet(parser, "reversecomplement");
+    searchParams.revCompl = isSet(parser, "reverse-complement");
 
     if (opt.errors == 0)
         searchParams.overlap = searchParams.length * 0.7;
@@ -287,6 +338,7 @@ int mappabilityMain(int argc, char const ** argv)
 
     // std::cout << "INFO: overlap = " << searchParams.overlap << '\n';
 
+    // TODO: make sure this never throws an error, if argument not set.
     if (searchParams.overlap > searchParams.length - 1)
     {
         std::cerr << "ERROR: overlap cannot be larger than K - 1.\n";
