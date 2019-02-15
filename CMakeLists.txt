@@ -60,5 +60,6 @@ endif ()
 # Add Tests
 # ----------------------------------------------------------------------------
 
-# message ("\n${ColourBold}Setting up unit tests${ColourReset}")
+message ("\n${ColourBold}Setting up unit tests${ColourReset}")
+enable_testing()
 # add_subdirectory(tests)
