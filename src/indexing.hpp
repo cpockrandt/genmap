@@ -90,7 +90,7 @@ void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, In
 
     {
         Index<TText, TUniIndexConfig> fwdIndex(chromosomesConcat);
-        if (std::is_same<TRadixSortTag, RadixSortSACreateTag>::value)
+        SEQAN_IF_CONSTEXPR (std::is_same<TRadixSortTag, RadixSortSACreateTag>::value)
             indexCreateProgress(fwdIndex, FibreSALF());
         else
         {
@@ -103,18 +103,18 @@ void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, In
 
     {
         reverse(chromosomesConcat);
-        Index<TText, TUniIndexConfig> fwdIndex(chromosomesConcat);
-        if (std::is_same<TRadixSortTag, RadixSortSACreateTag>::value)
-            indexCreateProgress(fwdIndex, FibreSALF());
+        Index<TText, TUniIndexConfig> bwdIndex(chromosomesConcat);
+        SEQAN_IF_CONSTEXPR (std::is_same<TRadixSortTag, RadixSortSACreateTag>::value)
+            indexCreateProgress(bwdIndex, FibreSALF());
         else
         {
-            std::cout << "Create fwd Index ... " << std::flush;
-            indexCreate(fwdIndex, FibreSALF());
+            std::cout << "Create bwd Index ... " << std::flush;
+            indexCreate(bwdIndex, FibreSALF());
             std::cout << "done!\n";
         }
-        clear(getFibre(getFibre(getFibre(fwdIndex, FibreSA()), FibreSparseString()), FibreValues()));
-        clear(getFibre(getFibre(getFibre(fwdIndex, FibreSA()), FibreSparseString()), FibreIndicators()));
-        saveRev(fwdIndex, toCString(std::string(toCString(options.indexPath)) + ".rev"));
+        clear(getFibre(getFibre(getFibre(bwdIndex, FibreSA()), FibreSparseString()), FibreValues()));
+        clear(getFibre(getFibre(getFibre(bwdIndex, FibreSA()), FibreSparseString()), FibreIndicators()));
+        saveRev(bwdIndex, toCString(std::string(toCString(options.indexPath)) + ".rev"));
     }
 }
 

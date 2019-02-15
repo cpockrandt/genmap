@@ -66,15 +66,15 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
     double start = get_wall_time();
     switch (opt.errors)
     {
-        case 0:  computeMappability<0>(index, text, c, searchParams);
+        case 0:  computeMappability<0>(index, text, c, searchParams, opt.directory, chromLengths);
                  break;
-        case 1:  computeMappability<1>(index, text, c, searchParams);
+        case 1:  computeMappability<1>(index, text, c, searchParams, opt.directory, chromLengths);
                  break;
-        case 2:  computeMappability<2>(index, text, c, searchParams);
+        case 2:  computeMappability<2>(index, text, c, searchParams, opt.directory, chromLengths);
                  break;
-        case 3:  computeMappability<3>(index, text, c, searchParams);
+        case 3:  computeMappability<3>(index, text, c, searchParams, opt.directory, chromLengths);
                  break;
-        case 4:  computeMappability<4>(index, text, c, searchParams);
+        case 4:  computeMappability<4>(index, text, c, searchParams, opt.directory, chromLengths);
                  break;
         default: std::cerr << "E > 4 not yet supported.\n";
                  exit(1);
@@ -173,7 +173,7 @@ inline void run(Options const & opt, SearchParams const & searchParams)
     auto const & text = indexText(index);
 
     StringSet<CharString, Owner<ConcatDirect<> > > chromosomeNames;
-    StringSet<uint64_t> chromosomeLengths;
+    StringSet<uint64_t> chromosomeLengths; // ConcatDirect on PODs does not seem to support clear() ...
     uint64_t startPos = 0;
     uint64_t fastaFileLength = 0;
     std::string fastaFile = std::get<0>(retrieveDirectoryInformationLine(directoryInformation[0]));

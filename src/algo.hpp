@@ -1,18 +1,17 @@
 using namespace seqan;
 
-template <typename TChar, typename TConfig, typename TMappVector>
-void resetLimits(seqan::String<TChar, TConfig> const &, TMappVector const &, unsigned const)
+template <typename TMappVector, typename TChromosomeLength>
+void resetLimits(TMappVector const &, unsigned const, TChromosomeLength const)
 { }
 
-template <typename TString, typename TConfig, typename TMappVector>
-void resetLimits(seqan::StringSet<TString, TConfig> const & text, TMappVector & c, unsigned const length)
+template <typename TMappVector, typename TLengths, typename TConfig>
+void resetLimits(TMappVector & c, unsigned const length, StringSet<TLengths, TConfig> const & chromLengths)
 {
-    auto const & limits = seqan::stringSetLimits(text);
-    for (unsigned i = 1; i < seqan::length(limits) - 1; ++i)
+    for (unsigned i = 1; i < seqan::length(chromLengths) - 1; ++i)
     {
         for (unsigned j = 1; j < length; ++j)
         {
-            c[limits[i] - j] = 0;
+            c[chromLengths[i] - j] = 0;
         }
     }
 }
@@ -188,8 +187,8 @@ inline void extend(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * 
     }
 }
 
-template <unsigned errors, typename TIndex, typename TText, typename TContainer>
-inline void computeMappability(TIndex & index, TText const & text, TContainer & c, SearchParams const & params)
+template <unsigned errors, typename TIndex, typename TText, typename TContainer, typename TChromosomeLengths>
+inline void computeMappability(TIndex & index, TText const & text, TContainer & c, SearchParams const & params, bool const directory, TChromosomeLengths const & chromLengths)
 {
     typedef typename TContainer::value_type TValue;
     typedef Iter<TIndex, VSTree<TopDown<> > > TBiIter;
@@ -293,7 +292,7 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
             _optimalSearchScheme(delegate, it, needlesOverlap, scheme, HammingDistance());
             for (uint64_t j = beginPos; j < endPos; ++j)
             {
-                if (countOccurrences(itExact[j - beginPos]) > 1) // guaranteed to exist, since there has to be at least one match!
+                if (!directory && countOccurrences(itExact[j - beginPos]) > 1) // guaranteed to exist, since there has to be at least one match!
                 {
                     for (auto const & occ : getOccurrences(itExact[j-beginPos]))
                     {
@@ -315,5 +314,5 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
     // Hence, it also searches k-mers that overlap two strings that actually do not exist.
     // At the end we overwrite the frequency of those k-mers with 0.
     // TODO: k-mers spanning two strings should not be searched if there are many short strings (i.e., fasta of reads).
-    resetLimits(indexText(index), c, params.length);
+    resetLimits(c, params.length, chromLengths);
 }
