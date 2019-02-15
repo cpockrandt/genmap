@@ -3,20 +3,23 @@
 #include <cstdint>
 
 // TODO: investigate performance of buffer sizes!
-#define     BUFFER_SIZE     4*1024*1024 // 4 MB
+// TODO: stack overflow might occur leading to a segmentation fault!
+#define     BUFFER_SIZE     32*1024 // 32 KB
 
 using namespace seqan;
 
-inline std::string get_output_path(Options const & opt, SearchParams const & searchParams)
+inline std::string get_output_path(Options const & opt, SearchParams const & searchParams, std::string const & fastaFile)
 {
-    std::string path = std::string(toCString(opt.outputPath)) + "_" +
+    std::string path = std::string(toCString(opt.outputPath)) + fastaFile + "_" +
                        std::to_string(opt.errors) + "_" +
                        std::to_string(searchParams.length);
     return path;
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+
 template <typename T>
-inline void saveRawFreq(std::vector<T> const & c, std::string const & output_path)
+void saveRawFreq(std::vector<T> const & c, std::string const & output_path)
 {
     std::ofstream outfile(output_path, std::ios::out | std::ios::binary);
     outfile.write((const char*) &c[0], c.size() * sizeof(T));
@@ -24,7 +27,7 @@ inline void saveRawFreq(std::vector<T> const & c, std::string const & output_pat
 }
 
 template <typename T>
-inline void saveRawMap(std::vector<T> const & c, std::string const & output_path)
+void saveRawMap(std::vector<T> const & c, std::string const & output_path)
 {
     char buffer[BUFFER_SIZE];
     std::ofstream outfile(output_path);
@@ -32,17 +35,19 @@ inline void saveRawMap(std::vector<T> const & c, std::string const & output_path
 
     for (T const & v : c)
     {
-        float const f = 1.0 / static_cast<float>(v);
+        float const f = (v != 0) ? 1.0 / static_cast<float>(v) : 0;
         outfile.write(reinterpret_cast<const char*>(&f), sizeof(float));
     }
     outfile.close();
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+
 template <typename T>
-inline void saveTxtFreq(std::vector<T> const & c, std::string const & output_path)
+void saveTxtFreq(std::vector<T> const & c, std::string const & output_path)
 {
     char buffer[BUFFER_SIZE];
-    std::ofstream outfile(output_path, std::ios::out | std::ofstream::binary);
+    std::ofstream outfile(output_path + ".txt", std::ios::out | std::ofstream::binary);
     outfile.rdbuf()->pubsetbuf(buffer, BUFFER_SIZE);
 
     copy(c.begin(), c.end(), (std::ostream_iterator<T>(outfile), std::ostream_iterator<int>(outfile, " ")));
@@ -50,17 +55,85 @@ inline void saveTxtFreq(std::vector<T> const & c, std::string const & output_pat
 }
 
 template <typename T>
-inline void saveTxtMap(std::vector<T> const & c, std::string const & output_path)
+void saveTxtMap(std::vector<T> const & c, std::string const & output_path)
 {
     char buffer[BUFFER_SIZE];
-    std::ofstream outfile(output_path);
+    std::ofstream outfile(output_path + ".txt");
     outfile.rdbuf()->pubsetbuf(buffer, BUFFER_SIZE);
 
     for (T const & v : c)
     {
-        float const f = 1.0 / static_cast<float>(v);
-        outfile.write(reinterpret_cast<const char*>(&f), sizeof(float));
-        // outfile << (1.0 / static_cast<float>(v)) << ' ';
+        float const f = (v != 0) ? 1.0 / static_cast<float>(v) : 0;
+        // outfile.write(reinterpret_cast<const char*>(&f), sizeof(float));
+        outfile << f << ' ';
     }
     outfile.close();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+template <bool mappability, typename T, typename TChromosomeNames, typename TChromosomeLengths>
+void saveWig(std::vector<T> const & c, std::string const & output_path, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths)
+{
+    uint64_t pos = 0;
+    uint64_t begin_pos_string = 0;
+    uint64_t end_pos_string = chromLengths[0];
+
+    char buffer[BUFFER_SIZE];
+
+    std::ofstream wigFile(output_path + ".wig");
+    wigFile.rdbuf()->pubsetbuf(buffer, BUFFER_SIZE);
+
+    for (uint64_t i = 0; i < length(chromLengths); ++i)
+    {
+        uint16_t current_val = c[pos];
+        uint64_t occ = 0;
+        uint64_t last_occ = 0;
+
+        while (pos < end_pos_string)
+        {
+            if (current_val != c[pos])
+            {
+                if (last_occ != occ)
+                    wigFile << "variableStep chrom=" << chromNames[i] << " span=" << occ << '\n';
+                // TODO: document this behavior (mappability of 0)
+                SEQAN_IF_CONSTEXPR (mappability)
+                {
+                    float const value = (current_val != 0) ? 1.0 / static_cast<float>(current_val) : 0;
+                    wigFile << (pos - occ + 1 - begin_pos_string) << ' ' << value << '\n'; // pos in wig start at 1
+                }
+                else
+                {
+                    wigFile << (pos - occ + 1 - begin_pos_string) << ' ' << current_val << '\n'; // pos in wig start at 1
+                }
+
+                last_occ = occ;
+                occ = 0;
+                current_val = c[pos];
+            }
+
+            ++occ;
+            ++pos;
+        }
+
+        // TODO: remove this block by appending a different value to c (reserve one more. check performance)
+        if (last_occ != occ)
+            wigFile << "variableStep chrom=" << chromNames[i] << " span=" << occ << '\n';
+        float const value = (current_val != 0) ? 1.0 / static_cast<float>(current_val) : 0;
+        wigFile << (pos - occ + 1 - begin_pos_string) << ' ' << value << '\n'; // pos in wig start at 1
+
+        begin_pos_string += chromLengths[i];
+        if (i + 1 < length(chromLengths))
+            end_pos_string += chromLengths[i + 1];
+        end_pos_string = std::min(end_pos_string, c.size()); // last chromosomeLength has to be reduced by K-1 characters
+    }
+    wigFile.close();
+
+    // .chrom.sizes file
+    std::ofstream chromSizesFile(output_path + ".chrom.sizes");
+    for (uint64_t i = 0; i < length(chromLengths); ++i)
+        chromSizesFile << chromNames[i] << '\t' << chromLengths[i] << '\n';
+    chromSizesFile.close();
+
+    // std::cout << "Wig file stored!" << std::endl;
 }

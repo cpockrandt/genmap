@@ -57,11 +57,13 @@ inline std::string retrieve(StringSet<CharString, TSpec> const & info, std::stri
     exit(1);
 }
 
-template <typename TDistance, typename value_type, typename TIndex, typename TText>
-inline void run(TIndex & index, TText const & text, Options const & opt, SearchParams const & searchParams)
+template <typename TDistance, typename value_type, typename TIndex, typename TText, typename TChromosomeNames, typename TChromosomeLengths>
+inline void run(TIndex & index, TText const & text, Options const & opt, SearchParams const & searchParams,
+                std::string const & fastaFile, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths)
 {
     std::vector<value_type> c(length(text) - searchParams.length + 1, 0);
 
+    double start = get_wall_time();
     switch (opt.errors)
     {
         case 0:  computeMappability<0>(index, text, c, searchParams);
@@ -74,102 +76,79 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
                  break;
         case 4:  computeMappability<4>(index, text, c, searchParams);
                  break;
-        default: std::cerr << "E = " << opt.errors << " not yet supported.\n";
+        default: std::cerr << "E > 4 not yet supported.\n";
                  exit(1);
     }
-
-    if (outputProgress)
+    SEQAN_IF_CONSTEXPR (outputProgress)
+    {
         std::cout << '\r';
-    std::cout << "Progress: 100.00%" << std::endl;
+        std::cout << "Progress: 100.00%" << std::endl;
+    }
 
-    std::string output_path = get_output_path(opt, searchParams);
+    if (opt.verbose)
+        std::cout << "Mappability computed in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
+
+    std::cout << "Start writing output files ...";
+    if (opt.verbose)
+        std::cout << std::endl;
+
+    std::string output_path = get_output_path(opt, searchParams, fastaFile);
     if (opt.rawFile)
     {
+        double start = get_wall_time();
         if (opt.outputType == OutputType::mappability)
             saveRawMap(c, output_path + ".map");
-        if (opt.outputType == OutputType::frequency_small)
+        else if (opt.outputType == OutputType::frequency_small)
             saveRawFreq(c, output_path + ".freq8");
-        if (opt.outputType == OutputType::frequency_large)
+        else // if (opt.outputType == OutputType::frequency_large)
             saveRawFreq(c, output_path + ".freq16");
+        if (opt.verbose)
+            std::cout << "RAW file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
 
     if (opt.txtFile)
     {
+        double start = get_wall_time();
         if (opt.outputType == OutputType::mappability)
-            saveTxtMap(c, output_path + ".txt");
+            saveTxtMap(c, output_path);
         if (opt.outputType == OutputType::frequency_small || opt.outputType == OutputType::frequency_large)
-            saveTxtFreq(c, output_path + ".txt");
-    }
-
-    if (opt.bedFile)
-    {
-        std::cerr << "ERROR: bed file export is comming soon (in 1-2 days)!\n";
+            saveTxtFreq(c, output_path);
+        if (opt.verbose)
+            std::cout << "TXT file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
 
     if (opt.wigFile)
     {
-        auto const & stringset = indexText(index);
-
-        uint64_t pos = 0;
-        uint64_t begin_pos_string = 0;
-        uint64_t end_pos_string = length(stringset[0]);
-        // for each sequence in the string set
-        for (uint64_t i = 0; i < length(stringset); ++i)
-        {
-            std::stringstream ss;
-
-            uint16_t current_val = c[pos];
-            uint64_t occ = 0;
-            uint64_t last_occ = 0;
-
-            for (; pos < end_pos_string; ++pos)
-            {
-                if (current_val == c[pos])
-                {
-                    ++occ;
-                }
-                else
-                {
-                    if (last_occ != occ)
-                        ss << "variableStep chrom=seq" << i << " span=" << occ << '\n';
-                    float value = 1;
-                    if (current_val != 0)
-                        value = 1.0/(float)(current_val);
-                    ss << (pos - occ + 1 - begin_pos_string) << ' ' << value << '\n'; // pos in wig start at 1
-
-                    last_occ = occ;
-                    occ = 1;
-                    current_val = c[pos];
-                }
-            }
-
-            if (last_occ != occ)
-                ss << "variableStep chrom=seq" << i << " span=" << occ << '\n';
-            float value = 1;
-            if (current_val != 0)
-                value = 1.0/(float)(current_val);
-            ss << (pos - occ + 1 - begin_pos_string) << ' ' << value << '\n'; // pos in wig start at 1
-
-            std::string wig_path = toCString(opt.outputPath);
-            wig_path += "_" + std::to_string(opt.errors) + "_" + std::to_string(searchParams.length) + "_seq" + std::to_string(i);
-
-            // .chrom.sizes file
-            std::ofstream chromSizesFile;
-            chromSizesFile.open(wig_path + ".chrom.sizes");
-            chromSizesFile << "seq" << i << '\t' << length(stringset[i]) << '\n';
-            chromSizesFile.close();
-
-            // .wig file
-            std::ofstream wigFile;
-            wigFile.open(wig_path + ".wig");
-            wigFile << ss.str();
-            wigFile.close();
-
-            begin_pos_string += length(stringset[i]);
-            if (i + 1 < length(stringset))
-                end_pos_string += length(stringset[i + 1]);
-        }
+        double start = get_wall_time();
+        if (opt.outputType == OutputType::mappability)
+            saveWig<true>(c, output_path, chromNames, chromLengths);
+        else
+            saveWig<false>(c, output_path, chromNames, chromLengths);
+        if (opt.verbose)
+            std::cout << "WIG file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
+
+    if (opt.bedFile)
+    {
+        double start = get_wall_time();
+        std::cerr << "ERROR: bed file export is comming soon (in 1-2 days)!\n";
+        if (opt.verbose)
+            std::cout << "BED file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
+    }
+
+    if (!opt.verbose)
+        std::cout << " done!\n";
+}
+
+inline auto retrieveDirectoryInformationLine(CharString const & info)
+{
+    std::string const row = toCString(info);
+    auto const firstSeparator = row.find(';', 0);
+    auto const secondSeparator = row.find(';', firstSeparator + 1);
+    std::string const fastaFile = row.substr(0, firstSeparator);
+    uint64_t const length = std::stoi(row.substr(firstSeparator + 1, secondSeparator - firstSeparator - 1));
+    std::string const chromName = row.substr(secondSeparator + 1);
+    return std::make_tuple(fastaFile, length, chromName);
 }
 
 template <typename TChar, typename TAllocConfig, typename TDistance, typename value_type,
@@ -183,11 +162,41 @@ inline void run(Options const & opt, SearchParams const & searchParams)
     TFMIndexConfig::SAMPLING = opt.sampling;
 
     using TIndex = Index<TStringSet, TBiIndexConfig<TFMIndexConfig> >;
-
     TIndex index;
     open(index, toCString(opt.indexPath), OPEN_RDONLY);
+
+    StringSet<CharString, Owner<ConcatDirect<> > > directoryInformation;
+    open(directoryInformation, toCString(std::string(toCString(opt.indexPath)) + ".ids"), OPEN_RDONLY);
+    appendValue(directoryInformation, "dummy.entry;0;chromosomename"); // dummy entry enforces that the mappability is
+                                                                       // computed for the last file in the while loop.
+
     auto const & text = indexText(index);
-    run<TDistance, value_type>(index, text.concat, opt, searchParams);
+
+    StringSet<CharString, Owner<ConcatDirect<> > > chromosomeNames;
+    StringSet<uint64_t> chromosomeLengths;
+    uint64_t startPos = 0;
+    uint64_t fastaFileLength = 0;
+    std::string fastaFile = std::get<0>(retrieveDirectoryInformationLine(directoryInformation[0]));
+
+    for (uint64_t i = 0; i < length(directoryInformation); ++i)
+    {
+        auto const row = retrieveDirectoryInformationLine(directoryInformation[i]);
+        if (std::get<0>(row) != fastaFile)
+        {
+            std::cout << "TODO: " << startPos << " ... " << fastaFileLength << std::endl;
+            auto const & fastaInfix = infixWithLength(text.concat, startPos, fastaFileLength);
+            run<TDistance, value_type>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths);
+
+            startPos += fastaFileLength;
+            fastaFile = std::get<0>(row);
+            fastaFileLength = 0;
+            clear(chromosomeNames);
+            clear(chromosomeLengths);
+        }
+        fastaFileLength += std::get<1>(row);
+        appendValue(chromosomeNames, std::get<2>(row));
+        appendValue(chromosomeLengths, std::get<1>(row));
+    }
 }
 
 template <typename TChar, typename TAllocConfig, typename TDistance, typename TValue>
@@ -236,7 +245,7 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 int mappabilityMain(int argc, char const ** argv)
 {
     // Argument parser
-    ArgumentParser parser("GenMap");
+    ArgumentParser parser("GenMap map");
     addDescription(parser,
         "Tool for computing the mappability/frequency on nucleotide sequences. It supports multi-fasta files with Dna4 and Dna5 alphabets. Frequency is the absolute number of occurrences, mappability is the inverse, i.e., 1 / frequency-value.");
 
@@ -272,9 +281,7 @@ int mappabilityMain(int argc, char const ** argv)
         "Output bed files. For each fasta file that was indexed a separate bed-file is created."));
 
     addOption(parser, ArgParseOption("m", "mmap",
-        "Turns memory-mapping on, i.e. the index is not loaded into RAM but accessed directly in secondary-memory. "
-        "This makes the algorithm only slightly slower but the index does not have to be loaded into main memory "
-        "(which takes some time)."));
+        "Turns memory-mapping on, i.e. the index is not loaded into RAM but accessed directly from secondary-memory. This may increase the overall running time, but do NOT use it if the index lies on network storage."));
 
     addOption(parser, ArgParseOption("T", "threads", "Number of threads", ArgParseArgument::INTEGER, "INT"));
     setDefaultValue(parser, "threads", omp_get_max_threads());
@@ -371,9 +378,6 @@ int mappabilityMain(int argc, char const ** argv)
     opt.sampling = std::stoi(retrieve(info, "sampling_rate"));
     opt.directory = retrieve(info, "fasta_directory") == "true";
 
-    StringSet<CharString, Owner<ConcatDirect<> > > ids;
-    open(ids, toCString(std::string(toCString(opt.indexPath)) + ".ids"));
-
     if (opt.verbose)
     {
         std::cout << "Index was loaded (" << opt.alphabet << " alphabet, sampling rate of " << opt.sampling << ").\n"
@@ -382,7 +386,7 @@ int mappabilityMain(int argc, char const ** argv)
                      " and " << opt.maxSeqLengthWidth  << " bit values.\n";
 
         if (opt.directory)
-            std::cout << "Index was built on an entire directory (" << length(ids) << " fasta file(s))." << std::endl;
+            std::cout << "Index was built on an entire directory." << std::endl;
         else
             std::cout << "Index was built on a single fasta file." << std::endl;
     }

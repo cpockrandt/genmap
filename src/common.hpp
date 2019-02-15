@@ -1,5 +1,16 @@
 #pragma once
 
+#include <time.h>
+#include <sys/time.h>
+
+inline double get_wall_time()
+{
+    struct timeval time;
+    if (gettimeofday(&time, NULL))
+        return 0;
+    return static_cast<double>(time.tv_sec) + static_cast<double>(time.tv_usec) * .000001;
+}
+
 template <typename TSpec = void, typename TLengthSum = size_t, unsigned LEVELS = 2, unsigned WORDS_PER_BLOCK = 1>
 struct GemMapFastFMIndexConfig
 {

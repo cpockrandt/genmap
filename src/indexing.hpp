@@ -28,10 +28,7 @@ struct IndexOptions
 
 std::string extractFileName(std::string const & path)
 {
-    // ./file.fa
-    // file.fa
-    // ../file.fa
-    // /path/to/file.fa
+    // possible formats of 'path': ./file.fa   file.fa   ../file.fa   /path/to/file.fa
     auto const pos = path.find_last_of('/');
     if (pos == std::string::npos) // no slash found, i.e. file.fa
         return path;
@@ -69,7 +66,7 @@ void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, In
         if (options.verbose)
         {
             CharString const alphabet = std::is_same<typename Value<TString>::Type, Dna>::value ? "dna4" : "dna5";
-            std::cout << "Index was constructed using " << alphabet << " alphabet.\n"
+            std::cout << "Index will be constructed using " << alphabet << " alphabet.\n"
                          "The BWT is represented by " << bwtDigits << " bit values.\n"
                          "The sampled suffix array is represented by pairs of " << seqNoDigits <<
                          " and " << seqPosDigits << " bit values." << std::endl;
@@ -155,17 +152,16 @@ void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, In
 int indexMain(int const argc, char const ** argv)
 {
     // Argument Parser
-    ArgumentParser parser("Index Creation");
-    addDescription(parser, "App for creating an index. Only supports Dna (with and without N's).");
+    ArgumentParser parser("GenMap index");
+    addDescription(parser, "Index creation. Only supports Dna (with and without N's).");
 
-    addOption(parser, ArgParseOption("G", "genome", "Path to the genome", ArgParseArgument::INPUT_FILE, "IN"));
-	setValidValues(parser, "genome", "fa fasta fastq");
-	setRequired(parser, "genome");
+    addOption(parser, ArgParseOption("F", "fasta-file", "Path to the fasta file.", ArgParseArgument::INPUT_FILE, "IN"));
+	setValidValues(parser, "fasta-file", "fa fasta fastq");
 
-    addOption(parser, ArgParseOption("I", "index", "Path to the index", ArgParseArgument::OUTPUT_FILE, "OUT"));
+    addOption(parser, ArgParseOption("FD", "fasta-directory", "Path to the directory of fasta files (indexes all .fa .fasta and .fastq files in there, not including subdirectories.).", ArgParseArgument::INPUT_FILE, "IN"));
+
+    addOption(parser, ArgParseOption("I", "index", "Path to the index.", ArgParseArgument::OUTPUT_FILE, "OUT"));
     setRequired(parser, "index");
-
-    addOption(parser, ArgParseOption("d", "directory", "Set this flag if --genome points to a directory of fasta files."));
 
     // TODO: describe both algorithms in terms of space consumption (disk and RAM)
     addOption(parser, ArgParseOption("A", "algorithm", "Algorithm for suffix array construction (needed for the FM index).", ArgParseArgument::INPUT_FILE, "IN"));
@@ -179,28 +175,45 @@ int indexMain(int const argc, char const ** argv)
 
     addOption(parser, ArgParseOption("v", "verbose", "Outputs some additional information on the constructed index."));
 
-    addOption(parser, ArgParseOption("xa", "seqno", "Number of sequences", ArgParseArgument::INTEGER, "INT"));
+    addOption(parser, ArgParseOption("xa", "seqno", "Number of sequences.", ArgParseArgument::INTEGER, "INT"));
     hideOption(parser, "seqno");
 
-    addOption(parser, ArgParseOption("xb", "seqpos", "Max length of sequences", ArgParseArgument::INTEGER, "INT"));
+    addOption(parser, ArgParseOption("xb", "seqpos", "Max length of sequences.", ArgParseArgument::INTEGER, "INT"));
     hideOption(parser, "seqpos");
 
-    addOption(parser, ArgParseOption("xc", "bwtlen", "Total length of all sequences", ArgParseArgument::INTEGER, "INT"));
+    addOption(parser, ArgParseOption("xc", "bwtlen", "Total length of all sequences.", ArgParseArgument::INTEGER, "INT"));
     hideOption(parser, "bwtlen");
 
     ArgumentParser::ParseResult res = parse(parser, argc, argv);
     if (res != ArgumentParser::PARSE_OK)
         return res == ArgumentParser::PARSE_ERROR;
 
+    bool const isSetFastaFile = isSet(parser, "fasta-file");
+    bool const isSetFastaDirectory = isSet(parser, "fasta-directory");
+
+    if (isSetFastaFile && isSetFastaDirectory)
+    {
+        std::cerr << "ERROR: You can only use eiher --fasta-file or --fasta-directory, not both.\n";
+        return ArgumentParser::PARSE_ERROR;
+    }
+    else if (!isSetFastaFile && !isSetFastaDirectory)
+    {
+        std::cerr << "ERROR: You forgot to specify --fasta-file or --fasta-directory.\n";
+        return ArgumentParser::PARSE_ERROR;
+    }
+
     // Retrieve input parameter
     IndexOptions options;
-    CharString genomePath, algorithm;
+    CharString fastaPath, algorithm;
     getOptionValue(options.indexPath, parser, "index");
-    getOptionValue(genomePath, parser, "genome");
     getOptionValue(algorithm, parser, "algorithm");
     getOptionValue(options.sampling, parser, "sampling");
     toLower(algorithm);
-    options.directory = isSet(parser, "directory");
+    options.directory = isSetFastaDirectory;
+    if (isSetFastaDirectory)
+        getOptionValue(fastaPath, parser, "fasta-directory");
+    else
+        getOptionValue(fastaPath, parser, "fasta-file");
     options.useRadix = algorithm == "radix";
     options.verbose = isSet(parser, "verbose");
 
@@ -224,13 +237,13 @@ int indexMain(int const argc, char const ** argv)
 
     // Read fasta input file(s)
     StringSet<Dna5String> chromosomes;
-    StringSet<CharString> directoryInformation;
+    StringSet<CharString, Owner<ConcatDirect<> > > directoryInformation;
 
     if (options.directory)
     {
         uint32_t filesLoaded = 0;
         std::stringstream filenames;
-        DIR * dirp = opendir(toCString(genomePath));
+        DIR * dirp = opendir(toCString(fastaPath));
         struct dirent * dp;
         while ((dp = readdir(dirp)) != NULL)
         {
@@ -239,7 +252,7 @@ int indexMain(int const argc, char const ** argv)
             {
                 ++filesLoaded;
                 filenames << file << '\n';
-                std::string fullPath = toCString(genomePath);
+                std::string fullPath = toCString(fastaPath);
                 if (!hasEnding(fullPath, "/"))
                     fullPath += "/";
                 fullPath += file;
@@ -289,7 +302,7 @@ int indexMain(int const argc, char const ** argv)
         StringSet<CharString, Owner<ConcatDirect<> > > ids;
         StringSet<Dna5String> chromosomes2;
 
-        SeqFileIn seqFileIn(toCString(genomePath));
+        SeqFileIn seqFileIn(toCString(fastaPath));
         readRecords(ids, chromosomes2, seqFileIn);
         if (options.verbose)
             std::cout << "Number of sequences in the fasta file: " << length(chromosomes) << '\n';
@@ -302,7 +315,7 @@ int indexMain(int const argc, char const ** argv)
 
             std::string const id = toCString(static_cast<CharString>(ids[i]));
             std::string const len = std::to_string(length(chromosomes2[i]));
-            std::string const file = extractFileName(toCString(genomePath));
+            std::string const file = extractFileName(toCString(fastaPath));
             appendValue(directoryInformation, file + ";" + len + ";" + id); // toCString(id.substr(0, id.find(" ")))
             appendValue(chromosomes, chromosomes2[i]);
         }
