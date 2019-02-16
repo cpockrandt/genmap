@@ -1,0 +1,16 @@
+variableStep chrom=seq1 span=2
+1 2
+3 1
+5 5
+variableStep chrom=seq1 span=1
+7 2
+variableStep chrom=seq1 span=5
+8 1
+variableStep chrom=seq1 span=3
+13 5
+variableStep chrom=seq1 span=1
+16 2
+variableStep chrom=seq1 span=3
+17 1
+variableStep chrom=seq1 span=2
+20 2

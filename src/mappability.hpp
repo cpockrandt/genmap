@@ -269,6 +269,7 @@ int mappabilityMain(int argc, char const ** argv)
 {
     // Argument parser
     ArgumentParser parser("GenMap map");
+    sharedSetup(parser);
     addDescription(parser,
         "Tool for computing the mappability/frequency on nucleotide sequences. It supports multi-fasta files with Dna4 and Dna5 alphabets. Frequency is the absolute number of occurrences, mappability is the inverse, i.e., 1 / frequency-value.");
 

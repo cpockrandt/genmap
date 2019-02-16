@@ -25,6 +25,10 @@ target_link_libraries(my_test pthread)
 add_test(NAME    my_test
          COMMAND my_test)
 
+add_test(NAME test1
+         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh
+         "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}")
+add_dependencies(test1 genmap)
 # foreach(DI sa fm)
 #     add_test (NAME test_mkindex_${PROG}_${DI}
 #               COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/maintests.sh

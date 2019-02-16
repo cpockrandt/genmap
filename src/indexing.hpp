@@ -153,6 +153,7 @@ int indexMain(int const argc, char const ** argv)
 {
     // Argument Parser
     ArgumentParser parser("GenMap index");
+    sharedSetup(parser);
     addDescription(parser, "Index creation. Only supports Dna (with and without N's).");
 
     addOption(parser, ArgParseOption("F", "fasta-file", "Path to the fasta file.", ArgParseArgument::INPUT_FILE, "IN"));
