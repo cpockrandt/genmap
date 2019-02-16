@@ -158,7 +158,7 @@ int indexMain(int const argc, char const ** argv)
     addOption(parser, ArgParseOption("F", "fasta-file", "Path to the fasta file.", ArgParseArgument::INPUT_FILE, "IN"));
 	setValidValues(parser, "fasta-file", "fa fasta fastq");
 
-    addOption(parser, ArgParseOption("FD", "fasta-directory", "Path to the directory of fasta files (indexes all .fa .fasta and .fastq files in there, not including subdirectories.).", ArgParseArgument::INPUT_FILE, "IN"));
+    addOption(parser, ArgParseOption("FD", "fasta-directory", "Path to the directory of fasta files (indexes all .fa .fasta and .fastq files in there, not including subdirectories).", ArgParseArgument::INPUT_FILE, "IN"));
 
     addOption(parser, ArgParseOption("I", "index", "Path to the index.", ArgParseArgument::OUTPUT_FILE, "OUT"));
     setRequired(parser, "index");

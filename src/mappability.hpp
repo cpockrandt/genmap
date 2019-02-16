@@ -24,6 +24,7 @@ struct Options
     bool bedFile;
     bool rawFile;
     bool txtFile;
+    bool csvFile;
     OutputType outputType;
     bool directory;
     bool verbose;
@@ -57,37 +58,22 @@ inline std::string retrieve(StringSet<CharString, TSpec> const & info, std::stri
     exit(1);
 }
 
-template <typename TDistance, typename value_type, typename TIndex, typename TText, typename TChromosomeNames, typename TChromosomeLengths>
-inline void run(TIndex & index, TText const & text, Options const & opt, SearchParams const & searchParams,
-                std::string const & fastaFile, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths)
+inline auto retrieveDirectoryInformationLine(CharString const & info)
 {
-    std::vector<value_type> c(length(text) - searchParams.length + 1, 0);
+    std::string const row = toCString(info);
+    auto const firstSeparator = row.find(';', 0);
+    auto const secondSeparator = row.find(';', firstSeparator + 1);
+    std::string const fastaFile = row.substr(0, firstSeparator);
+    uint64_t const length = std::stoi(row.substr(firstSeparator + 1, secondSeparator - firstSeparator - 1));
+    std::string const chromName = row.substr(secondSeparator + 1);
+    return std::make_tuple(fastaFile, length, chromName);
+}
 
-    double start = get_wall_time();
-    switch (opt.errors)
-    {
-        case 0:  computeMappability<0>(index, text, c, searchParams, opt.directory, chromLengths);
-                 break;
-        case 1:  computeMappability<1>(index, text, c, searchParams, opt.directory, chromLengths);
-                 break;
-        case 2:  computeMappability<2>(index, text, c, searchParams, opt.directory, chromLengths);
-                 break;
-        case 3:  computeMappability<3>(index, text, c, searchParams, opt.directory, chromLengths);
-                 break;
-        case 4:  computeMappability<4>(index, text, c, searchParams, opt.directory, chromLengths);
-                 break;
-        default: std::cerr << "E > 4 not yet supported.\n";
-                 exit(1);
-    }
-    SEQAN_IF_CONSTEXPR (outputProgress)
-    {
-        std::cout << '\r';
-        std::cout << "Progress: 100.00%" << std::endl;
-    }
-
-    if (opt.verbose)
-        std::cout << "Mappability computed in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
-
+template <typename TVector, typename TChromosomeNames, typename TChromosomeLengths>
+inline void outputMappability(TVector const & c, Options const & opt, SearchParams const & searchParams,
+                              std::string const & fastaFile, TChromosomeNames const & chromNames,
+                              TChromosomeLengths const & chromLengths)
+{
     std::cout << "Start writing output files ...";
     if (opt.verbose)
         std::cout << std::endl;
@@ -140,18 +126,46 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
         std::cout << " done!\n";
 }
 
-inline auto retrieveDirectoryInformationLine(CharString const & info)
+template <typename TDistance, typename value_type, bool csvComputation, typename TSeqNo, typename TSeqPos,
+          typename TIndex, typename TText, typename TChromosomeNames, typename TChromosomeLengths>
+inline void run(TIndex & index, TText const & text, Options const & opt, SearchParams const & searchParams,
+                std::string const & fastaFile, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths)
 {
-    std::string const row = toCString(info);
-    auto const firstSeparator = row.find(';', 0);
-    auto const secondSeparator = row.find(';', firstSeparator + 1);
-    std::string const fastaFile = row.substr(0, firstSeparator);
-    uint64_t const length = std::stoi(row.substr(firstSeparator + 1, secondSeparator - firstSeparator - 1));
-    std::string const chromName = row.substr(secondSeparator + 1);
-    return std::make_tuple(fastaFile, length, chromName);
+    std::vector<value_type> c(length(text) - searchParams.length + 1, 0);
+
+    std::map<Pair<TSeqNo, TSeqPos>,
+             std::pair<std::vector<Pair<TSeqNo, TSeqPos> >,
+                       std::vector<Pair<TSeqNo, TSeqPos> > > > locations;
+
+    double start = get_wall_time();
+    switch (opt.errors)
+    {
+        case 0:  computeMappability<0, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations);
+                 break;
+        case 1:  computeMappability<1, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations);
+                 break;
+        case 2:  computeMappability<2, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations);
+                 break;
+        case 3:  computeMappability<3, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations);
+                 break;
+        case 4:  computeMappability<4, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations);
+                 break;
+        default: std::cerr << "E > 4 not yet supported.\n";
+                 exit(1);
+    }
+    SEQAN_IF_CONSTEXPR (outputProgress)
+    {
+        std::cout << '\r';
+        std::cout << "Progress: 100.00%" << std::endl;
+    }
+
+    if (opt.verbose)
+        std::cout << "Mappability computed in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
+
+    outputMappability(c, opt, searchParams, fastaFile, chromNames, chromLengths);
 }
 
-template <typename TChar, typename TAllocConfig, typename TDistance, typename value_type,
+template <typename TChar, typename TAllocConfig, typename TDistance, typename value_type, bool csvComputation,
           typename TSeqNo, typename TSeqPos, typename TBWTLen>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
@@ -183,9 +197,9 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         auto const row = retrieveDirectoryInformationLine(directoryInformation[i]);
         if (std::get<0>(row) != fastaFile)
         {
-            std::cout << "TODO: " << startPos << " ... " << fastaFileLength << std::endl;
+            // std::cout << "TODO: " << startPos << " ... " << fastaFileLength << std::endl;
             auto const & fastaInfix = infixWithLength(text.concat, startPos, fastaFileLength);
-            run<TDistance, value_type>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths);
+            run<TDistance, value_type, csvComputation, TSeqNo, TSeqPos>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths);
 
             startPos += fastaFileLength;
             fastaFile = std::get<0>(row);
@@ -199,20 +213,29 @@ inline void run(Options const & opt, SearchParams const & searchParams)
     }
 }
 
-template <typename TChar, typename TAllocConfig, typename TDistance, typename TValue>
+template <typename TChar, typename TAllocConfig, typename TDistance, typename TValue, bool csvComputation>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
     if (opt.seqNoWidth == 16 && opt.maxSeqLengthWidth == 32)
     {
         if (opt.totalLengthWidth == 32)
-            run<TChar, TAllocConfig, TDistance, TValue, uint16_t, uint32_t, uint32_t>(opt, searchParams);
+            run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint16_t, uint32_t, uint32_t>(opt, searchParams);
         else if (opt.totalLengthWidth == 64)
-            run<TChar, TAllocConfig, TDistance, TValue, uint16_t, uint32_t, uint64_t>(opt, searchParams);
+            run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint16_t, uint32_t, uint64_t>(opt, searchParams);
     }
     else if (opt.seqNoWidth == 32 && opt.maxSeqLengthWidth == 16 && opt.totalLengthWidth == 64)
-        run<TChar, TAllocConfig, TDistance, TValue, uint32_t, uint16_t, uint64_t>(opt, searchParams);
+        run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint32_t, uint16_t, uint64_t>(opt, searchParams);
     else if (opt.seqNoWidth == 64 && opt.maxSeqLengthWidth == 64 && opt.totalLengthWidth == 64)
-        run<TChar, TAllocConfig, TDistance, TValue, uint64_t, uint64_t, uint64_t>(opt, searchParams);
+        run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint64_t, uint64_t, uint64_t>(opt, searchParams);
+}
+
+template <typename TChar, typename TAllocConfig, typename TDistance, typename TValue>
+inline void run(Options const & opt, SearchParams const & searchParams)
+{
+    if (opt.csvFile)
+        run<TChar, TAllocConfig, TDistance, TValue, true>(opt, searchParams);
+    else
+        run<TChar, TAllocConfig, TDistance, TValue, false>(opt, searchParams);
 }
 
 template <typename TChar, typename TAllocConfig, typename TDistance>
@@ -280,6 +303,9 @@ int mappabilityMain(int argc, char const ** argv)
     addOption(parser, ArgParseOption("b", "bed",
         "Output bed files. For each fasta file that was indexed a separate bed-file is created."));
 
+    addOption(parser, ArgParseOption("d", "csv",
+        "Output a detailed csv file reporting the locations of each k-mer (WARNING: This will produce large files and makes computing the mappability significantly slower)."));
+
     addOption(parser, ArgParseOption("m", "mmap",
         "Turns memory-mapping on, i.e. the index is not loaded into RAM but accessed directly from secondary-memory. This may increase the overall running time, but do NOT use it if the index lies on network storage."));
 
@@ -307,6 +333,7 @@ int mappabilityMain(int argc, char const ** argv)
     opt.bedFile = isSet(parser, "bed");
     opt.rawFile = isSet(parser, "raw");
     opt.txtFile = isSet(parser, "txt");
+    opt.csvFile = isSet(parser, "csv");
     opt.verbose = isSet(parser, "verbose");
 
     if (!opt.wigFile && !opt.bedFile && !opt.rawFile && !opt.txtFile)
@@ -329,7 +356,6 @@ int mappabilityMain(int argc, char const ** argv)
         std::cerr << "ERROR: Cannot use both --frequency-small and --frequency-large. Please choose one.\n";
         return ArgumentParser::PARSE_ERROR;
     }
-
 
     getOptionValue(searchParams.length, parser, "length");
     getOptionValue(searchParams.threads, parser, "threads");

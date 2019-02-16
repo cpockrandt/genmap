@@ -18,8 +18,9 @@ void resetLimits(TMappVector & c, unsigned const length, StringSet<TLengths, TCo
 
 // TODO: avoid signed integers
 
-template <bool reportExactMatch, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
+template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
 inline void extendExact(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * itExact,
+                        std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                         TText const & text, unsigned const length,
                         uint64_t a, uint64_t b, // searched interval
                         uint64_t ab, uint64_t bb) // entire interval
@@ -28,9 +29,13 @@ inline void extendExact(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIt
 
     if (b - a + 1 == length)
     {
-        if (reportExactMatch && maxErrors == 0)
+        SEQAN_IF_CONSTEXPR (reportExactMatch && maxErrors == 0)
         {
             itExact[a-ab] = it.fwdIter;
+        }
+        SEQAN_IF_CONSTEXPR (csvComputation)
+        {
+            itAll[a-ab].push_back(it.fwdIter);
         }
         hits[a-ab] = std::min((uint64_t) countOccurrences(it) + hits[a-ab], max_val);
         return;
@@ -48,7 +53,7 @@ inline void extendExact(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIt
                 success = goDown(it2, text[i], Rev());
             }
             if (success)
-                extendExact<reportExactMatch, maxErrors>(it2, hits, itExact, text, length, a, b_new, ab, bb);
+                extendExact<reportExactMatch, csvComputation, maxErrors>(it2, hits, itExact, itAll, text, length, a, b_new, ab, bb);
         }
     //}
 
@@ -61,19 +66,21 @@ inline void extendExact(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIt
             if(!goDown(it, text[i], Fwd()))
                 return;
         }
-        extendExact<reportExactMatch, maxErrors>(it, hits, itExact, text, length, a_new, b, ab, bb);
+        extendExact<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, text, length, a_new, b, ab, bb);
     }
 }
 
 // forward
-template <bool reportExactMatch, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
+template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
 inline void extend(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * itExact,
+                   std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                    unsigned errorsLeft, TText const & text, unsigned const length,
                    uint64_t a, uint64_t b, // searched interval
                    uint64_t ab, uint64_t bb); // entire interval
 
-template <bool reportExactMatch, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
+template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
 inline void approxSearch(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * itExact,
+                         std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                          unsigned errorsLeft, TText const & text, unsigned const length,
                          uint64_t a, uint64_t b, // searched interval
                          uint64_t ab, uint64_t bb, // entire interval
@@ -82,7 +89,7 @@ inline void approxSearch(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexI
 {
     if (b == b_new)
     {
-        extend<reportExactMatch, maxErrors>(it, hits, itExact, errorsLeft, text, length, a, b, ab, bb);
+        extend<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft, text, length, a, b, ab, bb);
         return;
     }
     if (errorsLeft > 0)
@@ -91,7 +98,7 @@ inline void approxSearch(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexI
         {
             do {
                 bool delta = !ordEqual(parentEdgeLabel(it, Rev()), text[b + 1]);
-                approxSearch<reportExactMatch, maxErrors>(it, hits, itExact, errorsLeft - delta, text, length, a, b + 1, ab, bb, b_new, Rev());
+                approxSearch<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft - delta, text, length, a, b + 1, ab, bb, b_new, Rev());
             } while (goRight(it, Rev()));
         }
     }
@@ -102,11 +109,12 @@ inline void approxSearch(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexI
             if (!goDown(it, text[i], Rev()))
                 return;
         }
-        extendExact<reportExactMatch, maxErrors>(it, hits, itExact, text, length, a, b_new, ab, bb);
+        extendExact<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, text, length, a, b_new, ab, bb);
     }
 }
-template <bool reportExactMatch, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
+template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
 inline void approxSearch(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * itExact,
+                         std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                          unsigned errorsLeft, TText const & text, unsigned const length,
                          uint64_t a, uint64_t b, // searched interval
                          uint64_t ab, uint64_t bb, // entire interval
@@ -115,7 +123,7 @@ inline void approxSearch(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexI
 {
     if (a == a_new)
     {
-        extend<reportExactMatch, maxErrors>(it, hits, itExact, errorsLeft, text, length, a, b, ab, bb);
+        extend<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft, text, length, a, b, ab, bb);
         return;
     }
     if (errorsLeft > 0)
@@ -124,7 +132,7 @@ inline void approxSearch(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexI
         {
             do {
                 bool delta = !ordEqual(parentEdgeLabel(it, Fwd()), text[a - 1]);
-                approxSearch<reportExactMatch, maxErrors>(it, hits, itExact, errorsLeft - delta, text, length, a - 1, b, ab, bb, a_new, Fwd());
+                approxSearch<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft - delta, text, length, a - 1, b, ab, bb, a_new, Fwd());
             } while (goRight(it, Fwd()));
         }
     }
@@ -135,12 +143,13 @@ inline void approxSearch(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexI
             if (!goDown(it, text[i], Fwd()))
                 return;
         }
-        extendExact<reportExactMatch, maxErrors>(it, hits, itExact, text, length, a_new, b, ab, bb);
+        extendExact<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, text, length, a_new, b, ab, bb);
     }
 }
 
-template <bool reportExactMatch, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
+template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
 inline void extend(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * itExact,
+                   std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                    unsigned errorsLeft, TText const & text, unsigned const length,
                    uint64_t a, uint64_t b, // searched interval
                    uint64_t ab, uint64_t bb) // entire interval
@@ -149,13 +158,20 @@ inline void extend(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * 
 
     if (errorsLeft == 0)
     {
-        extendExact<reportExactMatch, maxErrors>(it, hits, itExact, text, length, a, b, ab, bb);
+        extendExact<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, text, length, a, b, ab, bb);
         return;
     }
     if (b - a + 1 == length)
     {
-        if (reportExactMatch && maxErrors == errorsLeft)
-            itExact[a-ab] = it.fwdIter;
+        SEQAN_IF_CONSTEXPR (reportExactMatch)
+        {
+            if (maxErrors == errorsLeft)
+                itExact[a-ab] = it.fwdIter;
+        }
+        SEQAN_IF_CONSTEXPR (csvComputation)
+        {
+            itAll[a-ab].push_back(it.fwdIter);
+        }
         hits[a-ab] = std::min((uint64_t) countOccurrences(it) + hits[a-ab], max_val);
         return;
     }
@@ -165,7 +181,7 @@ inline void extend(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * 
         uint64_t b_new = b + (((brm - b) + 2 - 1) >> 1); // ceil((bb - b)/2)
         if (b_new <= bb)
         {
-            approxSearch<reportExactMatch, maxErrors>(it, hits, itExact, errorsLeft, text, length,
+            approxSearch<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft, text, length,
                          a, b, // searched interval
                          ab, bb, // entire interval
                          b_new,
@@ -178,7 +194,7 @@ inline void extend(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * 
     {
         int64_t alm = b + 1 - length;
         uint64_t a_new = alm + std::max<int64_t>(((a - alm) - 1) >> 1, 0);
-        approxSearch<reportExactMatch, maxErrors>(it, hits, itExact, errorsLeft, text, length,
+        approxSearch<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft, text, length,
                      a, b, // searched interval
                      ab, bb, // entire interval
                      a_new,
@@ -187,8 +203,9 @@ inline void extend(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * 
     }
 }
 
-template <unsigned errors, typename TIndex, typename TText, typename TContainer, typename TChromosomeLengths>
-inline void computeMappability(TIndex & index, TText const & text, TContainer & c, SearchParams const & params, bool const directory, TChromosomeLengths const & chromLengths)
+template <unsigned errors, bool csvComputation, typename TIndex, typename TText, typename TContainer, typename TChromosomeLengths, typename TLocations>
+inline void computeMappability(TIndex & index, TText const & text, TContainer & c, SearchParams const & params,
+                               bool const directory, TChromosomeLengths const & chromLengths, TLocations & locations)
 {
     typedef typename TContainer::value_type TValue;
     typedef Iter<TIndex, VSTree<TopDown<> > > TBiIter;
@@ -230,6 +247,8 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
 
             typename TBiIter::TFwdIndexIter itExact[endPos - beginPos];
             TValue hits[endPos - beginPos], hitsRevCompl[endPos - beginPos];
+            std::vector<std::vector<typename TBiIter::TFwdIndexIter> > itAll(endPos - beginPos);
+            std::vector<std::vector<typename TBiIter::TFwdIndexIter> > itAllrevCompl(endPos - beginPos);
 
             auto const & needles = infix(text, beginPos, beginPos + params.length + (endPos - beginPos) - 1);
             auto const & needlesOverlap = infix(text, beginPos + params.length - overlap, beginPos + params.length);
@@ -237,19 +256,21 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
 
             uint64_t const bb = std::min(textLength - 1, params.length - 1 + params.length - overlap);
 
-            auto delegate = [&hits, &itExact, bb, overlap, &params, &needles](
+            auto delegate = [&hits, &itExact, &itAll, bb, overlap, &params, &needles](
                 TBiIter it, TNeedlesOverlap const & /*read*/, unsigned const errors_spent)
             {
+                // TODO: we could turn reporting of exact iterators off at compile time by setting reportExactMatch = false if opt.directory is true. Evaluate binary size vs. performance.
+                // WARNING: if it is computed on the directory, csvComputation currently still needs the exact matches (can be updated down below)
                 if (errors_spent == 0)
                 {
-                    extend<true, errors>(it, hits, itExact, errors - errors_spent, needles, params.length,
+                    extend<true, csvComputation, errors>(it, hits, itExact, itAll, errors - errors_spent, needles, params.length,
                         params.length - overlap, params.length - 1, // searched interval
                         0, bb // entire interval
                     );
                 }
                 else
                 {
-                    extend<false, errors>(it, hits, itExact, errors - errors_spent, needles, params.length,
+                    extend<false, csvComputation, errors>(it, hits, itExact, itAll, errors - errors_spent, needles, params.length,
                         params.length - overlap, params.length - 1, // searched interval
                         0, bb // entire interval
                     );
@@ -264,10 +285,11 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
 
                 // uint64_t const bb = std::min(textLength - 1, params.length - 1 + params.length - overlap);
 
-                auto delegateRevCompl = [&hitsRevCompl, &itExact, bb, overlap, &params, &needlesRevCompl](
+                // TODO: could store the exact hits as well and use these values!
+                auto delegateRevCompl = [&hitsRevCompl, &itExact, &itAllrevCompl, bb, overlap, &params, &needlesRevCompl](
                     TBiIter it, TNeedlesRevComplOverlap const & /*read*/, unsigned const errors_spent)
                 {
-                    extend<false, errors>(it, hitsRevCompl, itExact, errors - errors_spent, needlesRevCompl, params.length,
+                    extend<false, csvComputation, errors>(it, hitsRevCompl, itExact, itAllrevCompl, errors - errors_spent, needlesRevCompl, params.length,
                         params.length - overlap, params.length - 1, // searched interval
                         0, bb // entire interval
                     );
@@ -303,6 +325,72 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                 else
                 {
                     c[j] = hits[j - beginPos];
+                }
+
+                SEQAN_IF_CONSTEXPR (csvComputation)
+                {
+                    using TLocation = typename TLocations::key_type;
+                    using TEntry = std::pair<TLocation, std::pair<std::vector<TLocation>, std::vector<TLocation> > >;
+
+                    TEntry entry;
+
+                    // std::set<uint16_t> distinct_sequences;
+                    // std::vector<TLocation> locations_single_kmer, locationsRevCompl_single_kmer;
+                    // locations_single_kmer.reserve(size);
+                    // locationsRevCompl_single_kmer.reserve(size);
+                    uint64_t size = 0;
+                    for (auto const & iterator : itAll[j - beginPos])
+                        size += countOccurrences(iterator);
+                    entry.second.first.reserve(size);
+
+                    size = 0;
+                    for (auto const & iterator : itAllrevCompl[j - beginPos])
+                        size += countOccurrences(iterator);
+                    entry.second.second.reserve(size);
+
+                    for (auto const & iterator : itAll[j - beginPos])
+                    {
+                        for (auto const & occ : getOccurrences(iterator))
+                        {
+                            // distinct_sequences.insert(occ.i1);
+                            entry.second.first.push_back(occ);
+                        }
+                    }
+
+                    for (auto const & iterator : itAllrevCompl[j - beginPos])
+                    {
+                        for (auto const & occ : getOccurrences(iterator))
+                        {
+                            // distinct_sequences.insert(occ.i1);
+                            entry.second.second.push_back(occ);
+                        }
+                    }
+
+                    // if (distinct_sequences.size() <= params.locationsMax)
+                    // {
+                    if (!directory && countOccurrences(itExact[j - beginPos]) > 1)
+                    {
+                        for (auto const & exact_occ : getOccurrences(itExact[j - beginPos]))
+                        {
+                            entry.first = exact_occ;
+                            // TODO: avoid copying
+                            #pragma omp critical
+                            locations.insert(entry);
+                            // locations.insert({exact_occ, {locations_single_kmer, locationsRevCompl_single_kmer}});
+                        }
+                    }
+                    else
+                    {
+                        // TLocation originalPos;
+                        // myPosLocalize(originalPos, j, chromLengths);
+                        myPosLocalize(entry.first, j, chromLengths); // TODO: inefficient for read data sets
+
+                        // TODO: avoid copying
+                        #pragma omp critical
+                        locations.insert(entry);
+                        // locations.insert({originalPos, {locations_single_kmer, locationsRevCompl_single_kmer}});
+                    }
+                    // }
                 }
             }
         }

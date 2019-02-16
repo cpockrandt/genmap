@@ -3,6 +3,15 @@
 #include <time.h>
 #include <sys/time.h>
 
+template <typename TResult, typename TSize, typename TSpec, typename TPosition>
+inline void myPosLocalize(TResult & result, TPosition const & pos, StringSet<TSize, TSpec> const & limits) {
+    typedef typename Iterator<StringSet<TSize, TSpec> const, Standard>::Type TIter;
+    TIter _begin = begin(limits, Standard());
+    TIter _upper = std::upper_bound(_begin, end(limits, Standard()), (TSize)pos) - 1;
+    result.i1 = difference(_begin, _upper);
+    result.i2 = pos - *_upper;
+}
+
 inline double get_wall_time()
 {
     struct timeval time;
