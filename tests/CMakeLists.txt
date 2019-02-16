@@ -44,3 +44,9 @@ add_test(
 add_test(
     NAME single_fasta_single_sequence_wig_freq16
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "-w -fl" "wig_freq16")
+add_test(
+    NAME single_fasta_single_sequence_bed_map
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "-b" "bed_map")
+add_test(
+    NAME single_fasta_single_sequence_bed_freq16
+    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "-b -fl" "bed_freq16")

@@ -117,7 +117,10 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
     if (opt.bedFile)
     {
         double start = get_wall_time();
-        std::cerr << "ERROR: bed file export is comming soon (in 1-2 days)!\n";
+        if (opt.outputType == OutputType::mappability)
+            saveBed<true>(c, output_path, chromNames, chromLengths);
+        else
+            saveBed<false>(c, output_path, chromNames, chromLengths);
         if (opt.verbose)
             std::cout << "BED file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
