@@ -8,11 +8,15 @@
 
 using namespace seqan;
 
-inline std::string get_output_path(Options const & opt, SearchParams const & searchParams, std::string const & fastaFile)
+inline std::string get_output_path(Options const & opt, SearchParams const & /*searchParams*/, std::string const & fastaFile)
 {
-    std::string path = std::string(toCString(opt.outputPath)) + fastaFile + "_" +
-                       std::to_string(opt.errors) + "_" +
-                       std::to_string(searchParams.length);
+    std::string path = std::string(toCString(opt.outputPath));
+    if (back(path) != '/')
+        path += "/";
+    path += fastaFile;
+                    // + fastaFile + "_" +
+                    //    std::to_string(opt.errors) + "_" +
+                    //    std::to_string(searchParams.length);
     return path;
 }
 
@@ -77,7 +81,7 @@ void saveWig(std::vector<T> const & c, std::string const & output_path, TChromos
 {
     uint64_t pos = 0;
     uint64_t begin_pos_string = 0;
-    uint64_t end_pos_string = chromLengths[0];
+    uint64_t end_pos_string = std::min(chromLengths[0], c.size());
 
     char buffer[BUFFER_SIZE];
 
@@ -119,8 +123,15 @@ void saveWig(std::vector<T> const & c, std::string const & output_path, TChromos
         // TODO: remove this block by appending a different value to c (reserve one more. check performance)
         if (last_occ != occ)
             wigFile << "variableStep chrom=" << chromNames[i] << " span=" << occ << '\n';
-        float const value = (current_val != 0) ? 1.0 / static_cast<float>(current_val) : 0;
-        wigFile << (pos - occ + 1 - begin_pos_string) << ' ' << value << '\n'; // pos in wig start at 1
+        SEQAN_IF_CONSTEXPR (mappability)
+        {
+            float const value = (current_val != 0) ? 1.0 / static_cast<float>(current_val) : 0;
+            wigFile << (pos - occ + 1 - begin_pos_string) << ' ' << value << '\n'; // pos in wig start at 1
+        }
+        else
+        {
+            wigFile << (pos - occ + 1 - begin_pos_string) << ' ' << current_val << '\n'; // pos in wig start at 1
+        }
 
         begin_pos_string += chromLengths[i];
         if (i + 1 < length(chromLengths))

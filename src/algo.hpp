@@ -210,6 +210,17 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
     typedef typename TContainer::value_type TValue;
     typedef Iter<TIndex, VSTree<TopDown<> > > TBiIter;
 
+    TChromosomeLengths chromCumLengths;
+    {
+        uint64_t _cumLength = 0;
+        appendValue(chromCumLengths, 0);
+        for (uint64_t i = 0; i < length(chromLengths); ++i)
+        {
+            _cumLength += chromLengths[i];
+            appendValue(chromCumLengths, _cumLength);
+        }
+    }
+
     auto const & limits = stringSetLimits(indexText(index));
     uint64_t const textLength = length(text);
     uint64_t const numberOfKmers = textLength - params.length + 1;
@@ -383,7 +394,7 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                     {
                         // TLocation originalPos;
                         // myPosLocalize(originalPos, j, chromLengths);
-                        myPosLocalize(entry.first, j, chromLengths); // TODO: inefficient for read data sets
+                        myPosLocalize(entry.first, j, chromCumLengths); // TODO: inefficient for read data sets
 
                         // TODO: avoid copying
                         #pragma omp critical

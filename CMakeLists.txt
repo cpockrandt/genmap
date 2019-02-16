@@ -45,13 +45,11 @@ endif ()
 # ----------------------------------------------------------------------------
 # Add GenMap targets
 # ----------------------------------------------------------------------------
-
 add_subdirectory(src)
 
 # ----------------------------------------------------------------------------
 # Warn if cmake build type is not "Release"
 # ----------------------------------------------------------------------------
-
 if (NOT CMAKE_BUILD_TYPE STREQUAL Release)
     message (STATUS "${ColourRed}CMAKE_BUILD_TYPE is not \"Release\", your binaries will be slow.${ColourReset}")
 endif ()
@@ -59,7 +57,6 @@ endif ()
 # ----------------------------------------------------------------------------
 # Add Tests
 # ----------------------------------------------------------------------------
-
 message ("\n${ColourBold}Setting up unit tests${ColourReset}")
 enable_testing()
-# add_subdirectory(tests)
+add_subdirectory(tests)

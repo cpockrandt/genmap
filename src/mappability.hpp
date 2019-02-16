@@ -122,6 +122,14 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
             std::cout << "BED file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
 
+    if (opt.csvFile)
+    {
+        double start = get_wall_time();
+        std::cerr << "ERROR: csv file export is comming soon (in 1-2 days)!\n";
+        if (opt.verbose)
+            std::cout << "CSV file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
+    }
+
     if (!opt.verbose)
         std::cout << " done!\n";
 }
@@ -337,9 +345,9 @@ int mappabilityMain(int argc, char const ** argv)
     opt.csvFile = isSet(parser, "csv");
     opt.verbose = isSet(parser, "verbose");
 
-    if (!opt.wigFile && !opt.bedFile && !opt.rawFile && !opt.txtFile)
+    if (!opt.wigFile && !opt.bedFile && !opt.rawFile && !opt.txtFile && !opt.csvFile)
     {
-        std::cerr << "ERROR: Please choose at least one output format (i.e., --wig, --bed, --raw, --txt).\n";
+        std::cerr << "ERROR: Please choose at least one output format (i.e., --wig, --bed, --raw, --txt, --csv).\n";
         return ArgumentParser::PARSE_ERROR;
     }
 

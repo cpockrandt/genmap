@@ -37,6 +37,8 @@ matrix:
           packages: ['clang-3.9', 'g++-7', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip'] # g++ required for newer libstdc++
       install: export CXX="clang++-3.9"
 
+    # TODO: add -fsanitize=address
+
     # - os: linux
     #   compiler: clang-5
     #   addons:
@@ -66,4 +68,4 @@ script:
   - mkdir -p build && cd build
   - cmake .. -DGENMAP_NATIVE_BUILD=0 -DGENMAP_COMPILE_THREADS=2 ${CMAKE_ARGS}
   - travis_wait make -j2 VERBOSE=1
-  # - ctest .
+  - ctest . --output-on-failure
