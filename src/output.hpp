@@ -173,7 +173,7 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
             if (current_val != c[pos])
             {
                 bedFile << chromNames[i] << '\t'                    // chrom name
-                        << (pos - occ - begin_pos_string) << '\t'   // start pos // pos in wig start at 1
+                        << (pos - occ - begin_pos_string) << '\t'   // start pos (begins with 0)
                         << (pos - begin_pos_string - 1) << '\t'     // end pos
                         << '-' << '\t';                             // name
 
@@ -192,7 +192,7 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
 
         // TODO: remove this block by appending a different value to c (reserve one more. check performance)
         bedFile << chromNames[i] << '\t'                    // chrom name
-                << (pos - occ - begin_pos_string) << '\t'   // start pos // pos in wig start at 1
+                << (pos - occ - begin_pos_string) << '\t'   // start pos (begins with 0)
                 << (pos - begin_pos_string - 1) << '\t'     // end pos
                 << '-' << '\t';                             // name
 
@@ -207,4 +207,74 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
         end_pos_string = std::min(end_pos_string, c.size()); // last chromosomeLength has to be reduced by K-1 characters
     }
     bedFile.close();
+}
+
+// ---------------------------------------------------------------------------------------------------------------------
+
+template <bool mappability, typename T, typename TLocations, typename TDirectoryInformation>
+void saveCsv(std::vector<T> const & /*c*/, std::string const & output_path, TLocations const & locations,
+             Options const & /*opt*/, SearchParams const & searchParams, TDirectoryInformation const & directoryInformation)
+{
+    char buffer[BUFFER_SIZE];
+
+    std::ofstream csvFile(output_path + ".csv");
+    csvFile.rdbuf()->pubsetbuf(buffer, BUFFER_SIZE);
+
+    uint64_t chromosomeCount = 0;
+    std::vector<std::pair<std::string, uint64_t> > fastaFiles;
+    std::string lastFastaFile = std::get<0>(retrieveDirectoryInformationLine(directoryInformation[0]));
+    for (auto const & row : directoryInformation)
+    {
+        auto const line = retrieveDirectoryInformationLine(row);
+        if (lastFastaFile != std::get<0>(line))
+        {
+            fastaFiles.push_back({lastFastaFile, chromosomeCount - 1});
+            lastFastaFile = std::get<0>(line);
+        }
+        ++chromosomeCount;
+    }
+
+    // TODO: for each filename:
+    csvFile << "\"k-mer\"";
+    for (auto const & fastaFile : fastaFiles)
+    {
+        csvFile << ";\"+ strand " << fastaFile.first << "\"";
+        if (searchParams.revCompl) // TODO: make it constexpr?
+            csvFile << ";\"- strand " << fastaFile.first << "\"";
+    }
+    csvFile << '\n';
+
+    for (auto const & kmerLocations : locations)
+    {
+        auto const & kmerPos = kmerLocations.first;
+        auto const & plusStrandLoc = kmerLocations.second.first;
+        // auto const & minusStrandLoc = kmerLocations.second.second;
+
+        csvFile << kmerPos.i1 << ',' << kmerPos.i2 << ';';
+
+        uint64_t i = 0;
+        for (auto const & fastaFile : fastaFiles)
+        {
+            bool subsequentIterations = false;
+            while (i < plusStrandLoc.size() && plusStrandLoc[i].i1 <= fastaFile.second)
+            {
+                if (subsequentIterations)
+                    csvFile << '|'; // separator for multiple locations in one column
+                csvFile << plusStrandLoc[i].i1 << ',' << plusStrandLoc[i].i2;
+                subsequentIterations = true;
+
+                ++i;
+            }
+        }
+
+        // TODO
+        // if (searchParams.reverseComplement)
+        // {
+        //
+        //     for (...)
+        // }
+        csvFile << '\n';
+    }
+
+    csvFile.close();
 }

@@ -3,6 +3,17 @@
 #include <time.h>
 #include <sys/time.h>
 
+inline auto retrieveDirectoryInformationLine(CharString const & info)
+{
+    std::string const row = toCString(info);
+    auto const firstSeparator = row.find(';', 0);
+    auto const secondSeparator = row.find(';', firstSeparator + 1);
+    std::string const fastaFile = row.substr(0, firstSeparator);
+    uint64_t const length = std::stoi(row.substr(firstSeparator + 1, secondSeparator - firstSeparator - 1));
+    std::string const chromName = row.substr(secondSeparator + 1);
+    return std::make_tuple(fastaFile, length, chromName);
+}
+
 template <typename TResult, typename TSize, typename TSpec, typename TPosition>
 inline void myPosLocalize(TResult & result, TPosition const & pos, StringSet<TSize, TSpec> const & limits) {
     typedef typename Iterator<StringSet<TSize, TSpec> const, Standard>::Type TIter;

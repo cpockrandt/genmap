@@ -58,21 +58,11 @@ inline std::string retrieve(StringSet<CharString, TSpec> const & info, std::stri
     exit(1);
 }
 
-inline auto retrieveDirectoryInformationLine(CharString const & info)
-{
-    std::string const row = toCString(info);
-    auto const firstSeparator = row.find(';', 0);
-    auto const secondSeparator = row.find(';', firstSeparator + 1);
-    std::string const fastaFile = row.substr(0, firstSeparator);
-    uint64_t const length = std::stoi(row.substr(firstSeparator + 1, secondSeparator - firstSeparator - 1));
-    std::string const chromName = row.substr(secondSeparator + 1);
-    return std::make_tuple(fastaFile, length, chromName);
-}
-
-template <typename TVector, typename TChromosomeNames, typename TChromosomeLengths>
+template <typename TVector, typename TChromosomeNames, typename TChromosomeLengths, typename TLocations, typename TDirectoryInformation>
 inline void outputMappability(TVector const & c, Options const & opt, SearchParams const & searchParams,
                               std::string const & fastaFile, TChromosomeNames const & chromNames,
-                              TChromosomeLengths const & chromLengths)
+                              TChromosomeLengths const & chromLengths, TLocations & locations,
+                              TDirectoryInformation const & directoryInformation)
 {
     std::cout << "Start writing output files ...";
     if (opt.verbose)
@@ -128,6 +118,10 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
     if (opt.csvFile)
     {
         double start = get_wall_time();
+        if (opt.outputType == OutputType::mappability)
+            saveCsv<true>(c, output_path, locations, opt, searchParams, directoryInformation);
+        else
+            saveCsv<false>(c, output_path, locations, opt, searchParams, directoryInformation);
         std::cerr << "ERROR: csv file export is comming soon (in 1-2 days)!\n";
         if (opt.verbose)
             std::cout << "CSV file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
@@ -138,9 +132,10 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
 }
 
 template <typename TDistance, typename value_type, bool csvComputation, typename TSeqNo, typename TSeqPos,
-          typename TIndex, typename TText, typename TChromosomeNames, typename TChromosomeLengths>
+          typename TIndex, typename TText, typename TChromosomeNames, typename TChromosomeLengths, typename TDirectoryInformation>
 inline void run(TIndex & index, TText const & text, Options const & opt, SearchParams const & searchParams,
-                std::string const & fastaFile, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths)
+                std::string const & fastaFile, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths,
+                TDirectoryInformation const & directoryInformation)
 {
     std::vector<value_type> c(length(text) - searchParams.length + 1, 0);
 
@@ -173,7 +168,7 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
     if (opt.verbose)
         std::cout << "Mappability computed in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
 
-    outputMappability(c, opt, searchParams, fastaFile, chromNames, chromLengths);
+    outputMappability(c, opt, searchParams, fastaFile, chromNames, chromLengths, locations, directoryInformation);
 }
 
 template <typename TChar, typename TAllocConfig, typename TDistance, typename value_type, bool csvComputation,
@@ -210,7 +205,7 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         {
             // std::cout << "TODO: " << startPos << " ... " << fastaFileLength << std::endl;
             auto const & fastaInfix = infixWithLength(text.concat, startPos, fastaFileLength);
-            run<TDistance, value_type, csvComputation, TSeqNo, TSeqPos>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths);
+            run<TDistance, value_type, csvComputation, TSeqNo, TSeqPos>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths, directoryInformation);
 
             startPos += fastaFileLength;
             fastaFile = std::get<0>(row);

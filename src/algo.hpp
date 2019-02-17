@@ -367,6 +367,8 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                             entry.second.first.push_back(occ);
                         }
                     }
+                    // sorting is needed for output when multiple fasta files are indexed and the locations need to be separated by filename.
+                    std::sort(entry.second.first.begin(), entry.second.first.end());
 
                     for (auto const & iterator : itAllrevCompl[j - beginPos])
                     {
@@ -376,6 +378,8 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                             entry.second.second.push_back(occ);
                         }
                     }
+                    // sorting is needed for output when multiple fasta files are indexed and the locations need to be separated by filename.
+                    std::sort(entry.second.second.begin(), entry.second.second.end());
 
                     // if (distinct_sequences.size() <= params.locationsMax)
                     // {

@@ -50,3 +50,6 @@ add_test(
 add_test(
     NAME single_fasta_single_sequence_bed_freq16
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "-b -fl" "bed_freq16")
+add_test(
+    NAME single_fasta_single_sequence_csv
+COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "-d" "csv")
