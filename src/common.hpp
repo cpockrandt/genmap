@@ -45,7 +45,7 @@ template <typename TLengthSum>
 using TGemMapFastFMIndexConfig = GemMapFastFMIndexConfig<void, TLengthSum, 2, 1>;
 
 template <typename TFMIndexConfig>
-using TBiIndexConfig = seqan::BidirectionalIndex<seqan::FMIndex<void, TFMIndexConfig> >;
+using TBiIndexConfig = BidirectionalIndex<FMIndex<void, TFMIndexConfig> >;
 
 namespace seqan {
 

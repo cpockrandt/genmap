@@ -52,7 +52,7 @@ void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, In
     using TText = StringSet<TString, Owner<ConcatDirect<SizeSpec_<TSeqNo, TSeqPos> > > > ;
     using TFMIndexConfig = TGemMapFastFMIndexConfig<TBWTLen>;
     TFMIndexConfig::SAMPLING = options.sampling;
-    using TUniIndexConfig = seqan::FMIndex<TRadixSortTag, TFMIndexConfig>;
+    using TUniIndexConfig = FMIndex<TRadixSortTag, TFMIndexConfig>;
 
     TText chromosomesConcat(chromosomes);
     clear(chromosomes);
@@ -184,6 +184,8 @@ int indexMain(int const argc, char const ** argv)
 
     addOption(parser, ArgParseOption("xc", "bwtlen", "Total length of all sequences.", ArgParseArgument::INTEGER, "INT"));
     hideOption(parser, "bwtlen");
+
+    // TODO: if non Dna-character found (IUPAC): suggest converting them to Dna5.
 
     ArgumentParser::ParseResult res = parse(parser, argc, argv);
     if (res != ArgumentParser::PARSE_OK)

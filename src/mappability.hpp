@@ -137,7 +137,7 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
                 std::string const & fastaFile, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths,
                 TDirectoryInformation const & directoryInformation)
 {
-    std::vector<value_type> c(length(text) - searchParams.length + 1, 0);
+    std::vector<value_type> c(length(text), 0);
 
     std::map<Pair<TSeqNo, TSeqPos>,
              std::pair<std::vector<Pair<TSeqNo, TSeqPos> >,

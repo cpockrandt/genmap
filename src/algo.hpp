@@ -1,17 +1,51 @@
 using namespace seqan;
 
-template <typename TMappVector, typename TChromosomeLength>
-void resetLimits(TMappVector const &, unsigned const, TChromosomeLength const)
-{ }
+// template <typename TMappVector, typename TChromosomeLength>
+// void resetLimits(TMappVector const &, unsigned const, TChromosomeLength const)
+// { }
 
-template <typename TMappVector, typename TLengths, typename TConfig>
-void resetLimits(TMappVector & c, unsigned const length, StringSet<TLengths, TConfig> const & chromLengths)
+template <bool csvComputation, typename TMappVector, typename TLengths, typename TConfig, typename TLocations>
+void resetLimits(TMappVector & c, unsigned const kmerLength, StringSet<TLengths, TConfig> const & chromLengths, TLocations & locations)
 {
-    for (unsigned i = 1; i < seqan::length(chromLengths) - 1; ++i)
+    using TLocation = typename TLocations::key_type;
+    using TEntry = std::pair<TLocation, std::pair<std::vector<TLocation>, std::vector<TLocation> > >;
+
+    for (uint64_t i = 1; i < length(chromLengths) - 1; ++i)
     {
-        for (unsigned j = 1; j < length; ++j)
+        for (uint64_t j = 1; j < kmerLength; ++j)
         {
             c[chromLengths[i] - j] = 0;
+        }
+
+        // TODO: if sequences are shorter that the kmer (and possibly span more than 2 sequences), this will lead to errors!
+        // Remove csv entries for kmers overlapping multiple sequences accidentally.
+        SEQAN_IF_CONSTEXPR (csvComputation)
+        {
+            TLocation loc;
+            loc.i1 = i;
+            loc.i2 = chromLengths[i] - kmerLength + 1;
+            while (loc.i2 < chromLengths[i])
+            {
+                auto kmer = locations.find(loc);
+                assert(kmer != locations.end());
+                kmer->second.first.clear();
+                kmer->second.second.clear();
+                ++loc.i2;
+            }
+        }
+    }
+
+    // Add empty lines to the end of the csv file
+    SEQAN_IF_CONSTEXPR (csvComputation)
+    {
+        TEntry entry;
+        uint64_t const lastChrom = length(chromLengths) - 1;
+        entry.first.i1 = lastChrom;
+        entry.first.i2 = chromLengths[lastChrom] - kmerLength + 1;
+        while (entry.first.i2 < chromLengths[lastChrom])
+        {
+            locations.insert(entry);
+            ++entry.first.i2;
         }
     }
 }
@@ -417,5 +451,5 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
     // Hence, it also searches k-mers that overlap two strings that actually do not exist.
     // At the end we overwrite the frequency of those k-mers with 0.
     // TODO: k-mers spanning two strings should not be searched if there are many short strings (i.e., fasta of reads).
-    resetLimits(c, params.length, chromLengths);
+    resetLimits<csvComputation>(c, params.length, chromLengths, locations);
 }
