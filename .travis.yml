@@ -9,7 +9,8 @@ matrix:
           sources: ['ubuntu-toolchain-r-test']
           packages: ['g++-4.9', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip']
       install: export CXX="g++-4.9"
-      env: CMAKE_ARGS='-DGENMAP_STATIC_BUILD=1 -DCMAKE_CXX_ARGS=-fsanitize=address'
+      env:
+        CMAKE_ARGS="-DGENMAP_STATIC_BUILD=1" # static and sanitizer is not allowed
 
     - os: linux
       compiler: gcc-5
@@ -18,7 +19,7 @@ matrix:
           sources: ['ubuntu-toolchain-r-test']
           packages: ['g++-5', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip']
       install: export CXX="g++-5"
-      env: CMAKE_ARGS="-DGENMAP_MULTIOPT_BUILD=1"
+      env: CMAKE_ARGS="-DCMAKE_CXX_FLAGS=-fsanitize=address"
 
     - os: linux
       compiler: gcc-7
@@ -27,7 +28,8 @@ matrix:
           sources: ['ubuntu-toolchain-r-test']
           packages: ['g++-7', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip']
       install: export CXX="g++-7"
-      env: CMAKE_ARGS="-DCMAKE_CXX_FLAGS=-std=c++17"
+      env:
+        CMAKE_ARGS='-DCMAKE_CXX_FLAGS="-fsanitize=address -std=c++17"'
 
     - os: linux
       compiler: clang-3.9
