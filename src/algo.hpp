@@ -405,7 +405,9 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                     // sorting is needed for output when multiple fasta files are indexed and the locations need to be separated by filename.
                     std::sort(entry.second.first.begin(), entry.second.first.end());
 
-                    for (auto const & iterator : itAllrevCompl[j - beginPos])
+                    // NOTE: vector has to be iterated over in reverse order (compared to itAll)
+                    // for (auto const & iterator : itAllrevCompl[j - beginPos])
+                    for (auto const & iterator : itAllrevCompl[endPos - 1 - j])
                     {
                         for (auto const & occ : getOccurrences(iterator))
                         {

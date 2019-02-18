@@ -70,6 +70,8 @@ This step only has to performed once.
 
     $ ./genmap index -G /path/to/fasta.fasta -I /path/to/index/folder
 
+A new folder `/path/to/index/folder` will be created to store the index and all associated files.
+
 There are two algorithms that can be chosen for index construction.
 One uses RAM (radixsort), one uses secondary memory (skew).
 Depending on the quota and main memory limitations you can choose the appropriate algorithm with ``-A radixsort`` or ``-A skew``.
@@ -82,9 +84,15 @@ For skew you can change the location of the temp directory via the environment v
 Computing the mappability
 """""""""""""""""""""""""
 
+To compute the (30,2)-mappability of the previously indexed genome, simply run:
+
 ::
 
-    $ ./genmap map ...
+    $ ./genmap map -E 2 -K 30 -I /path/to/index/folder -O /path/to/output/folder -t -w -b
+
+This will create a `text`, `wig` and `bed` file in `/path/to/output/folder` storing the computed mappability in different formats. You can remove not required formats by ommitting the corresponding flags `-t` `-w` or `-b`.
+
+Instead of the mappability, the frequency can be outputted, you only have to add the flag `-fl` to the previous command.
 
 Help pages and examples
 """""""""""""""""""""""

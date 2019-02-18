@@ -225,7 +225,7 @@ void saveCsv(std::vector<T> const & /*c*/, std::string const & output_path, TLoc
     csvFile.rdbuf()->pubsetbuf(buffer, BUFFER_SIZE);
 
     uint64_t chromosomeCount = 0;
-    std::vector<std::pair<std::string, uint64_t> > fastaFiles;
+    std::vector<std::pair<std::string, uint64_t> > fastaFiles; // fasta file, cumulative nbr. of chromosomes
     std::string lastFastaFile = std::get<0>(retrieveDirectoryInformationLine(directoryInformation[0]));
     for (auto const & row : directoryInformation)
     {
@@ -252,7 +252,7 @@ void saveCsv(std::vector<T> const & /*c*/, std::string const & output_path, TLoc
     {
         auto const & kmerPos = kmerLocations.first;
         auto const & plusStrandLoc = kmerLocations.second.first;
-        // auto const & minusStrandLoc = kmerLocations.second.second;
+        auto const & minusStrandLoc = kmerLocations.second.second;
 
         csvFile << kmerPos.i1 << ',' << kmerPos.i2 << ';';
 
@@ -271,12 +271,24 @@ void saveCsv(std::vector<T> const & /*c*/, std::string const & output_path, TLoc
             }
         }
 
-        // TODO
-        // if (searchParams.reverseComplement)
-        // {
-        //
-        //     for (...)
-        // }
+        if (searchParams.revCompl)
+        {
+            csvFile << ';';
+            uint64_t i = 0;
+            for (auto const & fastaFile : fastaFiles)
+            {
+                bool subsequentIterations = false;
+                while (i < minusStrandLoc.size() && minusStrandLoc[i].i1 <= fastaFile.second)
+                {
+                    if (subsequentIterations)
+                        csvFile << '|'; // separator for multiple locations in one column
+                    csvFile << minusStrandLoc[i].i1 << ',' << (minusStrandLoc[i].i2);
+                    subsequentIterations = true;
+
+                    ++i;
+                }
+            }
+        }
         csvFile << '\n';
     }
 

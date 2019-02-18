@@ -19,7 +19,7 @@ matrix:
           sources: ['ubuntu-toolchain-r-test']
           packages: ['g++-5', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip']
       install: export CXX="g++-5"
-      env: CMAKE_ARGS="-DCMAKE_CXX_FLAGS=-fsanitize=address"
+      env: CMAKE_ARGS="" # TODO -fsanitize=address
 
     - os: linux
       compiler: gcc-7
@@ -29,7 +29,7 @@ matrix:
           packages: ['g++-7', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip']
       install: export CXX="g++-7"
       env:
-        CMAKE_ARGS='-DCMAKE_CXX_FLAGS="-fsanitize=address -std=c++17"'
+        CMAKE_ARGS="-DCMAKE_CXX_FLAGS=-std=c++17" # TODO -fsanitize=address
 
     - os: linux
       compiler: clang-3.9
@@ -38,8 +38,6 @@ matrix:
           sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-3.9']
           packages: ['clang-3.9', 'g++-7', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip'] # g++ required for newer libstdc++
       install: export CXX="clang++-3.9"
-
-    # TODO: add -fsanitize=address
 
     - os: linux
       compiler: clang-5
@@ -69,4 +67,4 @@ matrix:
 script:
   - mkdir -p build && cd build
   - cmake .. -DGENMAP_NATIVE_BUILD=0 -DGENMAP_COMPILE_THREADS=2 ${CMAKE_ARGS}
-  - travis_wait make -j2 VERBOSE=1 && ctest . --output-on-failure
+  - travis_wait make -j2 VERBOSE=1 && ctest . -j2 --output-on-failure
