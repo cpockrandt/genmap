@@ -7,21 +7,13 @@ errorout()
     exit 1
 }
 
-[ $# -ne 4 ] && exit 1
-
-# single_fasta_single_seq
-# single_fasta_multiple_seq
-# directory_single_fasta_single_seq
-# directory_multiple_fasta_mixed_seq
+[ $# -ne 5 ] && exit 1
 
 SRCDIR=$1
 BINDIR=$2
-FLAGS=$3
-EXPECTED_FOLDER=$4
-# PROG=$3
-# DI=$4
-# MODE=$5
-# EXTENSION=$6
+CASE=$3
+FLAGS=$4
+EXPECTED_FOLDER=$5
 
 # check existence of commands
 which openssl gunzip mktemp diff cat zcat zgrep > /dev/null
@@ -36,9 +28,9 @@ mkdir -p "${MYTMP}/output"
 cd "$MYTMP"
 [ $? -eq 0 ] || errorout "Could not cd to tmp"
 
-${BINDIR}/bin/genmap index -F "${SRCDIR}/tests/test_cases/case_1/1.fa" -I "${MYTMP}/1_index" -A skew
-${BINDIR}/bin/genmap map -I "${MYTMP}/1_index" -O "${MYTMP}/output" -E 0 -K 3 -xo 1 ${FLAGS}
-diff -r -Z --strip-trailing-cr "${SRCDIR}/tests/test_cases/case_1/${EXPECTED_FOLDER}" "${MYTMP}/output"
+${BINDIR}/bin/genmap index -F "${SRCDIR}/tests/test_cases/case_${CASE}/genome.fa" -I "${MYTMP}/index" -A skew
+${BINDIR}/bin/genmap map -I "${MYTMP}/index" -O "${MYTMP}/output" -E 0 -K 3 -xo 1 ${FLAGS}
+diff -r -Z --strip-trailing-cr "${SRCDIR}/tests/test_cases/case_${CASE}/${EXPECTED_FOLDER}" "${MYTMP}/output"
 [ $? -eq 0 ] || errorout "Files are not equal!"
 
 # gunzip < "${SRCDIR}/tests/db_${SALPHIN}.fasta.gz" > db.fasta
