@@ -47,29 +47,35 @@ void saveRawMap(std::vector<T> const & c, std::string const & output_path)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-template <typename T>
-void saveTxtFreq(std::vector<T> const & c, std::string const & output_path)
+template <bool mappability, typename T, typename TChromosomeNames, typename TChromosomeLengths>
+void saveTxt(std::vector<T> const & c, std::string const & output_path, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths)
 {
     char buffer[BUFFER_SIZE];
     std::ofstream outfile(output_path + ".txt", std::ios::out | std::ofstream::binary);
     outfile.rdbuf()->pubsetbuf(buffer, BUFFER_SIZE);
 
-    copy(c.begin(), c.end(), (std::ostream_iterator<T>(outfile), std::ostream_iterator<int>(outfile, " ")));
-    outfile.close();
-}
-
-template <typename T>
-void saveTxtMap(std::vector<T> const & c, std::string const & output_path)
-{
-    char buffer[BUFFER_SIZE];
-    std::ofstream outfile(output_path + ".txt");
-    outfile.rdbuf()->pubsetbuf(buffer, BUFFER_SIZE);
-
-    for (T const & v : c)
+    auto seqBegin = c.begin();
+    auto seqEnd = c.begin() + chromLengths[0];
+    for (uint64_t i = 0; i < length(chromLengths); ++i)
     {
-        float const f = (v != 0) ? 1.0 / static_cast<float>(v) : 0;
-        // outfile.write(reinterpret_cast<const char*>(&f), sizeof(float));
-        outfile << f << ' ';
+        outfile << '>' << chromNames[i] << '\n';
+        // TODO: remove space at end of line
+        SEQAN_IF_CONSTEXPR (mappability)
+        {
+            for (T const & v : c)
+            {
+                float const f = (v != 0) ? 1.0 / static_cast<float>(v) : 0;
+                // outfile.write(reinterpret_cast<const char*>(&f), sizeof(float));
+                outfile << f << ' ';
+            }
+        }
+        else
+        {
+            std::copy(seqBegin, seqEnd, std::ostream_iterator<T>(outfile, " "));
+            // std::copy(seqBegin, seqEnd, (std::ostream_iterator<T>(outfile), std::ostream_iterator<int>(outfile, " ")));
+        }
+        seqBegin = seqEnd;
+        seqEnd += chromLengths[i];
     }
     outfile.close();
 }

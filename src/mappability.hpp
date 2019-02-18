@@ -86,9 +86,9 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
     {
         double start = get_wall_time();
         if (opt.outputType == OutputType::mappability)
-            saveTxtMap(c, output_path);
+            saveTxt<true>(c, output_path, chromNames, chromLengths);
         if (opt.outputType == OutputType::frequency_small || opt.outputType == OutputType::frequency_large)
-            saveTxtFreq(c, output_path);
+            saveTxt<false>(c, output_path, chromNames, chromLengths);
         if (opt.verbose)
             std::cout << "- TXT file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
