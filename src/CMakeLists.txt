@@ -118,15 +118,9 @@ endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     set (SEQAN_CXX_FLAGS "${SEQAN_CXX_FLAGS} -ftemplate-depth-1024")
-
-    # do not warn for variable length arrays
-    set (SEQAN_CXX_FLAGS "${SEQAN_CXX_FLAGS} -Wno-vla-extension")
 endif ()
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    # do not warn for variable length arrays
-    set (SEQAN_CXX_FLAGS "${SEQAN_CXX_FLAGS} -Wno-vla")
-
     # parallelize parts of build even for one translation unit
     if (NOT DEFINED GENMAP_COMPILE_THREADS)
         include(ProcessorCount)

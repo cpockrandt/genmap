@@ -79,7 +79,7 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
         else // if (opt.outputType == OutputType::frequency_large)
             saveRawFreq(c, output_path + ".freq16");
         if (opt.verbose)
-            std::cout << "RAW file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
+            std::cout << "- RAW file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
 
     if (opt.txtFile)
@@ -90,7 +90,7 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
         if (opt.outputType == OutputType::frequency_small || opt.outputType == OutputType::frequency_large)
             saveTxtFreq(c, output_path);
         if (opt.verbose)
-            std::cout << "TXT file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
+            std::cout << "- TXT file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
 
     if (opt.wigFile)
@@ -101,7 +101,7 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
         else
             saveWig<false>(c, output_path, chromNames, chromLengths);
         if (opt.verbose)
-            std::cout << "WIG file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
+            std::cout << "- WIG file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
 
     if (opt.bedFile)
@@ -112,7 +112,7 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
         else
             saveBed<false>(c, output_path, chromNames, chromLengths);
         if (opt.verbose)
-            std::cout << "BED file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
+            std::cout << "- BED file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
 
     if (opt.csvFile)
@@ -122,9 +122,8 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
             saveCsv<true>(c, output_path, locations, opt, searchParams, directoryInformation);
         else
             saveCsv<false>(c, output_path, locations, opt, searchParams, directoryInformation);
-        std::cerr << "ERROR: csv file export is comming soon (in 1-2 days)!\n";
         if (opt.verbose)
-            std::cout << "CSV file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
+            std::cout << "- CSV file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
 
     if (!opt.verbose)
@@ -414,14 +413,14 @@ int mappabilityMain(int argc, char const ** argv)
     if (opt.verbose)
     {
         std::cout << "Index was loaded (" << opt.alphabet << " alphabet, sampling rate of " << opt.sampling << ").\n"
-                     "The BWT is represented by " << opt.totalLengthWidth << " bit values.\n"
-                     "The sampled suffix array is represented by pairs of " << opt.seqNoWidth <<
+                     "- The BWT is represented by " << opt.totalLengthWidth << " bit values.\n"
+                     "- The sampled suffix array is represented by pairs of " << opt.seqNoWidth <<
                      " and " << opt.maxSeqLengthWidth  << " bit values.\n";
 
         if (opt.directory)
-            std::cout << "Index was built on an entire directory." << std::endl;
+            std::cout << "- Index was built on an entire directory." << std::endl;
         else
-            std::cout << "Index was built on a single fasta file." << std::endl;
+            std::cout << "- Index was built on a single fasta file." << std::endl;
     }
 
     if (opt.alphabet == "dna4")

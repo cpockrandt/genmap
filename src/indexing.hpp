@@ -67,8 +67,8 @@ void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, In
         {
             CharString const alphabet = std::is_same<typename Value<TString>::Type, Dna>::value ? "dna4" : "dna5";
             std::cout << "Index will be constructed using " << alphabet << " alphabet.\n"
-                         "The BWT is represented by " << bwtDigits << " bit values.\n"
-                         "The sampled suffix array is represented by pairs of " << seqNoDigits <<
+                         "- The BWT is represented by " << bwtDigits << " bit values.\n"
+                         "- The sampled suffix array is represented by pairs of " << seqNoDigits <<
                          " and " << seqPosDigits << " bit values." << std::endl;
         }
 
@@ -185,6 +185,7 @@ int indexMain(int const argc, char const ** argv)
     addOption(parser, ArgParseOption("xc", "bwtlen", "Total length of all sequences.", ArgParseArgument::INTEGER, "INT"));
     hideOption(parser, "bwtlen");
 
+    // TODO: hint, that indexing may take some time, i.e., 2-3 hours for the human genome with Skew
     // TODO: if non Dna-character found (IUPAC): suggest converting them to Dna5.
 
     ArgumentParser::ParseResult res = parse(parser, argc, argv);
