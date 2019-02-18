@@ -53,7 +53,7 @@ void resetLimits(TMappVector & c, unsigned const kmerLength, StringSet<TLengths,
 // TODO: avoid signed integers
 
 template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
-inline void extendExact(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * itExact,
+inline void extendExact(TBiIter it, std::vector<TValue> & hits, std::vector<typename TBiIter::TFwdIndexIter> & itExact,
                         std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                         TText const & text, unsigned const length,
                         uint64_t a, uint64_t b, // searched interval
@@ -106,14 +106,14 @@ inline void extendExact(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIt
 
 // forward
 template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
-inline void extend(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * itExact,
+inline void extend(TBiIter it, std::vector<TValue> & hits, std::vector<typename TBiIter::TFwdIndexIter> & itExact,
                    std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                    unsigned errorsLeft, TText const & text, unsigned const length,
                    uint64_t a, uint64_t b, // searched interval
                    uint64_t ab, uint64_t bb); // entire interval
 
 template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
-inline void approxSearch(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * itExact,
+inline void approxSearch(TBiIter it, std::vector<TValue> & hits, std::vector<typename TBiIter::TFwdIndexIter> & itExact,
                          std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                          unsigned errorsLeft, TText const & text, unsigned const length,
                          uint64_t a, uint64_t b, // searched interval
@@ -147,7 +147,7 @@ inline void approxSearch(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexI
     }
 }
 template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
-inline void approxSearch(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * itExact,
+inline void approxSearch(TBiIter it, std::vector<TValue> & hits, std::vector<typename TBiIter::TFwdIndexIter> & itExact,
                          std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                          unsigned errorsLeft, TText const & text, unsigned const length,
                          uint64_t a, uint64_t b, // searched interval
@@ -182,7 +182,7 @@ inline void approxSearch(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexI
 }
 
 template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
-inline void extend(TBiIter it, TValue * hits, typename TBiIter::TFwdIndexIter * itExact,
+inline void extend(TBiIter it, std::vector<TValue> & hits, std::vector<typename TBiIter::TFwdIndexIter> & itExact,
                    std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                    unsigned errorsLeft, TText const & text, unsigned const length,
                    uint64_t a, uint64_t b, // searched interval
@@ -290,8 +290,8 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
             auto scheme = OptimalSearchSchemes<0, errors>::VALUE;
             _optimalSearchSchemeComputeFixedBlocklength(scheme, overlap);
 
-            typename TBiIter::TFwdIndexIter itExact[endPos - beginPos];
-            TValue hits[endPos - beginPos], hitsRevCompl[endPos - beginPos];
+            std::vector<typename TBiIter::TFwdIndexIter> itExact(endPos - beginPos);
+            std::vector<TValue> hits(endPos - beginPos, 0), hitsRevCompl(endPos - beginPos, 0);
             std::vector<std::vector<typename TBiIter::TFwdIndexIter> > itAll(endPos - beginPos);
             std::vector<std::vector<typename TBiIter::TFwdIndexIter> > itAllrevCompl(endPos - beginPos);
 
@@ -346,6 +346,7 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                 TBiIter it(index);
                 _optimalSearchScheme(delegateRevCompl, it, needlesRevComplOverlap, scheme, HammingDistance());
 
+                // TODO: remove hitsRevCompl (in-place reverse)
                 for (unsigned y = 0; y < (endPos - beginPos); ++y)
                     hits[(endPos - beginPos - 1) - y] = hitsRevCompl[y];
             }
