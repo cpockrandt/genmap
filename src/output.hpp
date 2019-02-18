@@ -12,11 +12,9 @@ inline std::string get_output_path(Options const & opt, SearchParams const & /*s
 {
     std::string path = std::string(toCString(opt.outputPath));
     if (back(path) != '/')
-        path += "/";
-    path += fastaFile;
-                    // + fastaFile + "_" +
-                    //    std::to_string(opt.errors) + "_" +
-                    //    std::to_string(searchParams.length);
+        path += '/';
+    path += fastaFile.substr(0, fastaFile.find_last_of('.'));
+    path += ".genmap";
     return path;
 }
 
