@@ -20,6 +20,8 @@ Coming soon.
 Building from source
 ^^^^^^^^^^^^^^^^^^^^
 
+NOTE: Building from source can take up to 10 minutes depending on your machine.
+
 ::
 
     $ git clone --recursive https://github.com/cpockrandt/genmap.git

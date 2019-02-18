@@ -162,8 +162,8 @@ void sharedSetup(ArgumentParser & parser)
     std::string versionString = SEQAN_APP_VERSION;
     setVersion(parser, versionString);
     setDate(parser, __DATE__);
-    setShortCopyright(parser, "2019 Christopher Pockrandt, released under the 3-clause-BSDL; "
-                              "2016-2019 Knut Reinert and Freie Universität Berlin, released under the 3-clause-BSDL");
+    setShortCopyright(parser, "2019 Christopher Pockrandt, released under the 3-clause-BSD; "
+                              "2016-2019 Knut Reinert and Freie Universität Berlin, released under the 3-clause-BSD");
 
     setCitation(parser, "Pockrandt et al (2019); doi: TODO");
 

@@ -3,8 +3,8 @@
 # ----------------------------------------------------------------------------
 
 # change this after every release
-set (SEQAN_APP_VERSION_MAJOR "1")
-set (SEQAN_APP_VERSION_MINOR "0")
+set (SEQAN_APP_VERSION_MAJOR "0")
+set (SEQAN_APP_VERSION_MINOR "9")
 set (SEQAN_APP_VERSION_PATCH "0")
 
 # don't change the following
