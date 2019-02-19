@@ -23,9 +23,9 @@ void resetLimits(TMappVector & c, unsigned const kmerLength, StringSet<TLengths,
         SEQAN_IF_CONSTEXPR (csvComputation)
         {
             TLocation loc;
-            loc.i1 = i;
-            loc.i2 = cumChromLengths[i] - kmerLength + 1;
-            while (loc.i2 < cumChromLengths[i])
+            loc.i1 = i - 1; // i starts with one because first element in cumChromLengths is 0
+            loc.i2 = chromLengths[i - 1] - kmerLength + 1;
+            while (loc.i2 < chromLengths[i - 1])
             {
                 auto kmer = locations.find(loc);
                 assert(kmer != locations.end());
