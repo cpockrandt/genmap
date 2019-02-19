@@ -31,6 +31,9 @@ include (CTest)
 # directory_multiple_fasta_mixed_seq
 
 # TODO: add dependencies
+# add_test(
+#     NAME single_fasta_single_sequence_raw_map
+#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1" "-r" "raw_map")
 add_test(
     NAME single_fasta_single_sequence_raw_freq8
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1" "-r -fs" "raw_freq8")
@@ -59,6 +62,9 @@ add_test(
     NAME single_fasta_single_sequence_csv
     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1" "-d" "csv")
 
+# add_test(
+#     NAME single_fasta_single_sequence_rc_raw_map
+#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1b" "-c -r" "raw_map")
 # add_test(
 #     NAME single_fasta_single_sequence_rc_raw_freq8
 #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1b" "-c -r -fs" "raw_freq8")

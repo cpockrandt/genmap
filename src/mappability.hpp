@@ -367,28 +367,31 @@ int mappabilityMain(int argc, char const ** argv)
     getOptionValue(searchParams.threads, parser, "threads");
     searchParams.revCompl = isSet(parser, "reverse-complement");
 
-    if (opt.errors == 0)
+    if (isSet(parser, "overlap"))
+        getOptionValue(searchParams.overlap, parser, "overlap");
+    else if (opt.errors == 0)
         searchParams.overlap = searchParams.length * 0.7;
     else
         searchParams.overlap = searchParams.length * std::min(std::max(searchParams.length, 30u), 100u) * pow(0.7f, opt.errors) / 100.0;
 
-    if (isSet(parser, "overlap"))
-        getOptionValue(searchParams.overlap, parser, "overlap");
+    std::cout << "OVERLAP A: " << searchParams.overlap << '\n';
 
-    // std::cout << "INFO: overlap = " << searchParams.overlap << '\n';
+    uint64_t const maxPossibleOverlap = std::min(searchParams.length - 1, searchParams.length - opt.errors + 2);
+    // (K - O >= E + 2 must hold since common overlap has length K - O and will be split into E + 2 parts)
 
     // TODO: make sure this never throws an error, if argument not set.
-    if (searchParams.overlap > searchParams.length - 1)
+    if (searchParams.overlap > maxPossibleOverlap)
     {
-        std::cerr << "ERROR: overlap cannot be larger than K - 1.\n";
-        return ArgumentParser::PARSE_ERROR;
-    }
-
-    if (!(searchParams.length - searchParams.overlap >= opt.errors + 2))
-    {
-        std::cerr << "ERROR: overlap should be at least K - E - 2. "
-                "(K - O >= E + 2 must hold since common overlap has length K - O and will be split into E + 2 parts).\n";
-        return ArgumentParser::PARSE_ERROR;
+        if (!isSet(parser, "overlap"))
+        {
+            searchParams.overlap = maxPossibleOverlap;
+            std::cout << "OVERLAP B: " << searchParams.overlap << '\n';
+        }
+        else
+        {
+            std::cerr << "ERROR: overlap cannot be larger than min(K - 1, K - E + 2) = " << maxPossibleOverlap << ".\n";
+            return ArgumentParser::PARSE_ERROR;
+        }
     }
 
     // searchParams.overlap - length of common overlap
