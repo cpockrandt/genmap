@@ -5,16 +5,17 @@ using namespace seqan;
 // { }
 
 template <bool csvComputation, typename TMappVector, typename TLengths, typename TConfig, typename TLocations>
-void resetLimits(TMappVector & c, unsigned const kmerLength, StringSet<TLengths, TConfig> const & chromLengths, TLocations & locations)
+void resetLimits(TMappVector & c, unsigned const kmerLength, StringSet<TLengths, TConfig> const & chromLengths, StringSet<TLengths, TConfig> const & cumChromLengths, TLocations & locations)
 {
     using TLocation = typename TLocations::key_type;
     using TEntry = std::pair<TLocation, std::pair<std::vector<TLocation>, std::vector<TLocation> > >;
 
-    for (uint64_t i = 1; i < length(chromLengths) - 1; ++i)
+    // skip first, since the first cumulative length is 0
+    for (uint64_t i = 1; i < length(cumChromLengths) - 1; ++i)
     {
         for (uint64_t j = 1; j < kmerLength; ++j)
         {
-            c[chromLengths[i] - j] = 0;
+            c[cumChromLengths[i] - j] = 0;
         }
 
         // TODO: if sequences are shorter that the kmer (and possibly span more than 2 sequences), this will lead to errors!
@@ -23,8 +24,8 @@ void resetLimits(TMappVector & c, unsigned const kmerLength, StringSet<TLengths,
         {
             TLocation loc;
             loc.i1 = i;
-            loc.i2 = chromLengths[i] - kmerLength + 1;
-            while (loc.i2 < chromLengths[i])
+            loc.i2 = cumChromLengths[i] - kmerLength + 1;
+            while (loc.i2 < cumChromLengths[i])
             {
                 auto kmer = locations.find(loc);
                 assert(kmer != locations.end());
@@ -454,5 +455,5 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
     // Hence, it also searches k-mers that overlap two strings that actually do not exist.
     // At the end we overwrite the frequency of those k-mers with 0.
     // TODO: k-mers spanning two strings should not be searched if there are many short strings (i.e., fasta of reads).
-    resetLimits<csvComputation>(c, params.length, chromLengths, locations);
+    resetLimits<csvComputation>(c, params.length, chromLengths, chromCumLengths, locations);
 }

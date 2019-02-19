@@ -374,8 +374,6 @@ int mappabilityMain(int argc, char const ** argv)
     else
         searchParams.overlap = searchParams.length * std::min(std::max(searchParams.length, 30u), 100u) * pow(0.7f, opt.errors) / 100.0;
 
-    std::cout << "OVERLAP A: " << searchParams.overlap << '\n';
-
     uint64_t const maxPossibleOverlap = std::min(searchParams.length - 1, searchParams.length - opt.errors + 2);
     // (K - O >= E + 2 must hold since common overlap has length K - O and will be split into E + 2 parts)
 
@@ -385,7 +383,6 @@ int mappabilityMain(int argc, char const ** argv)
         if (!isSet(parser, "overlap"))
         {
             searchParams.overlap = maxPossibleOverlap;
-            std::cout << "OVERLAP B: " << searchParams.overlap << '\n';
         }
         else
         {

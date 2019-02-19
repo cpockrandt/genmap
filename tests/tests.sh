@@ -29,7 +29,7 @@ cd "$MYTMP"
 [ $? -eq 0 ] || errorout "Could not cd to tmp"
 
 ${BINDIR}/bin/genmap index -F "${SRCDIR}/tests/test_cases/case_${CASE}/genome.fa" -I "${MYTMP}/index" -A skew
-${BINDIR}/bin/genmap map -I "${MYTMP}/index" -O "${MYTMP}/output" -E 0 -K 3 ${FLAGS}
+${BINDIR}/bin/genmap map -I "${MYTMP}/index" -O "${MYTMP}/output" ${FLAGS}
 diff -r -Z --strip-trailing-cr "${SRCDIR}/tests/test_cases/case_${CASE}/${EXPECTED_FOLDER}" "${MYTMP}/output"
 [ $? -eq 0 ] || errorout "Files are not equal!"
 

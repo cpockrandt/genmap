@@ -60,9 +60,9 @@ void saveTxt(std::vector<T> const & c, std::string const & output_path, TChromos
         // TODO: remove space at end of line
         SEQAN_IF_CONSTEXPR (mappability)
         {
-            for (T const & v : c)
+            for (auto it = seqBegin; it < seqEnd; ++it)
             {
-                float const f = (v != 0) ? 1.0 / static_cast<float>(v) : 0;
+                float const f = (*it != 0) ? 1.0 / static_cast<float>(*it) : 0;
                 // outfile.write(reinterpret_cast<const char*>(&f), sizeof(float));
                 outfile << f << ' ';
             }
@@ -72,8 +72,12 @@ void saveTxt(std::vector<T> const & c, std::string const & output_path, TChromos
             std::copy(seqBegin, seqEnd, std::ostream_iterator<T>(outfile, " "));
             // std::copy(seqBegin, seqEnd, (std::ostream_iterator<T>(outfile), std::ostream_iterator<int>(outfile, " ")));
         }
-        seqBegin = seqEnd;
-        seqEnd += chromLengths[i];
+        outfile << '\n';
+        if (i + 1 < length(chromLengths))
+        {
+            seqBegin = seqEnd;
+            seqEnd += chromLengths[i + 1];
+        }
     }
     outfile.close();
 }
