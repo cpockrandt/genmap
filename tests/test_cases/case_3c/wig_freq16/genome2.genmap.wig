@@ -1,0 +1,4 @@
+variableStep chrom=seq1 span=10
+1 3
+variableStep chrom=seq1 span=3
+11 0

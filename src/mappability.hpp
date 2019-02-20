@@ -134,7 +134,7 @@ template <typename TDistance, typename value_type, bool csvComputation, typename
           typename TIndex, typename TText, typename TChromosomeNames, typename TChromosomeLengths, typename TDirectoryInformation>
 inline void run(TIndex & index, TText const & text, Options const & opt, SearchParams const & searchParams,
                 std::string const & fastaFile, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths,
-                TDirectoryInformation const & directoryInformation)
+                TDirectoryInformation const & directoryInformation, std::vector<TSeqNo> const & mappingSeqIdFile)
 {
     std::vector<value_type> c(length(text), 0);
 
@@ -145,15 +145,15 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
     double start = get_wall_time();
     switch (opt.errors)
     {
-        case 0:  computeMappability<0, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations);
+        case 0:  computeMappability<0, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations, mappingSeqIdFile);
                  break;
-        case 1:  computeMappability<1, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations);
+        case 1:  computeMappability<1, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations, mappingSeqIdFile);
                  break;
-        case 2:  computeMappability<2, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations);
+        case 2:  computeMappability<2, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations, mappingSeqIdFile);
                  break;
-        case 3:  computeMappability<3, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations);
+        case 3:  computeMappability<3, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations, mappingSeqIdFile);
                  break;
-        case 4:  computeMappability<4, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations);
+        case 4:  computeMappability<4, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations, mappingSeqIdFile);
                  break;
         default: std::cerr << "E > 4 not yet supported.\n";
                  exit(1);
@@ -189,22 +189,36 @@ inline void run(Options const & opt, SearchParams const & searchParams)
     appendValue(directoryInformation, "dummy.entry;0;chromosomename"); // dummy entry enforces that the mappability is
                                                                        // computed for the last file in the while loop.
 
-    auto const & text = indexText(index);
+    std::vector<TSeqNo> mappingSeqIdFile(length(directoryInformation) - 1);
+    if (searchParams.excludePseudo)
+    {
+        uint64_t fastaId = 0;
+        std::string fastaFile = std::get<0>(retrieveDirectoryInformationLine(directoryInformation[0]));
+        for (uint64_t i = 0; i < length(directoryInformation) - 1; ++i)
+        {
+            auto const row = retrieveDirectoryInformationLine(directoryInformation[i]);
+            if (std::get<0>(row) != fastaFile)
+            {
+                fastaFile = std::get<0>(row);
+                ++fastaId;
+            }
+            mappingSeqIdFile[i] = fastaId;
+        }
+    }
 
+    auto const & text = indexText(index);
     StringSet<CharString, Owner<ConcatDirect<> > > chromosomeNames;
     StringSet<uint64_t> chromosomeLengths; // ConcatDirect on PODs does not seem to support clear() ...
     uint64_t startPos = 0;
     uint64_t fastaFileLength = 0;
     std::string fastaFile = std::get<0>(retrieveDirectoryInformationLine(directoryInformation[0]));
-
     for (uint64_t i = 0; i < length(directoryInformation); ++i)
     {
         auto const row = retrieveDirectoryInformationLine(directoryInformation[i]);
         if (std::get<0>(row) != fastaFile)
         {
-            // std::cout << "TODO: " << startPos << " ... " << fastaFileLength << std::endl;
             auto const & fastaInfix = infixWithLength(text.concat, startPos, fastaFileLength);
-            run<TDistance, value_type, csvComputation, TSeqNo, TSeqPos>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths, directoryInformation);
+            run<TDistance, value_type, csvComputation, TSeqNo, TSeqPos>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths, directoryInformation, mappingSeqIdFile);
 
             startPos += fastaFileLength;
             fastaFile = std::get<0>(row);
@@ -237,7 +251,7 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 template <typename TChar, typename TAllocConfig, typename TDistance, typename TValue>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
-    if (opt.csvFile)
+    if (opt.csvFile || searchParams.excludePseudo) // compute csv output when --exclude-pseudo, but don't output!
         run<TChar, TAllocConfig, TDistance, TValue, true>(opt, searchParams);
     else
         run<TChar, TAllocConfig, TDistance, TValue, false>(opt, searchParams);
@@ -291,6 +305,8 @@ int mappabilityMain(int argc, char const ** argv)
 
     addOption(parser, ArgParseOption("c", "reverse-complement", "Searches each k-mer on the reverse strand as well."));
 
+    addOption(parser, ArgParseOption("ep", "exclude-pseudo", "Mappability only counts the number of fasta files that contain the k-mer, not the total number of occurrences (i.e., neglects so called- pseudo genes / sequences). This has no effect on the csv output."));
+
     addOption(parser, ArgParseOption("i", "indels", "Turns on indels (EditDistance). "
         "If not selected, only mismatches will be considered."));
 
@@ -312,7 +328,7 @@ int mappabilityMain(int argc, char const ** argv)
     addOption(parser, ArgParseOption("d", "csv",
         "Output a detailed csv file reporting the locations of each k-mer (WARNING: This will produce large files and makes computing the mappability significantly slower)."));
 
-    addOption(parser, ArgParseOption("m", "mmap",
+    addOption(parser, ArgParseOption("m", "memory-mapping",
         "Turns memory-mapping on, i.e. the index is not loaded into RAM but accessed directly from secondary-memory. This may increase the overall running time, but do NOT use it if the index lies on network storage."));
 
     addOption(parser, ArgParseOption("T", "threads", "Number of threads", ArgParseArgument::INTEGER, "INT"));
@@ -333,7 +349,7 @@ int mappabilityMain(int argc, char const ** argv)
     getOptionValue(opt.errors, parser, "errors");
     getOptionValue(opt.indexPath, parser, "index");
     getOptionValue(opt.outputPath, parser, "output");
-    opt.mmap = isSet(parser, "mmap");
+    opt.mmap = isSet(parser, "memory-mapping");
     opt.indels = isSet(parser, "indels");
     opt.wigFile = isSet(parser, "wig");
     opt.bedFile = isSet(parser, "bed");
@@ -366,6 +382,7 @@ int mappabilityMain(int argc, char const ** argv)
     getOptionValue(searchParams.length, parser, "length");
     getOptionValue(searchParams.threads, parser, "threads");
     searchParams.revCompl = isSet(parser, "reverse-complement");
+    searchParams.excludePseudo = isSet(parser, "exclude-pseudo");
 
     if (isSet(parser, "overlap"))
         getOptionValue(searchParams.overlap, parser, "overlap");

@@ -115,13 +115,14 @@ int main(int /*argc*/, char ** /*argv*/)
             searchParams.overlap = overlap;
             searchParams.threads = omp_get_num_threads();
             searchParams.revCompl = rand() % 2;
+            searchParams.excludePseudo = false;
 
             std::map<Pair<uint16_t, uint32_t>,
                      std::pair<std::vector<Pair<uint16_t, uint32_t> >,
                                std::vector<Pair<uint16_t, uint32_t> > > > locations;
-
+            std::vector<uint16_t> mappingSeqIdFile(0);
             computeMappabilityTrivial<errors>(index, frequency_expected, searchParams);
-            computeMappability<errors, false>(index, text, frequency_actual, searchParams, false /*dir*/, chromLengths, locations);
+            computeMappability<errors, false>(index, text, frequency_actual, searchParams, false /*dir*/, chromLengths, locations, mappingSeqIdFile);
 
             if (frequency_expected != frequency_actual)
             {

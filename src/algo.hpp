@@ -234,9 +234,9 @@ inline void extend(TBiIter it, std::vector<TValue> & hits, std::vector<typename 
     }
 }
 
-template <unsigned errors, bool csvComputation, typename TIndex, typename TText, typename TContainer, typename TChromosomeLengths, typename TLocations>
+template <unsigned errors, bool csvComputation, typename TIndex, typename TText, typename TContainer, typename TChromosomeLengths, typename TLocations, typename TMapping>
 inline void computeMappability(TIndex & index, TText const & text, TContainer & c, SearchParams const & params,
-                               bool const directory, TChromosomeLengths const & chromLengths, TLocations & locations)
+                               bool const directory, TChromosomeLengths const & chromLengths, TLocations & locations, TMapping const & mappingSeqIdFile)
 {
     typedef typename TContainer::value_type TValue;
     typedef Iter<TIndex, VSTree<TopDown<> > > TBiIter;
@@ -288,7 +288,7 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
             _optimalSearchSchemeComputeFixedBlocklength(scheme, overlap);
 
             std::vector<typename TBiIter::TFwdIndexIter> itExact(endPos - beginPos);
-            std::vector<TValue> hits(endPos - beginPos, 0), hitsRevCompl(endPos - beginPos, 0);
+            std::vector<TValue> hits(endPos - beginPos, 0);
             std::vector<std::vector<typename TBiIter::TFwdIndexIter> > itAll(endPos - beginPos);
             std::vector<std::vector<typename TBiIter::TFwdIndexIter> > itAllrevCompl(endPos - beginPos);
 
@@ -328,48 +328,26 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                 // uint64_t const bb = std::min(textLength - 1, params.length - 1 + params.length - overlap);
 
                 // TODO: could store the exact hits as well and use these values!
-                auto delegateRevCompl = [&hitsRevCompl, &itExact, &itAllrevCompl, bb, overlap, &params, &needlesRevCompl](
+                auto delegateRevCompl = [&hits, &itExact, &itAllrevCompl, bb, overlap, &params, &needlesRevCompl](
                     TBiIter it, TNeedlesRevComplOverlap const & /*read*/, unsigned const errors_spent)
                 {
-                    extend<false, csvComputation, errors>(it, hitsRevCompl, itExact, itAllrevCompl, errors - errors_spent, needlesRevCompl, params.length,
+                    extend<false, csvComputation, errors>(it, hits, itExact, itAllrevCompl, errors - errors_spent, needlesRevCompl, params.length,
                         params.length - overlap, params.length - 1, // searched interval
                         0, bb // entire interval
                     );
                 };
 
-                for (unsigned y = 0; y < (endPos - beginPos); ++y)
-                    hitsRevCompl[y] = 0;
-
                 TBiIter it(index);
                 _optimalSearchScheme(delegateRevCompl, it, needlesRevComplOverlap, scheme, HammingDistance());
 
-                // TODO: remove hitsRevCompl (in-place reverse)
-                for (unsigned y = 0; y < (endPos - beginPos); ++y)
-                    hits[(endPos - beginPos - 1) - y] = hitsRevCompl[y];
-            }
-            else
-            {
-                for (unsigned y = 0; y < (endPos - beginPos); ++y)
-                    hits[y] = 0;
+                // hits of the reverse-complement are stored in reversed order.
+                std::reverse(hits.begin(), hits.end());
             }
 
             TBiIter it(index);
             _optimalSearchScheme(delegate, it, needlesOverlap, scheme, HammingDistance());
             for (uint64_t j = beginPos; j < endPos; ++j)
             {
-                if (!directory && countOccurrences(itExact[j - beginPos]) > 1) // guaranteed to exist, since there has to be at least one match!
-                {
-                    for (auto const & occ : getOccurrences(itExact[j-beginPos]))
-                    {
-                        auto const occ_pos = posGlobalize(occ, limits);
-                        c[occ_pos] = hits[j - beginPos];
-                    }
-                }
-                else
-                {
-                    c[j] = hits[j - beginPos];
-                }
-
                 SEQAN_IF_CONSTEXPR (csvComputation)
                 {
                     using TLocation = typename TLocations::key_type;
@@ -377,10 +355,6 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
 
                     TEntry entry;
 
-                    // std::set<uint16_t> distinct_sequences;
-                    // std::vector<TLocation> locations_single_kmer, locationsRevCompl_single_kmer;
-                    // locations_single_kmer.reserve(size);
-                    // locationsRevCompl_single_kmer.reserve(size);
                     uint64_t size = 0;
                     for (auto const & iterator : itAll[j - beginPos])
                         size += countOccurrences(iterator);
@@ -415,6 +389,19 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                     // sorting is needed for output when multiple fasta files are indexed and the locations need to be separated by filename.
                     std::sort(entry.second.second.begin(), entry.second.second.end());
 
+                    // overwrite frequency vector
+                    if (params.excludePseudo)
+                    {
+                        std::set<typename Value<TLocation, 1>::Type> distinct_sequences;
+                        for (auto const & location : entry.second.first) // forward strand
+                            distinct_sequences.insert(mappingSeqIdFile[location.i1]);
+                        assert(entry.second.second.size() == 0 || params.revCompl);
+                        for (auto const & location : entry.second.second) // reverse strand
+                            distinct_sequences.insert(mappingSeqIdFile[location.i1]);
+
+                        hits[j - beginPos] = distinct_sequences.size();
+                    }
+
                     // if (distinct_sequences.size() <= params.locationsMax)
                     // {
                     if (!directory && countOccurrences(itExact[j - beginPos]) > 1)
@@ -448,6 +435,19 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                         // locations.insert({originalPos, {locations_single_kmer, locationsRevCompl_single_kmer}});
                     }
                     // }
+                }
+
+                if (!directory && countOccurrences(itExact[j - beginPos]) > 1) // guaranteed to exist, since there has to be at least one match!
+                {
+                    for (auto const & occ : getOccurrences(itExact[j-beginPos]))
+                    {
+                        auto const occ_pos = posGlobalize(occ, limits);
+                        c[occ_pos] = hits[j - beginPos];
+                    }
+                }
+                else
+                {
+                    c[j] = hits[j - beginPos];
                 }
             }
         }

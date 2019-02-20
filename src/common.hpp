@@ -110,6 +110,7 @@ struct SearchParams
     unsigned threads;
     // bool indels;
     bool revCompl;
+    bool excludePseudo;
 };
 
 std::string mytime()
