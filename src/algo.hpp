@@ -11,8 +11,7 @@ void resetLimits(TMappVector & c, unsigned const kmerLength, TChromLengths const
     using TEntry = std::pair<TLocation, std::pair<std::vector<TLocation>, std::vector<TLocation> > >;
 
     // skip first, since the first cumulative length is 0
-    // does not cover the last sequence
-    for (uint64_t i = 1; i < length(cumChromLengths) - 1; ++i)
+    for (uint64_t i = 1; i < length(cumChromLengths); ++i)
     {
         for (uint64_t j = 1; j < kmerLength; ++j)
         {
@@ -23,50 +22,27 @@ void resetLimits(TMappVector & c, unsigned const kmerLength, TChromLengths const
         // Remove csv entries for kmers overlapping multiple sequences accidentally.
         SEQAN_IF_CONSTEXPR (csvComputation)
         {
-            if (chromLengths[i - 1] >= kmerLength)
-            {
-                // clear entries in csv of kmers that overlap sequences
-                TLocation loc;
-                loc.i1 = i - 1; // i starts with one because first element in cumChromLengths is 0
-                loc.i2 = chromLengths[i - 1] - kmerLength + 1;
-                while (loc.i2 < chromLengths[i - 1])
-                {
-                    auto kmer = locations.find(loc);
-                    if (kmer != locations.end())
-                    {
-                        kmer->second.first.clear();
-                        kmer->second.second.clear();
-                    }
-                    ++loc.i2;
-                    // TODO: better: if == then break loop
-                }
-            }
-            else
-            {
-                // add empty entries in csv for sequences that are shorter that K
-                TEntry entry;
-                entry.first.i1 = i - 1;
-                entry.first.i2 = 0;
-                while (entry.first.i2 < chromLengths[i - 1])
-                {
-                    locations.insert(entry);
-                    ++entry.first.i2;
-                }
-            }
-        }
-    }
+            // for single fasta files it is guaranteed that every entry exists and it only has to be resetted if the kmer is overlapping
+            // for directories some kmers might be missing
 
-    // Add empty lines to the end of the csv file
-    SEQAN_IF_CONSTEXPR (csvComputation)
-    {
-        TEntry entry;
-        uint64_t const lastChrom = length(chromLengths) - 1;
-        entry.first.i1 = lastChrom;
-        entry.first.i2 = chromLengths[lastChrom] - kmerLength + 1;
-        while (entry.first.i2 < chromLengths[lastChrom])
-        {
-            locations.insert(entry);
-            ++entry.first.i2;
+            // add empty entries in csv for sequences that are shorter that K and reset the last k-1 entries of each sequence
+            TEntry entry;
+            entry.first.i1 = i - 1;
+            entry.first.i2 = (chromLengths[i - 1] >= kmerLength) ? (chromLengths[i - 1] - kmerLength + 1) : 0;
+            while (entry.first.i2 < chromLengths[i - 1])
+            {
+                auto const insertPos = locations.lower_bound(entry.first);
+                if (insertPos != locations.end() && !(locations.key_comp()(entry.first, insertPos->first)))
+                {
+                    insertPos->second.first.clear();
+                    insertPos->second.second.clear();
+                }
+                else
+                {
+                    locations.insert(insertPos, entry);
+                }
+                ++entry.first.i2;
+            }
         }
     }
 }
@@ -438,8 +414,6 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                     }
                     // sorting is needed for output when multiple fasta files are indexed and the locations need to be separated by filename.
                     std::sort(entry.second.second.begin(), entry.second.second.end());
-
-                    myPosLocalize(entry.first, j, chromCumLengths);
 
                     // if (distinct_sequences.size() <= params.locationsMax)
                     // {

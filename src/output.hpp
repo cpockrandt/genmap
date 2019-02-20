@@ -245,9 +245,10 @@ void saveCsv(std::vector<T> const & /*c*/, std::string const & output_path, TLoc
     // TODO: for each filename:
     csvFile << "\"k-mer\"";
     for (auto const & fastaFile : fastaFiles)
-    {
         csvFile << ";\"+ strand " << fastaFile.first << "\"";
-        if (searchParams.revCompl) // TODO: make it constexpr?
+    if (searchParams.revCompl) // TODO: make it constexpr?
+    {
+        for (auto const & fastaFile : fastaFiles)
             csvFile << ";\"- strand " << fastaFile.first << "\"";
     }
     csvFile << '\n';
@@ -258,39 +259,45 @@ void saveCsv(std::vector<T> const & /*c*/, std::string const & output_path, TLoc
         auto const & plusStrandLoc = kmerLocations.second.first;
         auto const & minusStrandLoc = kmerLocations.second.second;
 
-        csvFile << kmerPos.i1 << ',' << kmerPos.i2 << ';';
+        csvFile << kmerPos.i1 << ',' << kmerPos.i2;
 
         uint64_t i = 0;
+        uint64_t nbrChromosomesInPreviousFastas = 0;
         for (auto const & fastaFile : fastaFiles)
         {
+            csvFile << ';';
             bool subsequentIterations = false;
             while (i < plusStrandLoc.size() && plusStrandLoc[i].i1 <= fastaFile.second)
             {
                 if (subsequentIterations)
                     csvFile << '|'; // separator for multiple locations in one column
-                csvFile << plusStrandLoc[i].i1 << ',' << plusStrandLoc[i].i2;
+                csvFile << (plusStrandLoc[i].i1 - nbrChromosomesInPreviousFastas)
+                        << ',' << plusStrandLoc[i].i2;
                 subsequentIterations = true;
 
                 ++i;
             }
+            nbrChromosomesInPreviousFastas = fastaFile.second + 1;
         }
 
         if (searchParams.revCompl)
         {
-            csvFile << ';';
             uint64_t i = 0;
+            uint64_t nbrChromosomesInPreviousFastas = 0;
             for (auto const & fastaFile : fastaFiles)
             {
+                csvFile << ';';
                 bool subsequentIterations = false;
                 while (i < minusStrandLoc.size() && minusStrandLoc[i].i1 <= fastaFile.second)
                 {
                     if (subsequentIterations)
                         csvFile << '|'; // separator for multiple locations in one column
-                    csvFile << minusStrandLoc[i].i1 << ',' << (minusStrandLoc[i].i2);
+                    csvFile << (minusStrandLoc[i].i1 - nbrChromosomesInPreviousFastas)
+                            << ',' << minusStrandLoc[i].i2;
                     subsequentIterations = true;
-
                     ++i;
                 }
+                nbrChromosomesInPreviousFastas = fastaFile.second + 1;
             }
         }
         csvFile << '\n';

@@ -30,13 +30,28 @@ case 2c
 case 2d
   case 2c with reverse complement
 
-Single fasta file in directory with multiple sequences
-""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-Coming soon.
-
 Multiple fasta files in directory with single and multiple sequences
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+case 3a
+    4-mers with 0 errors without reverse complement. Multiple fasta files. Some only have one sequence (chromosome), some have multiple. There are k-mers that
+      - occur once only in a single sequence in only one fasta file (TTTT)
+      - occur multiple times only in a single sequence in only one fasta file (ACGT)
+      - occur multiple times in different sequences of only one fasta file (CGTA)
+      - occur multiple times in different sequences of multiple fasta files (at most one hit per fasta file) (AGGA)
+      - occur multiple times in different sequences of multiple fasta files (multiple hits per fasta file) (ACCA, AAGG)
+
+case 3b
+    case 3a with reverse complement
+
+case 3c
+    case 3a with ``--exclude-pseudo``
+
+case 3c
+    case 3c with reverse complement
+
+Single fasta file in directory with multiple sequences
+""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 Coming soon (including and exluding ``--exclude-pseudo``).
 
