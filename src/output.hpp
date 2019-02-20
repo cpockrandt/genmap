@@ -89,7 +89,7 @@ void saveWig(std::vector<T> const & c, std::string const & output_path, TChromos
 {
     uint64_t pos = 0;
     uint64_t begin_pos_string = 0;
-    uint64_t end_pos_string = std::min<uint64_t>(chromLengths[0], c.size());
+    uint64_t end_pos_string = chromLengths[0];
 
     char buffer[BUFFER_SIZE];
 
@@ -144,7 +144,6 @@ void saveWig(std::vector<T> const & c, std::string const & output_path, TChromos
         begin_pos_string += chromLengths[i];
         if (i + 1 < length(chromLengths))
             end_pos_string += chromLengths[i + 1];
-        end_pos_string = std::min<uint64_t>(end_pos_string, c.size()); // last chromosomeLength has to be reduced by K-1 characters
     }
     wigFile.close();
 
@@ -164,7 +163,7 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
 {
     uint64_t pos = 0;
     uint64_t begin_pos_string = 0;
-    uint64_t end_pos_string = std::min<uint64_t>(chromLengths[0], c.size());
+    uint64_t end_pos_string = chromLengths[0];
 
     char buffer[BUFFER_SIZE];
 
@@ -212,7 +211,6 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
         begin_pos_string += chromLengths[i];
         if (i + 1 < length(chromLengths))
             end_pos_string += chromLengths[i + 1];
-        end_pos_string = std::min<uint64_t>(end_pos_string, c.size()); // last chromosomeLength has to be reduced by K-1 characters
     }
     bedFile.close();
 }
