@@ -245,8 +245,7 @@ int indexMain(int const argc, char const ** argv)
 
     if (options.directory)
     {
-        uint32_t filesLoaded = 0;
-        std::stringstream filenames;
+        std::vector<std::string> filenames;
         DIR * dirp = opendir(toCString(fastaPath));
         struct dirent * dp;
         while ((dp = readdir(dirp)) != NULL)
@@ -254,39 +253,43 @@ int indexMain(int const argc, char const ** argv)
             std::string const file(dp->d_name);
             if (hasEnding(file, ".fa") || hasEnding(file, ".fasta") || hasEnding(file, ".fastq"))
             {
-                ++filesLoaded;
-                filenames << file << '\n';
-                std::string fullPath = toCString(fastaPath);
-                if (!hasEnding(fullPath, "/"))
-                    fullPath += "/";
-                fullPath += file;
-                SeqFileIn seqFileIn(toCString(fullPath));
-
-                StringSet<CharString, Owner<ConcatDirect<> > > ids;
-                StringSet<Dna5String> chromosomes2;
-                readRecords(ids, chromosomes2, seqFileIn);
-                if (lengthSum(chromosomes2) == 0)
-                {
-                    std::cerr << "WARNING: The fasta file " << file << " seems to be empty. Excluded from indexing.\n";
-                    continue;
-                }
-
-                for (uint64_t i = 0; i < length(chromosomes2); ++i)
-                {
-                    // skip empty sequences
-                    if (length(chromosomes2[i]) == 0)
-                        continue;
-
-                    std::string const id = toCString(static_cast<CharString>(ids[i]));
-                    std::string const len = std::to_string(length(chromosomes2[i]));
-                    appendValue(directoryInformation, file + ";" + len + ";" + id); // toCString(id.substr(0, id.find(" ")))
-                    appendValue(chromosomes, chromosomes2[i]);
-                }
-
-                clear(ids);
+                filenames.push_back(file);
             }
         }
         closedir(dirp);
+        std::sort(filenames.begin(), filenames.end());
+
+        for (auto const & file : filenames)
+        {
+            std::string fullPath = toCString(fastaPath);
+            if (!hasEnding(fullPath, "/"))
+                fullPath += "/";
+            fullPath += file;
+            SeqFileIn seqFileIn(toCString(fullPath));
+
+            StringSet<CharString, Owner<ConcatDirect<> > > ids;
+            StringSet<Dna5String> chromosomes2;
+            readRecords(ids, chromosomes2, seqFileIn);
+            if (lengthSum(chromosomes2) == 0)
+            {
+                std::cerr << "WARNING: The fasta file " << file << " seems to be empty. Excluded from indexing.\n";
+                continue;
+            }
+
+            for (uint64_t i = 0; i < length(chromosomes2); ++i)
+            {
+                // skip empty sequences
+                if (length(chromosomes2[i]) == 0)
+                    continue;
+
+                std::string const id = toCString(static_cast<CharString>(ids[i]));
+                std::string const len = std::to_string(length(chromosomes2[i]));
+                appendValue(directoryInformation, file + ";" + len + ";" + id); // toCString(id.substr(0, id.find(" ")))
+                appendValue(chromosomes, chromosomes2[i]);
+            }
+
+            clear(ids);
+        }
 
         if (length(chromosomes) == 0)
         {
@@ -295,11 +298,16 @@ int indexMain(int const argc, char const ** argv)
             return ArgumentParser::PARSE_ERROR;
         }
 
-        std::cout << filesLoaded << " fasta files have been loaded";
+        std::cout << filenames.size() << " fasta files have been loaded";
         if (options.verbose)
-            std::cout << ":\n" << filenames.str();
+        {
+            std::cout << ":\n";
+            std::copy(filenames.begin(), filenames.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
+        }
         else
+        {
             std::cout << " (run with --verbose to list the files)\n";
+        }
     }
     else
     {
