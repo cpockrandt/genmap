@@ -6,8 +6,11 @@
 
 static constexpr bool outputProgress = false;
 
-#include "common.h"
+#include "common.hpp"
 #include "algo.hpp"
+
+template <typename TSpec, typename TLengthSum, unsigned LEVELS, unsigned WORDS_PER_BLOCK>
+unsigned GemMapFastFMIndexConfig<TSpec, TLengthSum, LEVELS, WORDS_PER_BLOCK>::SAMPLING = 10;
 
 using namespace std;
 using namespace seqan;
@@ -37,7 +40,7 @@ inline void computeMappabilityTrivial(TIndex & index, TContainer & c, SearchPara
         for (uint64_t i = 0; i < length(text[seq]) - searchParams.length + 1; ++i, ++global_pos)
         {
             value_type hits = 0;
-            auto delegate = [&hits](auto const &it, auto const & /*read*/, unsigned const /*errors*/) {
+            auto delegate = [&hits, max_val](auto const &it, auto const & /*read*/, unsigned const /*errors*/) {
                 if ((uint64_t) hits + countOccurrences(it) <= max_val)
                     hits += countOccurrences(it);
                 else
@@ -60,9 +63,9 @@ inline void computeMappabilityTrivial(TIndex & index, TContainer & c, SearchPara
     }
 }
 
-int main(int argc, char *argv[])
+int main(int /*argc*/, char ** /*argv*/)
 {
-    using TIndexConfig = TBiIndexConfig<TGemMapFastFMIndexConfig<uint32_t, uint32_t>>;
+    using TIndexConfig = TBiIndexConfig<TGemMapFastFMIndexConfig<uint32_t>>;
 
     auto now = std::chrono::system_clock::now();
     auto seed = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
@@ -76,6 +79,8 @@ int main(int argc, char *argv[])
         typedef StringSet<String<Dna>, Owner<ConcatDirect<> > > TGenome;
         TGenome genome;
 
+        StringSet<uint64_t> chromLengths;
+
         cout << "Stringset: ";
         uint64_t minStringLength = 999999999;
         uint64_t const stringsetsize = (rng() % 10) + 1;
@@ -86,6 +91,7 @@ int main(int argc, char *argv[])
             DnaString chr;
             randomText(chr, rng, textLength);
             appendValue(genome, chr);
+            appendValue(chromLengths, textLength);
             cout << textLength << ' ';
         }
         cout << endl;
@@ -110,14 +116,22 @@ int main(int argc, char *argv[])
             searchParams.threads = omp_get_num_threads();
             searchParams.revCompl = rand() % 2;
 
+            std::map<Pair<uint16_t, uint32_t>,
+                     std::pair<std::vector<Pair<uint16_t, uint32_t> >,
+                               std::vector<Pair<uint16_t, uint32_t> > > > locations;
+
             computeMappabilityTrivial<errors>(index, frequency_expected, searchParams);
-            computeMappability<errors>(index, text, frequency_actual, searchParams);
+            computeMappability<errors, false>(index, text, frequency_actual, searchParams, false /*dir*/, chromLengths, locations);
 
             if (frequency_expected != frequency_actual)
             {
                 cerr << "Length (K): " << length << ", Overlap: " << overlap << ", Reads: " << reads << endl;
                 for (uint64_t ss = 0; ss < stringsetsize; ++ss)
                     cerr << genome[ss] << '\n';
+                std::copy(frequency_expected.begin(), frequency_expected.end(), std::ostream_iterator<int>(std::cerr, " "));
+                std::cerr << '\n';
+                std::copy(frequency_actual.begin(), frequency_actual.end(), std::ostream_iterator<int>(std::cerr, " "));
+                std::cerr << '\n';
                 exit(1);
             }
         }

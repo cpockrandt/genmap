@@ -1,5 +1,7 @@
 #pragma once
 
+using namespace seqan;
+
 #include <time.h>
 #include <sys/time.h>
 
