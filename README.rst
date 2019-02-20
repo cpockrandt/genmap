@@ -1,5 +1,5 @@
 GenMap - Fast and Exact Computation of Genome Mappability |buildstatus|
----------------------------------------------------------
+-----------------------------------------------------------------------
 
 .. |BUILDSTATUS| image:: https://travis-ci.org/cpockrandt/genmap.svg?branch=master
     :target: https://travis-ci.org/cpockrandt/genmap
@@ -11,6 +11,10 @@ Hence, a mappability value of 1 at position i indicates that the k-mer in the se
 A low mappability value indicates that this k-mer belongs to a repetitive region.
 
 A small example is listed below, for detailed examples such as marker sequence computation on multiple fasta files, please check out the GitHub wiki (coming soon).
+
+For questions or feature requests feel free to open an issue on GitHub or send an e-mail to ``christopher.pockrandt [ÄT] fu-berlin.de``.
+
+The corresponding paper will be uploaded to biorxiv.org in mid-March. Until then major design changes of the interface and minor changes to its specification are possible.
 
 Binaries
 ^^^^^^^^
