@@ -154,23 +154,30 @@ int indexMain(int const argc, char const ** argv)
     // Argument Parser
     ArgumentParser parser("GenMap index");
     sharedSetup(parser);
-    addDescription(parser, "Index creation. Only supports Dna (with and without N's).");
+    addDescription(parser, "Index creation. Only supports Dna (A, C, G, T).");
+
+    // sorted in descending lexicographical order, since setValidValues() prints them in this order
+    std::vector<std::string> const fastaFileTypes {"fsa", "fna", "fastq", "fasta", "fas", "fa"};
+    std::string fastaFileTypesHelpString;
+    for (uint8_t i = 0; i < fastaFileTypes.size() - 1; ++i)
+        fastaFileTypesHelpString += '.' + fastaFileTypes[i] + ' ';
+    fastaFileTypesHelpString += "and ." + fastaFileTypes.back();
 
     addOption(parser, ArgParseOption("F", "fasta-file", "Path to the fasta file.", ArgParseArgument::INPUT_FILE, "IN"));
-	setValidValues(parser, "fasta-file", "fa fasta fastq");
+    setValidValues(parser, "fasta-file", fastaFileTypes);
 
-    addOption(parser, ArgParseOption("FD", "fasta-directory", "Path to the directory of fasta files (indexes all .fa .fasta and .fastq files in there, not including subdirectories).", ArgParseArgument::INPUT_FILE, "IN"));
+    addOption(parser, ArgParseOption("FD", "fasta-directory", "Path to the directory of fasta files (indexes all " + fastaFileTypesHelpString + " files in there, not including subdirectories).", ArgParseArgument::INPUT_FILE, "IN"));
 
     addOption(parser, ArgParseOption("I", "index", "Path to the index.", ArgParseArgument::OUTPUT_FILE, "OUT"));
     setRequired(parser, "index");
 
     // TODO: describe both algorithms in terms of space consumption (disk and RAM)
     addOption(parser, ArgParseOption("A", "algorithm", "Algorithm for suffix array construction (needed for the FM index).", ArgParseArgument::INPUT_FILE, "IN"));
-	setDefaultValue(parser, "algorithm", "radix");
-	setValidValues(parser, "algorithm", "radix skew");
+    setDefaultValue(parser, "algorithm", "radix");
+    setValidValues(parser, "algorithm", std::vector<std::string>{"radix", "skew"});
 
     addOption(parser, ArgParseOption("S", "sampling", "Sampling rate of suffix array", ArgParseArgument::INTEGER, "INT"));
-	setDefaultValue(parser, "sampling", 10);
+    setDefaultValue(parser, "sampling", 10);
     setMaxValue(parser, "sampling", "64");
     setMinValue(parser, "sampling", "1");
 
@@ -251,10 +258,9 @@ int indexMain(int const argc, char const ** argv)
         while ((dp = readdir(dirp)) != NULL)
         {
             std::string const file(dp->d_name);
-            if (hasEnding(file, ".fa") || hasEnding(file, ".fasta") || hasEnding(file, ".fastq"))
-            {
+            std::string const fileExtension = file.substr(file.find_last_of('.') + 1);
+            if (std::find(fastaFileTypes.begin(), fastaFileTypes.end(), fileExtension) != fastaFileTypes.end())
                 filenames.push_back(file);
-            }
         }
         closedir(dirp);
         std::sort(filenames.begin(), filenames.end());

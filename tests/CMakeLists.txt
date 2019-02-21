@@ -58,7 +58,7 @@ function(add_test_suite TEST_NAME_PREFIX TEST_CASE_FOLDER INDEX_FLAGS MAP_FLAGS)
     add_test(
         NAME "${TEST_NAME_PREFIX}_csv"
         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -d" "csv")
-endfunction(<add_test_suite>)
+endfunction(add_test_suite)
 
 add_test_suite("single_fasta_single_sequence"                 "1a" "-F"  "-E 0 -K 3")
 add_test_suite("single_fasta_single_sequence_rc"              "1b" "-F"  "-E 0 -K 3 -c")

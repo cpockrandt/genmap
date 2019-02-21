@@ -4,17 +4,22 @@ GenMap - Fast and Exact Computation of Genome Mappability |buildstatus|
 .. |BUILDSTATUS| image:: https://travis-ci.org/cpockrandt/genmap.svg?branch=master
     :target: https://travis-ci.org/cpockrandt/genmap
 
-GenMap is a tool to compute the mappability of nucleotide sequences.
-In particular, it computes the (k,e)-frequency, i.e., how often each k-mer from the sequence occurs with up to e errors in the sequence itself.
+GenMap is a tool to compute the mappability respectively frequency of nucleotide sequences.
+In particular, it computes the (k,e)-frequency, i.e., how often each k-mer from the sequence occurs with up to e errors
+in the sequence itself.
 The (k,e)-mappability is the inverse of the (k,e)-frequency.
-Hence, a mappability value of 1 at position i indicates that the k-mer in the sequence at position i occurs only once in the sequence with up to e errors.
+Hence, a mappability value of 1 at position i indicates that the k-mer in the sequence at position i occurs only once
+in the sequence with up to e errors.
 A low mappability value indicates that this k-mer belongs to a repetitive region.
 
-A small example is listed below, for detailed examples such as marker sequence computation on multiple fasta files, please check out the GitHub wiki (coming soon).
+A small example on how to run GenMap is listed below, for detailed examples such as marker sequence computation on
+multiple fasta files, please check out our GitHub `Wiki pages <https://github.com/cpockrandt/genmap/wiki>`_.
 
-For questions or feature requests feel free to open an issue on GitHub or send an e-mail to ``christopher.pockrandt [ÄT] fu-berlin.de``.
+For questions or feature requests feel free to open an issue on GitHub or send an e-mail to
+``christopher.pockrandt [ÄT] fu-berlin.de``.
 
-The corresponding paper will be uploaded to biorxiv.org in mid-March. Until then major design changes of the interface and minor changes to its specification are possible.
+The corresponding paper will be uploaded to biorxiv.org in mid-March.
+Until then major design changes of the interface and minor changes to its specification are possible.
 
 Binaries
 ^^^^^^^^
@@ -74,12 +79,14 @@ This step only has to performed once.
 
     $ ./genmap index -G /path/to/fasta.fasta -I /path/to/index/folder
 
-A new folder `/path/to/index/folder` will be created to store the index and all associated files.
+A new folder ``/path/to/index/folder`` will be created to store the index and all associated files.
 
 There are two algorithms that can be chosen for index construction.
-One uses RAM (radixsort), one uses secondary memory (skew).
-Depending on the quota and main memory limitations you can choose the appropriate algorithm with ``-A radixsort`` or ``-A skew``.
-For skew you can change the location of the temp directory via the environment variable (e.g., to choose a directory with more quota):
+One uses RAM (radix), one uses secondary memory (skew).
+Depending on the quota and main memory limitations you can choose the appropriate algorithm with ``-A radix`` or
+``-A skew``.
+For skew you can change the location of the temp directory via the environment variable (e.g., to choose a directory
+with more quota):
 
 ::
 
@@ -94,9 +101,11 @@ To compute the (30,2)-mappability of the previously indexed genome, simply run:
 
     $ ./genmap map -E 2 -K 30 -I /path/to/index/folder -O /path/to/output/folder -t -w -b
 
-This will create a `text`, `wig` and `bed` file in `/path/to/output/folder` storing the computed mappability in different formats. You can remove not required formats by ommitting the corresponding flags `-t` `-w` or `-b`.
+This will create a ``text``, ``wig`` and ``bed`` file in ``/path/to/output/folder`` storing the computed mappability in
+different formats. You can remove not required formats by ommitting the corresponding flags ``-t`` ``-w`` or ``-b``.
 
-Instead of the mappability, the frequency can be outputted, you only have to add the flag `-fl` to the previous command.
+Instead of the mappability, the frequency can be outputted, you only have to add the flag ``-fl`` to the previous
+command.
 
 Help pages and examples
 """""""""""""""""""""""
@@ -107,6 +116,6 @@ A detailed list of arguments and explanations can be retrieved using ``--help``:
 
     $ ./genmap --help
     $ ./genmap index --help
-    $ ./genmap mappability --help
+    $ ./genmap map --help
 
-More detailed examples will be coming soon in the wiki.
+More detailed examples can be found in the Wiki.
