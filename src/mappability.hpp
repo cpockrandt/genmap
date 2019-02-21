@@ -418,7 +418,7 @@ int mappabilityMain(int argc, char const ** argv)
     // TODO: error message if output files already exist or directory is not writeable
     // TODO: nice error messages if index is incorrect or doesnt exist
     if (back(opt.indexPath) != '/')
-        opt.indexPath += "/";
+        opt.indexPath += '/';
     opt.indexPath += "index";
 
     StringSet<CharString, Owner<ConcatDirect<> > > info;

@@ -26,7 +26,7 @@ struct IndexOptions
     bool verbose;
 };
 
-std::string extractFileName(std::string const & path)
+inline std::string extractFileName(std::string const & path)
 {
     // possible formats of 'path': ./file.fa   file.fa   ../file.fa   /path/to/file.fa
     auto const pos = path.find_last_of('/');
@@ -34,14 +34,6 @@ std::string extractFileName(std::string const & path)
         return path;
     else
         return path.substr(pos + 1);
-}
-
-bool hasEnding(std::string const & fullString, std::string ending)
-{
-    if (fullString.length() >= ending.length())
-        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
-    else
-        return false;
 }
 
 template <typename TSeqNo, typename TSeqPos, typename TBWTLen,
@@ -141,12 +133,43 @@ void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, In
 }
 
 template <typename TString, typename TStringSetConfig>
-void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, IndexOptions const & options)
+int buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, IndexOptions const & options)
 {
+#ifdef NDEBUG
+    try
+    {
+        if (options.useRadix)
+            buildIndex(chromosomes, options, RadixSortSACreateTag());
+        else
+            buildIndex(chromosomes, options, Nothing());
+    }
+    catch (std::bad_alloc const & e)
+    {
+        std::cerr << "ERROR: GenMap ran out of memory :(\n"
+                     "       You might want to use a different algorithm (-A skew or -A radix).\n";
+        return -1;
+    }
+    catch (std::exception const & e)
+    {
+        std::cerr << "\n\n"
+                  << "ERROR: The following unspecified exception was thrown:\n"
+                  << "       \"" << e.what() << "\"\n"
+                  << "       If the problem persists, report an issue at "
+                  << "https://github.com/cpockrandt/genmap/issues "
+                  << "and include this output, as well as the output of `genmap --version`, thanks!\n";
+        return -1;
+    }
+#else
+    // In debug mode we don't catch the exceptions so that we get a backtrace from SeqAn's handler
     if (options.useRadix)
         buildIndex(chromosomes, options, RadixSortSACreateTag());
     else
         buildIndex(chromosomes, options, Nothing());
+#endif
+
+    std::cout << "Index created successfully.\n";
+
+    return 0;
 }
 
 int indexMain(int const argc, char const ** argv)
@@ -243,7 +266,7 @@ int indexMain(int const argc, char const ** argv)
 
     // Append prefix name for indices.
     if (back(options.indexPath) != '/')
-        options.indexPath += "/";
+        options.indexPath += '/';
     options.indexPath += "index";
 
     // Read fasta input file(s)
@@ -268,8 +291,8 @@ int indexMain(int const argc, char const ** argv)
         for (auto const & file : filenames)
         {
             std::string fullPath = toCString(fastaPath);
-            if (!hasEnding(fullPath, "/"))
-                fullPath += "/";
+            if (fullPath.back() != '/')
+                fullPath += '/';
             fullPath += file;
             SeqFileIn seqFileIn(toCString(fullPath));
 
@@ -385,20 +408,24 @@ int indexMain(int const argc, char const ** argv)
         options.totalLength = (static_cast<uint64_t>(1) << bwtlen) - 2;
     }
 
+    if (options.useRadix && lengthSum(chromosomes) < 1'000'000)
+    {
+        options.useRadix = false;
+        std::cout << "NOTE: Your input is quite small (i.e., less than 1 mega base)."
+                  << "Hence, Skew7 is used for index construction anyway to avoid parallelization overhead.\n"
+                  << std::flush;
+    }
+
     // Construct index using Dna4 or Dna5 alphabet.
     if (canConvert)
     {
-        // NOTE: avoid copying. Use a custom ModfiedFunctor instead.
+        // TODO: avoid copying. Use a custom ModfiedFunctor instead.
         StringSet<DnaString> chromosomes4(chromosomes);
         clear(chromosomes);
-        buildIndex(chromosomes4, options);
+        return buildIndex(chromosomes4, options);
     }
     else
     {
-        buildIndex(chromosomes, options);
+        return buildIndex(chromosomes, options);
     }
-
-    std::cout << "Index created successfully.\n";
-
-    return 0;
 }
