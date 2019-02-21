@@ -25,337 +25,48 @@ include (CTest)
 # add_test(NAME    my_test
 #          COMMAND my_test)
 
-# directory_single_fasta_single_seq
-# directory_multiple_fasta_mixed_seq
-
 # TODO: add dependencies
 
-set (CASE_1A_INDEX_FLAGS "-F")
-set (CASE_1A_FLAGS "-E 0 -K 3")
-# add_test(
-#     NAME single_fasta_single_sequence_raw_map
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1a" "${CASE_1A_INDEX_FLAGS}" "${CASE_1A_FLAGS} -r" "raw_map")
-add_test(
-    NAME single_fasta_single_sequence_raw_freq8
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1a" "${CASE_1A_INDEX_FLAGS}" "${CASE_1A_FLAGS} -r -fs" "raw_freq8")
-add_test(
-    NAME single_fasta_single_sequence_raw_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1a" "${CASE_1A_INDEX_FLAGS}" "${CASE_1A_FLAGS} -r -fl" "raw_freq16")
-add_test(
-    NAME single_fasta_single_sequence_txt_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1a" "${CASE_1A_INDEX_FLAGS}" "${CASE_1A_FLAGS} -t" "txt_map")
-add_test(
-    NAME single_fasta_single_sequence_txt_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1a" "${CASE_1A_INDEX_FLAGS}" "${CASE_1A_FLAGS} -t -fl" "txt_freq16")
-add_test(
-    NAME single_fasta_single_sequence_wig_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1a" "${CASE_1A_INDEX_FLAGS}" "${CASE_1A_FLAGS} -w" "wig_map")
-add_test(
-    NAME single_fasta_single_sequence_wig_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1a" "${CASE_1A_INDEX_FLAGS}" "${CASE_1A_FLAGS} -w -fl" "wig_freq16")
-add_test(
-    NAME single_fasta_single_sequence_bed_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1a" "${CASE_1A_INDEX_FLAGS}" "${CASE_1A_FLAGS} -b" "bed_map")
-add_test(
-    NAME single_fasta_single_sequence_bed_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1a" "${CASE_1A_INDEX_FLAGS}" "${CASE_1A_FLAGS} -b -fl" "bed_freq16")
-add_test(
-    NAME single_fasta_single_sequence_csv
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1a" "${CASE_1A_INDEX_FLAGS}" "${CASE_1A_FLAGS} -d" "csv")
+function(add_test_suite TEST_NAME_PREFIX TEST_CASE_FOLDER INDEX_FLAGS MAP_FLAGS)
+    # add_test(
+    #     NAME "${TEST_NAME_PREFIX}_raw_map"
+    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -r" "raw_map")
+    # add_test(
+    #     NAME "${TEST_NAME_PREFIX}_raw_freq8"
+    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -r -fs" "raw_freq8")
+    # add_test(
+    #     NAME "${TEST_NAME_PREFIX}_raw_freq16"
+    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -r -fl" "raw_freq16")
+    add_test(
+        NAME "${TEST_NAME_PREFIX}_txt_map"
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -t" "txt_map")
+    add_test(
+        NAME "${TEST_NAME_PREFIX}_txt_freq16"
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -t -fl" "txt_freq16")
+    add_test(
+        NAME "${TEST_NAME_PREFIX}_wig_map"
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -w" "wig_map")
+    add_test(
+        NAME "${TEST_NAME_PREFIX}_wig_freq16"
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -w -fl" "wig_freq16")
+    add_test(
+        NAME "${TEST_NAME_PREFIX}_bed_map"
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -b" "bed_map")
+    add_test(
+        NAME "${TEST_NAME_PREFIX}_bed_freq16"
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -b -fl" "bed_freq16")
+    add_test(
+        NAME "${TEST_NAME_PREFIX}_csv"
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -d" "csv")
+endfunction(<add_test_suite>)
 
-set (CASE_1B_INDEX_FLAGS "-F")
-set (CASE_1B_FLAGS "-E 0 -K 3 -c")
-# add_test(
-#     NAME single_fasta_single_sequence_rc_raw_map
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1b" "${CASE_1B_INDEX_FLAGS}" "${CASE_1B_FLAGS} -r" "raw_map")
-# add_test(
-#     NAME single_fasta_single_sequence_rc_raw_freq8
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1b" "${CASE_1B_INDEX_FLAGS}" "${CASE_1B_FLAGS} -r -fs" "raw_freq8")
-# add_test(
-#     NAME single_fasta_single_sequence_rc_raw_freq16
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1b" "${CASE_1B_INDEX_FLAGS}" "${CASE_1B_FLAGS} -r -fl" "raw_freq16")
-add_test(
-    NAME single_fasta_single_sequence_rc_txt_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1b" "${CASE_1B_INDEX_FLAGS}" "${CASE_1B_FLAGS} -t" "txt_map")
-add_test(
-    NAME single_fasta_single_sequence_rc_txt_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1b" "${CASE_1B_INDEX_FLAGS}" "${CASE_1B_FLAGS} -t -fl" "txt_freq16")
-add_test(
-    NAME single_fasta_single_sequence_rc_wig_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1b" "${CASE_1B_INDEX_FLAGS}" "${CASE_1B_FLAGS} -w" "wig_map")
-add_test(
-    NAME single_fasta_single_sequence_rc_wig_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1b" "${CASE_1B_INDEX_FLAGS}" "${CASE_1B_FLAGS} -w -fl" "wig_freq16")
-add_test(
-    NAME single_fasta_single_sequence_rc_bed_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1b" "${CASE_1B_INDEX_FLAGS}" "${CASE_1B_FLAGS} -b" "bed_map")
-add_test(
-    NAME single_fasta_single_sequence_rc_bed_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1b" "${CASE_1B_INDEX_FLAGS}" "${CASE_1B_FLAGS} -b -fl" "bed_freq16")
-add_test(
-    NAME single_fasta_single_sequence_rc_csv
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "1b" "${CASE_1B_INDEX_FLAGS}" "${CASE_1B_FLAGS} -d" "csv")
-
-set (CASE_2A_INDEX_FLAGS "-F")
-set (CASE_2A_FLAGS "-E 0 -K 4")
-# add_test(
-#     NAME single_fasta_multi_sequence_raw_map
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2a" "${CASE_2A_INDEX_FLAGS}" "${CASE_2A_FLAGS} -r" "raw_map")
-# add_test(
-#     NAME single_fasta_multi_sequence_raw_freq8
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2a" "${CASE_2A_INDEX_FLAGS}" "${CASE_2A_FLAGS} -r -fs" "raw_freq8")
-# add_test(
-#     NAME single_fasta_multi_sequence_raw_freq16
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2a" "${CASE_2A_INDEX_FLAGS}" "${CASE_2A_FLAGS} -r -fl" "raw_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_txt_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2a" "${CASE_2A_INDEX_FLAGS}" "${CASE_2A_FLAGS} -t" "txt_map")
-add_test(
-    NAME single_fasta_multi_sequence_txt_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2a" "${CASE_2A_INDEX_FLAGS}" "${CASE_2A_FLAGS} -t -fl" "txt_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_wig_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2a" "${CASE_2A_INDEX_FLAGS}" "${CASE_2A_FLAGS} -w" "wig_map")
-add_test(
-    NAME single_fasta_multi_sequence_wig_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2a" "${CASE_2A_INDEX_FLAGS}" "${CASE_2A_FLAGS} -w -fl" "wig_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_bed_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2a" "${CASE_2A_INDEX_FLAGS}" "${CASE_2A_FLAGS} -b" "bed_map")
-add_test(
-    NAME single_fasta_multi_sequence_bed_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2a" "${CASE_2A_INDEX_FLAGS}" "${CASE_2A_FLAGS} -b -fl" "bed_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_csv
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2a" "${CASE_2A_INDEX_FLAGS}" "${CASE_2A_FLAGS} -d" "csv")
-
-set (CASE_2B_INDEX_FLAGS "-F")
-set (CASE_2B_FLAGS "-E 0 -K 4 -c")
-# add_test(
-#     NAME single_fasta_multi_sequence_rc_raw_map
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2b" "${CASE_2B_INDEX_FLAGS}" "${CASE_2B_FLAGS} -r" "raw_map")
-# add_test(
-#     NAME single_fasta_multi_sequence_rc_raw_freq8
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2b" "${CASE_2B_INDEX_FLAGS}" "${CASE_2B_FLAGS} -r -fs" "raw_freq8")
-# add_test(
-#     NAME single_fasta_multi_sequence_rc_raw_freq16
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2b" "${CASE_2B_INDEX_FLAGS}" "${CASE_2B_FLAGS} -r -fl" "raw_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_rc_txt_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2b" "${CASE_2B_INDEX_FLAGS}" "${CASE_2B_FLAGS} -t" "txt_map")
-add_test(
-    NAME single_fasta_multi_sequence_rc_txt_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2b" "${CASE_2B_INDEX_FLAGS}" "${CASE_2B_FLAGS} -t -fl" "txt_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_rc_wig_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2b" "${CASE_2B_INDEX_FLAGS}" "${CASE_2B_FLAGS} -w" "wig_map")
-add_test(
-    NAME single_fasta_multi_sequence_rc_wig_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2b" "${CASE_2B_INDEX_FLAGS}" "${CASE_2B_FLAGS} -w -fl" "wig_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_rc_bed_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2b" "${CASE_2B_INDEX_FLAGS}" "${CASE_2B_FLAGS} -b" "bed_map")
-add_test(
-    NAME single_fasta_multi_sequence_rc_bed_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2b" "${CASE_2B_INDEX_FLAGS}" "${CASE_2B_FLAGS} -b -fl" "bed_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_rc_csv
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2b" "${CASE_2B_INDEX_FLAGS}" "${CASE_2B_FLAGS} -d" "csv")
-
-set (CASE_2C_INDEX_FLAGS "-F")
-set (CASE_2C_FLAGS "-E 0 -K 4")
-# add_test(
-#     NAME single_fasta_multi_sequence_hard_raw_map
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2c" "${CASE_2C_INDEX_FLAGS}" "${CASE_2C_FLAGS} -r" "raw_map")
-# add_test(
-#     NAME single_fasta_multi_sequence_hard_raw_freq8
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2c" "${CASE_2C_INDEX_FLAGS}" "${CASE_2C_FLAGS} -r -fs" "raw_freq8")
-# add_test(
-#     NAME single_fasta_multi_sequence_hard_raw_freq16
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2c" "${CASE_2C_INDEX_FLAGS}" "${CASE_2C_FLAGS} -r -fl" "raw_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_hard_txt_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2c" "${CASE_2C_INDEX_FLAGS}" "${CASE_2C_FLAGS} -t" "txt_map")
-add_test(
-    NAME single_fasta_multi_sequence_hard_txt_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2c" "${CASE_2C_INDEX_FLAGS}" "${CASE_2C_FLAGS} -t -fl" "txt_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_hard_wig_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2c" "${CASE_2C_INDEX_FLAGS}" "${CASE_2C_FLAGS} -w" "wig_map")
-add_test(
-    NAME single_fasta_multi_sequence_hard_wig_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2c" "${CASE_2C_INDEX_FLAGS}" "${CASE_2C_FLAGS} -w -fl" "wig_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_hard_bed_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2c" "${CASE_2C_INDEX_FLAGS}" "${CASE_2C_FLAGS} -b" "bed_map")
-add_test(
-    NAME single_fasta_multi_sequence_hard_bed_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2c" "${CASE_2C_INDEX_FLAGS}" "${CASE_2C_FLAGS} -b -fl" "bed_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_hard_csv
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2c" "${CASE_2C_INDEX_FLAGS}" "${CASE_2C_FLAGS} -d" "csv")
-
-set (CASE_2D_INDEX_FLAGS "-F")
-set (CASE_2D_FLAGS "-E 0 -K 4 -c")
-# add_test(
-#     NAME single_fasta_multi_sequence_hard_rc_raw_map
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2d" "${CASE_2D_INDEX_FLAGS}" "${CASE_2D_FLAGS} -r" "raw_map")
-# add_test(
-#     NAME single_fasta_multi_sequence_hard_rc_raw_freq8
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2d" "${CASE_2D_INDEX_FLAGS}" "${CASE_2D_FLAGS} -r -fs" "raw_freq8")
-# add_test(
-#     NAME single_fasta_multi_sequence_hard_rc_raw_freq16
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2d" "${CASE_2D_INDEX_FLAGS}" "${CASE_2D_FLAGS} -r -fl" "raw_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_hard_rc_txt_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2d" "${CASE_2D_INDEX_FLAGS}" "${CASE_2D_FLAGS} -t" "txt_map")
-add_test(
-    NAME single_fasta_multi_sequence_hard_rc_txt_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2d" "${CASE_2D_INDEX_FLAGS}" "${CASE_2D_FLAGS} -t -fl" "txt_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_hard_rc_wig_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2d" "${CASE_2D_INDEX_FLAGS}" "${CASE_2D_FLAGS} -w" "wig_map")
-add_test(
-    NAME single_fasta_multi_sequence_hard_rc_wig_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2d" "${CASE_2D_INDEX_FLAGS}" "${CASE_2D_FLAGS} -w -fl" "wig_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_hard_rc_bed_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2d" "${CASE_2D_INDEX_FLAGS}" "${CASE_2D_FLAGS} -b" "bed_map")
-add_test(
-    NAME single_fasta_multi_sequence_hard_rc_bed_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2d" "${CASE_2D_INDEX_FLAGS}" "${CASE_2D_FLAGS} -b -fl" "bed_freq16")
-add_test(
-    NAME single_fasta_multi_sequence_hard_rc_csv
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "2d" "${CASE_2D_INDEX_FLAGS}" "${CASE_2D_FLAGS} -d" "csv")
-
-set (CASE_3A_INDEX_FLAGS "-FD")
-set (CASE_3A_FLAGS "-E 0 -K 4")
-# add_test(
-#     NAME multi_fasta_multi_sequence_raw_map
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3a" "${CASE_3A_INDEX_FLAGS}" "${CASE_3A_FLAGS} -r" "raw_map")
-# add_test(
-#     NAME multi_fasta_multi_sequence_raw_freq8
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3a" "${CASE_3A_INDEX_FLAGS}" "${CASE_3A_FLAGS} -r -fs" "raw_freq8")
-# add_test(
-#     NAME multi_fasta_multi_sequence_raw_freq16
-#     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3a" "${CASE_3A_INDEX_FLAGS}" "${CASE_3A_FLAGS} -r -fl" "raw_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_txt_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3a" "${CASE_3A_INDEX_FLAGS}" "${CASE_3A_FLAGS} -t" "txt_map")
-add_test(
-    NAME multi_fasta_multi_sequence_txt_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3a" "${CASE_3A_INDEX_FLAGS}" "${CASE_3A_FLAGS} -t -fl" "txt_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_wig_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3a" "${CASE_3A_INDEX_FLAGS}" "${CASE_3A_FLAGS} -w" "wig_map")
-add_test(
-    NAME multi_fasta_multi_sequence_wig_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3a" "${CASE_3A_INDEX_FLAGS}" "${CASE_3A_FLAGS} -w -fl" "wig_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_bed_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3a" "${CASE_3A_INDEX_FLAGS}" "${CASE_3A_FLAGS} -b" "bed_map")
-add_test(
-    NAME multi_fasta_multi_sequence_bed_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3a" "${CASE_3A_INDEX_FLAGS}" "${CASE_3A_FLAGS} -b -fl" "bed_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_csv
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3a" "${CASE_3A_INDEX_FLAGS}" "${CASE_3A_FLAGS} -d" "csv")
-
-set (CASE_3B_INDEX_FLAGS "-FD")
-set (CASE_3B_FLAGS "-E 0 -K 4 -c")
-# add_test(
-    #     NAME multi_fasta_multi_sequence_rc_raw_map
-    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3b" "${CASE_3B_INDEX_FLAGS}" "${CASE_3B_FLAGS} -r" "raw_map")
-# add_test(
-    #     NAME multi_fasta_multi_sequence_rc_raw_freq8
-    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3b" "${CASE_3B_INDEX_FLAGS}" "${CASE_3B_FLAGS} -r -fs" "raw_freq8")
-# add_test(
-    #     NAME multi_fasta_multi_sequence_rc_raw_freq16
-    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3b" "${CASE_3B_INDEX_FLAGS}" "${CASE_3B_FLAGS} -r -fl" "raw_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_rc_txt_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3b" "${CASE_3B_INDEX_FLAGS}" "${CASE_3B_FLAGS} -t" "txt_map")
-add_test(
-    NAME multi_fasta_multi_sequence_rc_txt_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3b" "${CASE_3B_INDEX_FLAGS}" "${CASE_3B_FLAGS} -t -fl" "txt_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_rc_wig_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3b" "${CASE_3B_INDEX_FLAGS}" "${CASE_3B_FLAGS} -w" "wig_map")
-add_test(
-    NAME multi_fasta_multi_sequence_rc_wig_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3b" "${CASE_3B_INDEX_FLAGS}" "${CASE_3B_FLAGS} -w -fl" "wig_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_rc_bed_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3b" "${CASE_3B_INDEX_FLAGS}" "${CASE_3B_FLAGS} -b" "bed_map")
-add_test(
-    NAME multi_fasta_multi_sequence_rc_bed_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3b" "${CASE_3B_INDEX_FLAGS}" "${CASE_3B_FLAGS} -b -fl" "bed_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_rc_csv
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3b" "${CASE_3B_INDEX_FLAGS}" "${CASE_3B_FLAGS} -d" "csv")
-
-set (CASE_3C_INDEX_FLAGS "-FD")
-set (CASE_3C_FLAGS "-E 0 -K 4 -ep")
-# add_test(
-    #     NAME multi_fasta_multi_sequence_exclude_pseudo_raw_map
-    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3c" "${CASE_3C_INDEX_FLAGS}" "${CASE_3C_FLAGS} -r" "raw_map")
-# add_test(
-    #     NAME multi_fasta_multi_sequence_exclude_pseudo_raw_freq8
-    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3c" "${CASE_3C_INDEX_FLAGS}" "${CASE_3C_FLAGS} -r -fs" "raw_freq8")
-# add_test(
-    #     NAME multi_fasta_multi_sequence_exclude_pseudo_raw_freq16
-    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3c" "${CASE_3C_INDEX_FLAGS}" "${CASE_3C_FLAGS} -r -fl" "raw_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_exclude_pseudo_txt_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3c" "${CASE_3C_INDEX_FLAGS}" "${CASE_3C_FLAGS} -t" "txt_map")
-add_test(
-    NAME multi_fasta_multi_sequence_exclude_pseudo_txt_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3c" "${CASE_3C_INDEX_FLAGS}" "${CASE_3C_FLAGS} -t -fl" "txt_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_exclude_pseudo_wig_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3c" "${CASE_3C_INDEX_FLAGS}" "${CASE_3C_FLAGS} -w" "wig_map")
-add_test(
-    NAME multi_fasta_multi_sequence_exclude_pseudo_wig_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3c" "${CASE_3C_INDEX_FLAGS}" "${CASE_3C_FLAGS} -w -fl" "wig_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_exclude_pseudo_bed_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3c" "${CASE_3C_INDEX_FLAGS}" "${CASE_3C_FLAGS} -b" "bed_map")
-add_test(
-    NAME multi_fasta_multi_sequence_exclude_pseudo_bed_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3c" "${CASE_3C_INDEX_FLAGS}" "${CASE_3C_FLAGS} -b -fl" "bed_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_exclude_pseudo_csv
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3c" "${CASE_3C_INDEX_FLAGS}" "${CASE_3C_FLAGS} -d" "csv")
-
-set (CASE_3D_INDEX_FLAGS "-FD")
-set (CASE_3D_FLAGS "-E 0 -K 4 -ep -c")
-# add_test(
-    #     NAME multi_fasta_multi_sequence_exclude_pseudo_rc_raw_map
-    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3d" "${CASE_3D_INDEX_FLAGS}" "${CASE_3D_FLAGS} -r" "raw_map")
-# add_test(
-    #     NAME multi_fasta_multi_sequence_exclude_pseudo_rc_raw_freq8
-    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3d" "${CASE_3D_INDEX_FLAGS}" "${CASE_3D_FLAGS} -r -fs" "raw_freq8")
-# add_test(
-    #     NAME multi_fasta_multi_sequence_exclude_pseudo_rc_raw_freq16
-    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3d" "${CASE_3D_INDEX_FLAGS}" "${CASE_3D_FLAGS} -r -fl" "raw_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_exclude_pseudo_rc_txt_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3d" "${CASE_3D_INDEX_FLAGS}" "${CASE_3D_FLAGS} -t" "txt_map")
-add_test(
-    NAME multi_fasta_multi_sequence_exclude_pseudo_rc_txt_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3d" "${CASE_3D_INDEX_FLAGS}" "${CASE_3D_FLAGS} -t -fl" "txt_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_exclude_pseudo_rc_wig_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3d" "${CASE_3D_INDEX_FLAGS}" "${CASE_3D_FLAGS} -w" "wig_map")
-add_test(
-    NAME multi_fasta_multi_sequence_exclude_pseudo_rc_wig_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3d" "${CASE_3D_INDEX_FLAGS}" "${CASE_3D_FLAGS} -w -fl" "wig_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_exclude_pseudo_rc_bed_map
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3d" "${CASE_3D_INDEX_FLAGS}" "${CASE_3D_FLAGS} -b" "bed_map")
-add_test(
-    NAME multi_fasta_multi_sequence_exclude_pseudo_rc_bed_freq16
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3d" "${CASE_3D_INDEX_FLAGS}" "${CASE_3D_FLAGS} -b -fl" "bed_freq16")
-add_test(
-    NAME multi_fasta_multi_sequence_exclude_pseudo_rc_csv
-    COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "3d" "${CASE_3D_INDEX_FLAGS}" "${CASE_3D_FLAGS} -d" "csv")
+add_test_suite("single_fasta_single_sequence"                 "1a" "-F"  "-E 0 -K 3")
+add_test_suite("single_fasta_single_sequence_rc"              "1b" "-F"  "-E 0 -K 3 -c")
+add_test_suite("single_fasta_multi_sequence"                  "2a" "-F"  "-E 0 -K 4")
+add_test_suite("single_fasta_multi_sequence_rc"               "2b" "-F"  "-E 0 -K 4 -c")
+add_test_suite("single_fasta_multi_sequence_hard_raw"         "2c" "-F"  "-E 0 -K 4")
+add_test_suite("single_fasta_multi_sequence_hard_raw_rc"      "2d" "-F"  "-E 0 -K 4 -c")
+add_test_suite("multi_fasta_multi_sequence"                   "3a" "-FD" "-E 0 -K 4")
+add_test_suite("multi_fasta_multi_sequence_rc"                "3b" "-FD" "-E 0 -K 4 -c")
+add_test_suite("multi_fasta_multi_sequence_exclude_pseudo"    "3c" "-FD" "-E 0 -K 4 -ep")
+add_test_suite("multi_fasta_multi_sequence_exclude_pseudo_rc" "3d" "-FD" "-E 0 -K 4 -ep -c")
