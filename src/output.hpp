@@ -2,48 +2,33 @@
 #include <string>
 #include <cstdint>
 
-// TODO: investigate performance of buffer sizes!
-// TODO: stack overflow might occur leading to a segmentation fault!
+// TODO: investigate performance of buffer sizes (stack overflow might occur leading to a segmentation fault)
 #define     BUFFER_SIZE     32*1024 // 32 KB
 
 using namespace seqan;
 
-inline std::string get_output_path(Options const & opt, SearchParams const & /*searchParams*/, std::string const & fastaFile)
-{
-    std::string path = std::string(toCString(opt.outputPath));
-    if (back(path) != '/')
-        path += '/';
-    path += fastaFile.substr(0, fastaFile.find_last_of('.'));
-    path += ".genmap";
-    return path;
-}
-
-// ---------------------------------------------------------------------------------------------------------------------
-
-template <typename T>
-void saveRawFreq(std::vector<T> const & c, std::string const & output_path)
-{
-    std::ofstream outfile(output_path, std::ios::out | std::ios::binary);
-    outfile.write((const char*) &c[0], c.size() * sizeof(T));
-    outfile.close();
-}
-
-template <typename T>
-void saveRawMap(std::vector<T> const & c, std::string const & output_path)
+template <bool mappability, typename T>
+void saveRaw(std::vector<T> const & c, std::string const & output_path)
 {
     char buffer[BUFFER_SIZE];
-    std::ofstream outfile(output_path);
+    std::ofstream outfile(output_path, std::ios::out | std::ios::binary);
     outfile.rdbuf()->pubsetbuf(buffer, BUFFER_SIZE);
 
-    for (T const & v : c)
+    SEQAN_IF_CONSTEXPR (mappability)
     {
-        float const f = (v != 0) ? 1.0 / static_cast<float>(v) : 0;
-        outfile.write(reinterpret_cast<const char*>(&f), sizeof(float));
+        for (T const v : c)
+        {
+            float const f = (v != 0) ? 1.0 / static_cast<float>(v) : 0;
+            outfile.write(reinterpret_cast<const char*>(&f), sizeof(float));
+        }
     }
+    else
+    {
+        outfile.write((const char*) &c[0], c.size() * sizeof(T));
+    }
+
     outfile.close();
 }
-
-// ---------------------------------------------------------------------------------------------------------------------
 
 template <bool mappability, typename T, typename TChromosomeNames, typename TChromosomeLengths>
 void saveTxt(std::vector<T> const & c, std::string const & output_path, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths)
@@ -57,22 +42,25 @@ void saveTxt(std::vector<T> const & c, std::string const & output_path, TChromos
     for (uint64_t i = 0; i < length(chromLengths); ++i)
     {
         outfile << '>' << chromNames[i] << '\n';
-        // TODO: remove space at end of line
+
         SEQAN_IF_CONSTEXPR (mappability)
         {
-            for (auto it = seqBegin; it < seqEnd; ++it)
+            for (auto it = seqBegin; it < seqEnd - 1; ++it)
             {
                 float const f = (*it != 0) ? 1.0 / static_cast<float>(*it) : 0;
                 // outfile.write(reinterpret_cast<const char*>(&f), sizeof(float));
                 outfile << f << ' ';
             }
+            float const f = (*(seqEnd - 1) != 0) ? 1.0 / static_cast<float>(*(seqEnd - 1)) : 0;
+            outfile << f << ' '; // no space after last value
         }
         else
         {
-            std::copy(seqBegin, seqEnd, std::ostream_iterator<T>(outfile, " "));
-            // std::copy(seqBegin, seqEnd, (std::ostream_iterator<T>(outfile), std::ostream_iterator<int>(outfile, " ")));
+            std::copy(seqBegin, seqEnd - 1, std::ostream_iterator<T>(outfile, " "));
+            outfile << *(seqEnd - 1); // no space after last value
         }
         outfile << '\n';
+
         if (i + 1 < length(chromLengths))
         {
             seqBegin = seqEnd;
@@ -81,8 +69,6 @@ void saveTxt(std::vector<T> const & c, std::string const & output_path, TChromos
     }
     outfile.close();
 }
-
-// ---------------------------------------------------------------------------------------------------------------------
 
 template <bool mappability, typename T, typename TChromosomeNames, typename TChromosomeLengths>
 void saveWig(std::vector<T> const & c, std::string const & output_path, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths)
@@ -102,9 +88,9 @@ void saveWig(std::vector<T> const & c, std::string const & output_path, TChromos
         uint64_t occ = 0;
         uint64_t last_occ = 0;
 
-        while (pos < end_pos_string)
+        while (pos < end_pos_string + 1) // iterate once more to output the last line
         {
-            if (current_val != c[pos])
+            if (pos == end_pos_string || current_val != c[pos])
             {
                 if (last_occ != occ)
                     wigFile << "variableStep chrom=" << chromNames[i] << " span=" << occ << '\n';
@@ -121,25 +107,14 @@ void saveWig(std::vector<T> const & c, std::string const & output_path, TChromos
 
                 last_occ = occ;
                 occ = 0;
-                current_val = c[pos];
+                if (pos < end_pos_string)
+                    current_val = c[pos];
             }
 
             ++occ;
             ++pos;
         }
-
-        // TODO: remove this block by appending a different value to c (reserve one more. check performance)
-        if (last_occ != occ)
-            wigFile << "variableStep chrom=" << chromNames[i] << " span=" << occ << '\n';
-        SEQAN_IF_CONSTEXPR (mappability)
-        {
-            float const value = (current_val != 0) ? 1.0 / static_cast<float>(current_val) : 0;
-            wigFile << (pos - occ + 1 - begin_pos_string) << ' ' << value << '\n'; // pos in wig start at 1
-        }
-        else
-        {
-            wigFile << (pos - occ + 1 - begin_pos_string) << ' ' << current_val << '\n'; // pos in wig start at 1
-        }
+        --pos; // pos is incremented once too often by the additional last iteration, i.e., pos == end_pos_string
 
         begin_pos_string += chromLengths[i];
         if (i + 1 < length(chromLengths))
@@ -152,11 +127,7 @@ void saveWig(std::vector<T> const & c, std::string const & output_path, TChromos
     for (uint64_t i = 0; i < length(chromLengths); ++i)
         chromSizesFile << chromNames[i] << '\t' << chromLengths[i] << '\n';
     chromSizesFile.close();
-
-    // std::cout << "Wig file stored!" << std::endl;
 }
-
-// ---------------------------------------------------------------------------------------------------------------------
 
 template <bool mappability, typename T, typename TChromosomeNames, typename TChromosomeLengths>
 void saveBed(std::vector<T> const & c, std::string const & output_path, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths)
@@ -175,9 +146,9 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
         uint16_t current_val = c[pos];
         uint64_t occ = 0;
 
-        while (pos < end_pos_string)
+        while (pos < end_pos_string + 1) // iterate once more to output the last line
         {
-            if (current_val != c[pos])
+            if (pos == end_pos_string || current_val != c[pos])
             {
                 bedFile << chromNames[i] << '\t'                    // chrom name
                         << (pos - occ - begin_pos_string) << '\t'   // start pos (begins with 0)
@@ -190,23 +161,14 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
                     bedFile << current_val << '\n';
 
                 occ = 0;
-                current_val = c[pos];
+                if (pos < end_pos_string)
+                    current_val = c[pos];
             }
 
             ++occ;
             ++pos;
         }
-
-        // TODO: remove this block by appending a different value to c (reserve one more. check performance)
-        bedFile << chromNames[i] << '\t'                    // chrom name
-                << (pos - occ - begin_pos_string) << '\t'   // start pos (begins with 0)
-                << (pos - begin_pos_string - 1) << '\t'     // end pos
-                << '-' << '\t';                             // name
-
-        SEQAN_IF_CONSTEXPR (mappability)
-            bedFile << ((current_val != 0) ? 1.0 / static_cast<float>(current_val) : 0) << '\n';
-        else
-            bedFile << current_val << '\n';
+        --pos; // pos is incremented once too often by the additional last iteration, i.e., pos == end_pos_string
 
         begin_pos_string += chromLengths[i];
         if (i + 1 < length(chromLengths))
@@ -215,11 +177,9 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
     bedFile.close();
 }
 
-// ---------------------------------------------------------------------------------------------------------------------
-
-template <bool mappability, typename T, typename TLocations, typename TDirectoryInformation>
-void saveCsv(std::vector<T> const & /*c*/, std::string const & output_path, TLocations const & locations,
-             Options const & /*opt*/, SearchParams const & searchParams, TDirectoryInformation const & directoryInformation)
+template <bool mappability, typename TLocations, typename TDirectoryInformation>
+void saveCsv(std::string const & output_path, TLocations const & locations,
+             SearchParams const & searchParams, TDirectoryInformation const & directoryInformation)
 {
     char buffer[BUFFER_SIZE];
 
@@ -240,7 +200,6 @@ void saveCsv(std::vector<T> const & /*c*/, std::string const & output_path, TLoc
         ++chromosomeCount;
     }
 
-    // TODO: for each filename:
     csvFile << "\"k-mer\"";
     for (auto const & fastaFile : fastaFiles)
         csvFile << ";\"+ strand " << fastaFile.first << "\"";
@@ -269,10 +228,8 @@ void saveCsv(std::vector<T> const & /*c*/, std::string const & output_path, TLoc
             {
                 if (subsequentIterations)
                     csvFile << '|'; // separator for multiple locations in one column
-                csvFile << (plusStrandLoc[i].i1 - nbrChromosomesInPreviousFastas)
-                        << ',' << plusStrandLoc[i].i2;
+                csvFile << (plusStrandLoc[i].i1 - nbrChromosomesInPreviousFastas) << ',' << plusStrandLoc[i].i2;
                 subsequentIterations = true;
-
                 ++i;
             }
             nbrChromosomesInPreviousFastas = fastaFile.second + 1;
@@ -290,8 +247,7 @@ void saveCsv(std::vector<T> const & /*c*/, std::string const & output_path, TLoc
                 {
                     if (subsequentIterations)
                         csvFile << '|'; // separator for multiple locations in one column
-                    csvFile << (minusStrandLoc[i].i1 - nbrChromosomesInPreviousFastas)
-                            << ',' << minusStrandLoc[i].i2;
+                    csvFile << (minusStrandLoc[i].i1 - nbrChromosomesInPreviousFastas) << ',' << minusStrandLoc[i].i2;
                     subsequentIterations = true;
                     ++i;
                 }

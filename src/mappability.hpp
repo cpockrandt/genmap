@@ -68,16 +68,20 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
     if (opt.verbose)
         std::cout << std::endl;
 
-    std::string output_path = get_output_path(opt, searchParams, fastaFile);
+    std::string output_path = std::string(toCString(opt.outputPath));
+    if (back(output_path) != '/')
+        output_path += '/';
+    output_path += fastaFile.substr(0, fastaFile.find_last_of('.')) + ".genmap";
+
     if (opt.rawFile)
     {
         double start = get_wall_time();
         if (opt.outputType == OutputType::mappability)
-            saveRawMap(c, output_path + ".map");
+            saveRaw<true>(c, output_path + ".map");
         else if (opt.outputType == OutputType::frequency_small)
-            saveRawFreq(c, output_path + ".freq8");
+            saveRaw<false>(c, output_path + ".freq8");
         else // if (opt.outputType == OutputType::frequency_large)
-            saveRawFreq(c, output_path + ".freq16");
+            saveRaw<false>(c, output_path + ".freq16");
         if (opt.verbose)
             std::cout << "- RAW file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
@@ -119,9 +123,9 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
     {
         double start = get_wall_time();
         if (opt.outputType == OutputType::mappability)
-            saveCsv<true>(c, output_path, locations, opt, searchParams, directoryInformation);
+            saveCsv<true>(output_path, locations, searchParams, directoryInformation);
         else
-            saveCsv<false>(c, output_path, locations, opt, searchParams, directoryInformation);
+            saveCsv<false>(output_path, locations, searchParams, directoryInformation);
         if (opt.verbose)
             std::cout << "- CSV file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }

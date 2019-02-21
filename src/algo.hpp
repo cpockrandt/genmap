@@ -325,8 +325,6 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                 ModifiedString<ModifiedString<typename std::remove_reference<decltype(needlesOverlap)>::type, ModComplementDna>, ModReverse> needlesRevComplOverlap(needlesOverlap);
                 using TNeedlesRevComplOverlap = decltype(needlesRevComplOverlap);
 
-                // uint64_t const bb = std::min(textLength - 1, params.length - 1 + params.length - overlap);
-
                 // TODO: could store the exact hits as well and use these values!
                 auto delegateRevCompl = [&hits, &itExact, &itAllrevCompl, bb, overlap, &params, &needlesRevCompl](
                     TBiIter it, TNeedlesRevComplOverlap const & /*read*/, unsigned const errors_spent)
@@ -369,7 +367,6 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                     {
                         for (auto const & occ : getOccurrences(iterator))
                         {
-                            // distinct_sequences.insert(occ.i1);
                             entry.second.first.push_back(occ);
                         }
                     }
@@ -382,7 +379,6 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                     {
                         for (auto const & occ : getOccurrences(iterator))
                         {
-                            // distinct_sequences.insert(occ.i1);
                             entry.second.second.push_back(occ);
                         }
                     }
@@ -400,10 +396,12 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                             distinct_sequences.insert(mappingSeqIdFile[location.i1]);
 
                         hits[j - beginPos] = distinct_sequences.size();
+
+                        // NOTE: If you want to filter certain k-mers in the csv file based on the mappability value
+                        // (with respect to --exclude-pseudo) you can unset 'entry' here.
+
                     }
 
-                    // if (distinct_sequences.size() <= params.locationsMax)
-                    // {
                     if (!directory && countOccurrences(itExact[j - beginPos]) > 1)
                     {
                         // the for-loop does not insert an entry for kmers originating from a position such that the kmer spans two sequences. Hence we insert it here. The occurrences will later be cleared by resetLimits, but at least the position exists in the map.
@@ -420,21 +418,15 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                             // TODO: avoid copying
                             #pragma omp critical
                             locations.insert(entry);
-                            // locations.insert({exact_occ, {locations_single_kmer, locationsRevCompl_single_kmer}});
                         }
                     }
                     else
                     {
-                        // TLocation originalPos;
-                        // myPosLocalize(originalPos, j, chromLengths);
                         myPosLocalize(entry.first, j, chromCumLengths); // TODO: inefficient for read data sets
-
                         // TODO: avoid copying
                         #pragma omp critical
                         locations.insert(entry);
-                        // locations.insert({originalPos, {locations_single_kmer, locationsRevCompl_single_kmer}});
                     }
-                    // }
                 }
 
                 if (!directory && countOccurrences(itExact[j - beginPos]) > 1) // guaranteed to exist, since there has to be at least one match!
