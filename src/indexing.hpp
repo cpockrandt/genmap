@@ -279,7 +279,7 @@ int indexMain(int const argc, char const ** argv)
     options.indexPath += "index";
 
     // Read fasta input file(s)
-    StringSet<Dna5String> chromosomes;
+    StringSet<CharString> chromosomes;
     StringSet<CharString, Owner<ConcatDirect<> > > directoryInformation;
 
     if (options.directory)
@@ -306,7 +306,7 @@ int indexMain(int const argc, char const ** argv)
             SeqFileIn seqFileIn(toCString(fullPath));
 
             StringSet<CharString, Owner<ConcatDirect<> > > ids;
-            StringSet<Dna5String> chromosomes2;
+            StringSet<CharString> chromosomes2;
             readRecords(ids, chromosomes2, seqFileIn);
             if (lengthSum(chromosomes2) == 0)
             {
@@ -350,7 +350,7 @@ int indexMain(int const argc, char const ** argv)
     else
     {
         StringSet<CharString, Owner<ConcatDirect<> > > ids;
-        StringSet<Dna5String> chromosomes2;
+        StringSet<CharString> chromosomes2;
 
         SeqFileIn seqFileIn(toCString(fastaPath));
         readRecords(ids, chromosomes2, seqFileIn);
@@ -381,25 +381,31 @@ int indexMain(int const argc, char const ** argv)
 
     save(directoryInformation, toCString(std::string(toCString(options.indexPath)) + ".ids"));
 
-    // TODO: if non Dna-character found (IUPAC): suggest converting them to Dna5.
+    // Conversion to Dna5 alphabet (replace anything that is not A,C,G,T, N to N)
+    // TODO: This does not perform an in-place conversion (i.e., unnecessary memory peak)
+    // Use a custom ModfiedFunctor instead and check performance.
+    StringSet<Dna5String> chromosomesDna5;
+    move(chromosomesDna5, chromosomes);
+    clear(chromosomes);
+
     // check whether it can be converted to Dna4 and analyze the data for determining the index dimensions later.
     bool canConvert = true; // TODO: test this code block
-    options.seqNumber = length(chromosomes);
+    options.seqNumber = length(chromosomesDna5);
     options.maxSeqLength = 0;
-    options.totalLength = length(chromosomes); // to account for a sentinel character for each chromosome in the FM index.
-    for (uint64_t i = 0; i < length(chromosomes); ++i)
+    options.totalLength = length(chromosomesDna5); // to account for a sentinel character for each chromosome in the FM index.
+    for (uint64_t i = 0; i < length(chromosomesDna5); ++i)
     {
-        options.totalLength += length(chromosomes[i]);
-        options.maxSeqLength = std::max<uint64_t>(options.maxSeqLength, length(chromosomes[i]));
+        options.totalLength += length(chromosomesDna5[i]);
+        options.maxSeqLength = std::max<uint64_t>(options.maxSeqLength, length(chromosomesDna5[i]));
 
-        for (uint64_t j = 0; canConvert && j < length(chromosomes[i]); ++j)
+        for (uint64_t j = 0; canConvert && j < length(chromosomesDna5[i]); ++j)
         {
-            if (chromosomes[i][j] == 'N')
+            if (chromosomesDna5[i][j] == 'N')
                 canConvert = false;
         }
     }
 
-    // overwrite dimensions
+    // overwrite index dimensions
     if (isSet(parser, "seqno"))
     {
         uint64_t seqno;
@@ -431,13 +437,16 @@ int indexMain(int const argc, char const ** argv)
     // Construct index using Dna4 or Dna5 alphabet.
     if (canConvert)
     {
-        // TODO: avoid copying. Use a custom ModfiedFunctor instead.
-        StringSet<DnaString> chromosomes4(chromosomes);
-        clear(chromosomes);
-        return buildIndex(chromosomes4, options);
+        // Conversion to Dna4 alphabet since no Ns are in the sequences.
+        // TODO: This does not perform an in-place conversion (i.e., unnecessary memory peak)
+        // Use a custom ModfiedFunctor instead and check performance.
+        StringSet<DnaString> chromosomesDna4;
+        move(chromosomesDna4, chromosomesDna5);
+        clear(chromosomesDna5);
+        return buildIndex(chromosomesDna4, options);
     }
     else
     {
-        return buildIndex(chromosomes, options);
+        return buildIndex(chromosomesDna5, options);
     }
 }
