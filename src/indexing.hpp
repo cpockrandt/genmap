@@ -28,26 +28,30 @@ struct IndexOptions
 
 inline std::string extractFileName(std::string const & path)
 {
-    // possible formats of 'path': ./file.fa   file.fa   ../file.fa   /path/to/file.fa
     auto const pos = path.find_last_of('/');
     if (pos == std::string::npos) // no slash found, i.e. file.fa
         return path;
-    else
+    else // slash found, i.e., ./file.fa file.fa ../file.fa /path/to/file.fa
         return path.substr(pos + 1);
 }
 
-template <typename TSeqNo, typename TSeqPos, typename TBWTLen,
-          typename TString, typename TStringSetConfig, typename TRadixSortTag>
-void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, IndexOptions const & options,
-                       TRadixSortTag const & /**/)
+template <typename TRadixSortTag, typename TSeqNo, typename TSeqPos, typename TBWTLen, typename TChromosomes>
+void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 {
+    using TString = typename Value<TChromosomes>::Type;
+    using TAlphabet = typename Value<TString>::Type;
     using TText = StringSet<TString, Owner<ConcatDirect<SizeSpec_<TSeqNo, TSeqPos> > > > ;
     using TFMIndexConfig = TGemMapFastFMIndexConfig<TBWTLen>;
-    TFMIndexConfig::SAMPLING = options.sampling;
     using TUniIndexConfig = FMIndex<TRadixSortTag, TFMIndexConfig>;
+    TFMIndexConfig::SAMPLING = options.sampling;
+
+    constexpr bool isDna5 = std::is_same<TAlphabet, Dna5>::value;
 
     TText chromosomesConcat(chromosomes);
-    clear(chromosomes);
+    clear(chromosomes); // reduce memory footprint
+
+    std::cout << "The index will now be built. "
+              << "This can take some time (e.g., 2-3 hours with Skew7 for the human genome).\n" << std::flush;
 
     {
         uint32_t const bwtDigits = std::numeric_limits<TBWTLen>::digits;
@@ -57,16 +61,15 @@ void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, In
         // Print some size information on the index.
         if (options.verbose)
         {
-            CharString const alphabet = std::is_same<typename Value<TString>::Type, Dna>::value ? "dna4" : "dna5";
-            std::cout << "Index will be constructed using " << alphabet << " alphabet.\n"
+            std::cout << "Index will be constructed using " << (isDna5 ? "dna5" : "dna4") << " alphabet.\n"
                          "- The BWT is represented by " << bwtDigits << " bit values.\n"
                          "- The sampled suffix array is represented by pairs of " << seqNoDigits <<
-                         " and " << seqPosDigits << " bit values." << std::endl;
+                         " and " << seqPosDigits << " bit values.\n";
         }
 
         // Store index dimensions and alphabet type.
         StringSet<CharString, Owner<ConcatDirect<> > > info;
-        uint32_t const alphabetSize = 4 + std::is_same<typename Value<TString>::Type, Dna5>::value;
+        uint32_t const alphabetSize = 4 + isDna5;
         std::string const directoryFlag = options.directory ? "true" : "false";
         appendValue(info, "alphabet_size:" + std::to_string(alphabetSize));
         appendValue(info, "sa_dimensions_i1:" + std::to_string(seqNoDigits));
@@ -77,13 +80,12 @@ void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, In
         save(info, toCString(std::string(toCString(options.indexPath)) + ".info"));
     }
 
-    // TODO: do not use radix for small files
-    // TODO: print helpful information if running out of memory.
-
     {
         Index<TText, TUniIndexConfig> fwdIndex(chromosomesConcat);
         SEQAN_IF_CONSTEXPR (std::is_same<TRadixSortTag, RadixSortSACreateTag>::value)
+        {
             indexCreateProgress(fwdIndex, FibreSALF());
+        }
         else
         {
             std::cout << "Create fwd Index ... " << std::flush;
@@ -97,7 +99,9 @@ void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, In
         reverse(chromosomesConcat);
         Index<TText, TUniIndexConfig> bwdIndex(chromosomesConcat);
         SEQAN_IF_CONSTEXPR (std::is_same<TRadixSortTag, RadixSortSACreateTag>::value)
+        {
             indexCreateProgress(bwdIndex, FibreSALF());
+        }
         else
         {
             std::cout << "Create bwd Index ... " << std::flush;
@@ -110,9 +114,8 @@ void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, In
     }
 }
 
-template <typename TString, typename TStringSetConfig, typename TRadixSortTag>
-void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, IndexOptions const & options,
-                       TRadixSortTag const & /**/)
+template <typename TRadixSortTag, typename TChromosomes>
+void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 {
     constexpr uint64_t max16bitUnsignedValue = std::numeric_limits<uint16_t>::max();
     constexpr uint64_t max32bitUnsignedValue = std::numeric_limits<uint32_t>::max();
@@ -122,31 +125,32 @@ void buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, In
     if (options.seqNumber <= max16bitUnsignedValue && options.maxSeqLength <= max32bitUnsignedValue)
     {
         if (options.totalLength <= max32bitUnsignedValue)
-            buildIndex<uint16_t, uint32_t, uint32_t>(chromosomes, options, TRadixSortTag()); // e.g. human genome
+            buildIndex<TRadixSortTag, uint16_t, uint32_t, uint32_t>(chromosomes, options); // e.g. human genome
         else
-            buildIndex<uint16_t, uint32_t, uint64_t>(chromosomes, options, TRadixSortTag()); // e.g. barley genome
+            buildIndex<TRadixSortTag, uint16_t, uint32_t, uint64_t>(chromosomes, options); // e.g. barley genome
     }
     else if (options.seqNumber <= max32bitUnsignedValue && options.maxSeqLength <= max16bitUnsignedValue)
-        buildIndex<uint32_t, uint16_t, uint64_t>(chromosomes, options, TRadixSortTag()); // e.g. read data set
+        buildIndex<TRadixSortTag, uint32_t, uint16_t, uint64_t>(chromosomes, options); // e.g. read data set
     else
-        buildIndex<uint64_t, uint64_t, uint64_t>(chromosomes, options, TRadixSortTag()); // anything else
+        buildIndex<TRadixSortTag, uint64_t, uint64_t, uint64_t>(chromosomes, options); // anything else
 }
 
-template <typename TString, typename TStringSetConfig>
-int buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, IndexOptions const & options)
+template <typename TChromosomes>
+int buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 {
+
 #ifdef NDEBUG
     try
     {
         if (options.useRadix)
-            buildIndex(chromosomes, options, RadixSortSACreateTag());
+            buildIndex<RadixSortSACreateTag>(chromosomes, options);
         else
-            buildIndex(chromosomes, options, Nothing());
+            buildIndex<Nothing>(chromosomes, options);
     }
     catch (std::bad_alloc const & e)
     {
         std::cerr << "ERROR: GenMap ran out of memory :(\n"
-                     "       You might want to use a different algorithm (-A skew or -A radix).\n";
+                     "       You might want to use a different algorithm (--algorithm skew or --algorithm radix).\n";
         return -1;
     }
     catch (std::exception const & e)
@@ -162,9 +166,9 @@ int buildIndex(StringSet<TString, TStringSetConfig> /*const*/ & chromosomes, Ind
 #else
     // In debug mode we don't catch the exceptions so that we get a backtrace from SeqAn's handler
     if (options.useRadix)
-        buildIndex(chromosomes, options, RadixSortSACreateTag());
+        buildIndex<RadixSortSACreateTag>(chromosomes, options);
     else
-        buildIndex(chromosomes, options, Nothing());
+        buildIndex<Nothing>(chromosomes, options);
 #endif
 
     std::cout << "Index created successfully.\n";
@@ -177,7 +181,8 @@ int indexMain(int const argc, char const ** argv)
     // Argument Parser
     ArgumentParser parser("GenMap index");
     sharedSetup(parser);
-    addDescription(parser, "Index creation. Only supports Dna (A, C, G, T).");
+    addDescription(parser, "Index creation. Only supports Dna (A, C, G, T, N). "
+                           "Other characters will be converted to N.");
 
     // sorted in descending lexicographical order, since setValidValues() prints them in this order
     std::vector<std::string> const fastaFileTypes {"fsa", "fna", "fastq", "fasta", "fas", "fa"};
@@ -189,17 +194,21 @@ int indexMain(int const argc, char const ** argv)
     addOption(parser, ArgParseOption("F", "fasta-file", "Path to the fasta file.", ArgParseArgument::INPUT_FILE, "IN"));
     setValidValues(parser, "fasta-file", fastaFileTypes);
 
-    addOption(parser, ArgParseOption("FD", "fasta-directory", "Path to the directory of fasta files (indexes all " + fastaFileTypesHelpString + " files in there, not including subdirectories).", ArgParseArgument::INPUT_FILE, "IN"));
+    addOption(parser, ArgParseOption("FD", "fasta-directory", "Path to the directory of fasta files "
+        "(indexes all " + fastaFileTypesHelpString + " files in there, not including subdirectories).",
+        ArgParseArgument::INPUT_FILE, "IN"));
 
     addOption(parser, ArgParseOption("I", "index", "Path to the index.", ArgParseArgument::OUTPUT_FILE, "OUT"));
     setRequired(parser, "index");
 
     // TODO: describe both algorithms in terms of space consumption (disk and RAM)
-    addOption(parser, ArgParseOption("A", "algorithm", "Algorithm for suffix array construction (needed for the FM index).", ArgParseArgument::INPUT_FILE, "IN"));
+    addOption(parser, ArgParseOption("A", "algorithm", "Algorithm for suffix array construction "
+        "(needed for the FM index).", ArgParseArgument::INPUT_FILE, "IN"));
     setDefaultValue(parser, "algorithm", "radix");
     setValidValues(parser, "algorithm", std::vector<std::string>{"radix", "skew"});
 
-    addOption(parser, ArgParseOption("S", "sampling", "Sampling rate of suffix array", ArgParseArgument::INTEGER, "INT"));
+    addOption(parser, ArgParseOption("S", "sampling", "Sampling rate of suffix array",
+        ArgParseArgument::INTEGER, "INT"));
     setDefaultValue(parser, "sampling", 10);
     setMaxValue(parser, "sampling", "64");
     setMinValue(parser, "sampling", "1");
@@ -212,11 +221,9 @@ int indexMain(int const argc, char const ** argv)
     addOption(parser, ArgParseOption("xb", "seqpos", "Max length of sequences.", ArgParseArgument::INTEGER, "INT"));
     hideOption(parser, "seqpos");
 
-    addOption(parser, ArgParseOption("xc", "bwtlen", "Total length of all sequences.", ArgParseArgument::INTEGER, "INT"));
+    addOption(parser, ArgParseOption("xc", "bwtlen", "Total length of all sequences.",
+        ArgParseArgument::INTEGER, "INT"));
     hideOption(parser, "bwtlen");
-
-    // TODO: hint, that indexing may take some time, i.e., 2-3 hours for the human genome with Skew
-    // TODO: if non Dna-character found (IUPAC): suggest converting them to Dna5.
 
     ArgumentParser::ParseResult res = parse(parser, argc, argv);
     if (res != ArgumentParser::PARSE_OK)
@@ -255,7 +262,7 @@ int indexMain(int const argc, char const ** argv)
     if (fileExists(toCString(options.indexPath)))
     {
         std::cerr << "ERROR: The output directory for the index already exists at " << options.indexPath << '\n'
-             << "Please remove it, or choose a different location.\n";
+                  << "Please remove it, or choose a different location.\n";
         return ArgumentParser::PARSE_ERROR;
     }
     else if (mkdir(toCString(options.indexPath), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH))
@@ -263,6 +270,8 @@ int indexMain(int const argc, char const ** argv)
         std::cerr << "ERROR: Cannot create output directory at " << options.indexPath << '\n';
         return ArgumentParser::PARSE_ERROR;
     }
+
+    CharString const indexPathDir = options.indexPath;
 
     // Append prefix name for indices.
     if (back(options.indexPath) != '/')
@@ -313,7 +322,8 @@ int indexMain(int const argc, char const ** argv)
 
                 std::string const id = toCString(static_cast<CharString>(ids[i]));
                 std::string const len = std::to_string(length(chromosomes2[i]));
-                appendValue(directoryInformation, file + ";" + len + ";" + id); // toCString(id.substr(0, id.find(" ")))
+                // NOTE: maybe parsing of sequence names in fasta files is necessary
+                appendValue(directoryInformation, file + ";" + len + ";" + id);
                 appendValue(chromosomes, chromosomes2[i]);
             }
 
@@ -322,20 +332,19 @@ int indexMain(int const argc, char const ** argv)
 
         if (length(chromosomes) == 0)
         {
-            // TODO: rmdir
-            std::cerr << "ERROR: No non-empty fasta file found!\n";
+            rmdir(toCString(indexPathDir));
+            std::cerr << "ERROR: No (non-empty) fasta file found!\n";
             return ArgumentParser::PARSE_ERROR;
         }
 
-        std::cout << filenames.size() << " fasta files have been loaded";
         if (options.verbose)
         {
-            std::cout << ":\n";
+            std::cout << filenames.size() << " fasta files have been loaded:\n";
             std::copy(filenames.begin(), filenames.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
         }
         else
         {
-            std::cout << " (run with --verbose to list the files)\n";
+            std::cout << filenames.size() << " fasta files have been loaded (run with --verbose to list the files)\n";
         }
     }
     else
@@ -357,13 +366,14 @@ int indexMain(int const argc, char const ** argv)
             std::string const id = toCString(static_cast<CharString>(ids[i]));
             std::string const len = std::to_string(length(chromosomes2[i]));
             std::string const file = extractFileName(toCString(fastaPath));
-            appendValue(directoryInformation, file + ";" + len + ";" + id); // toCString(id.substr(0, id.find(" ")))
+            // NOTE: maybe parsing of sequence names in fasta files is necessary
+            appendValue(directoryInformation, file + ";" + len + ";" + id);
             appendValue(chromosomes, chromosomes2[i]);
         }
 
         if (length(chromosomes) == 0)
         {
-            // TODO: rmdir
+            rmdir(toCString(indexPathDir));
             std::cerr << "ERROR: The fasta file seems to be empty.\n";
             return ArgumentParser::PARSE_ERROR;
         }
@@ -371,6 +381,7 @@ int indexMain(int const argc, char const ** argv)
 
     save(directoryInformation, toCString(std::string(toCString(options.indexPath)) + ".ids"));
 
+    // TODO: if non Dna-character found (IUPAC): suggest converting them to Dna5.
     // check whether it can be converted to Dna4 and analyze the data for determining the index dimensions later.
     bool canConvert = true; // TODO: test this code block
     options.seqNumber = length(chromosomes);
@@ -410,8 +421,9 @@ int indexMain(int const argc, char const ** argv)
 
     if (options.useRadix && lengthSum(chromosomes) < 1'000'000)
     {
+        // There might be undefined behavior of radix sort for very small indices with a handful of bases.
         options.useRadix = false;
-        std::cout << "NOTE: Your input is quite small (i.e., less than 1 mega base)."
+        std::cout << "NOTE: Your input is quite small (i.e., less than 1 megabase)."
                   << "Hence, Skew7 is used for index construction anyway to avoid parallelization overhead.\n"
                   << std::flush;
     }

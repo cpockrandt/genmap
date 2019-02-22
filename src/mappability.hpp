@@ -66,7 +66,7 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
 {
     std::cout << "Start writing output files ...";
     if (opt.verbose)
-        std::cout << std::endl;
+        std::cout << '\n' << std::flush;
 
     std::string output_path = std::string(toCString(opt.outputPath));
     if (back(output_path) != '/')
@@ -165,7 +165,7 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
     SEQAN_IF_CONSTEXPR (outputProgress)
     {
         std::cout << '\r';
-        std::cout << "Progress: 100.00%" << std::endl;
+        std::cout << "Progress: 100.00%\n" << std::flush;
     }
 
     if (opt.verbose)
@@ -368,40 +368,42 @@ int mappabilityMain(int argc, char const ** argv)
         return ArgumentParser::PARSE_ERROR;
     }
 
-    opt.outputType = OutputType::mappability; // default value
-    if (isSet(parser, "frequency-small") && !isSet(parser, "frequency-large"))
-    {
-        opt.outputType = OutputType::frequency_small;
-    }
-    else if (!isSet(parser, "frequency-small") && isSet(parser, "frequency-large"))
-    {
-        opt.outputType = OutputType::frequency_large;
-    }
-    else if (isSet(parser, "frequency-small") && isSet(parser, "frequency-large"))
+    // store in temporary variables to avoid parsing arguments twice
+    bool const isSetFS = isSet(parser, "frequency-small");
+    bool const isSetFL = isSet(parser, "frequency-large");
+
+    if (isSetFS && isSetFL)
     {
         std::cerr << "ERROR: Cannot use both --frequency-small and --frequency-large. Please choose one.\n";
         return ArgumentParser::PARSE_ERROR;
     }
+
+    if (isSetFS)
+        opt.outputType = OutputType::frequency_small;
+    else if (isSetFL)
+        opt.outputType = OutputType::frequency_large;
+    else // default value
+        opt.outputType = OutputType::mappability;
 
     getOptionValue(searchParams.length, parser, "length");
     getOptionValue(searchParams.threads, parser, "threads");
     searchParams.revCompl = isSet(parser, "reverse-complement");
     searchParams.excludePseudo = isSet(parser, "exclude-pseudo");
 
-    if (isSet(parser, "overlap"))
+    // store in temporary variables to avoid parsing arguments twice
+    bool const isSetOverlap = isSet(parser, "overlap");
+    if (isSetOverlap)
         getOptionValue(searchParams.overlap, parser, "overlap");
     else if (opt.errors == 0)
         searchParams.overlap = searchParams.length * 0.7;
     else
         searchParams.overlap = searchParams.length * std::min(std::max(searchParams.length, 30u), 100u) * pow(0.7f, opt.errors) / 100.0;
 
-    uint64_t const maxPossibleOverlap = std::min(searchParams.length - 1, searchParams.length - opt.errors + 2);
     // (K - O >= E + 2 must hold since common overlap has length K - O and will be split into E + 2 parts)
-
-    // TODO: make sure this never throws an error, if argument not set.
+    uint64_t const maxPossibleOverlap = std::min(searchParams.length - 1, searchParams.length - opt.errors + 2);
     if (searchParams.overlap > maxPossibleOverlap)
     {
-        if (!isSet(parser, "overlap"))
+        if (!isSetOverlap)
         {
             searchParams.overlap = maxPossibleOverlap;
         }
@@ -439,9 +441,9 @@ int mappabilityMain(int argc, char const ** argv)
                      " and " << opt.maxSeqLengthWidth  << " bit values.\n";
 
         if (opt.directory)
-            std::cout << "- Index was built on an entire directory." << std::endl;
+            std::cout << "- Index was built on an entire directory.\n" << std::flush;
         else
-            std::cout << "- Index was built on a single fasta file." << std::endl;
+            std::cout << "- Index was built on a single fasta file.\n" << std::flush;
     }
 
     if (opt.alphabet == "dna4")
