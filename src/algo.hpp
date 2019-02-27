@@ -1,3 +1,5 @@
+#include "find2_index_approx.hpp"
+
 using namespace seqan;
 
 // template <typename TMappVector, typename TChromosomeLength>
@@ -56,6 +58,8 @@ inline void extendExact(TBiIter it, std::vector<TValue> & hits, std::vector<type
                         uint64_t a, uint64_t b, // searched interval
                         uint64_t ab, uint64_t bb) // entire interval
 {
+    constexpr bool isDna5 = std::is_same<typename Value<TText>::Type, Dna5>::value;
+
     constexpr uint64_t max_val = std::numeric_limits<TValue>::max();
 
     if (b - a + 1 == length)
@@ -81,7 +85,7 @@ inline void extendExact(TBiIter it, std::vector<TValue> & hits, std::vector<type
             bool success = true;
             for (uint64_t i = b + 1; i <= b_new && success; ++i)
             {
-                success = goDown(it2, text[i], Rev());
+                success = (!isDna5 || text[i] != Dna5('N')) && goDown(it2, text[i], Rev());
             }
             if (success)
                 extendExact<reportExactMatch, csvComputation, maxErrors>(it2, hits, itExact, itAll, text, length, a, b_new, ab, bb);
@@ -94,7 +98,7 @@ inline void extendExact(TBiIter it, std::vector<TValue> & hits, std::vector<type
         uint64_t a_new = alm + std::max<int64_t>(((a - alm) - 1) >> 1, 0);
         for (int64_t i = a - 1; i >= static_cast<int64_t>(a_new); --i)
         {
-            if(!goDown(it, text[i], Fwd()))
+            if((isDna5 && text[i] == Dna5('N')) || !goDown(it, text[i], Fwd()))
                 return;
         }
         extendExact<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, text, length, a_new, b, ab, bb);
@@ -118,6 +122,8 @@ inline void approxSearch(TBiIter it, std::vector<TValue> & hits, std::vector<typ
                          uint64_t b_new,
                          Rev const &)
 {
+    constexpr bool isDna5 = std::is_same<typename Value<TText>::Type, Dna5>::value;
+
     if (b == b_new)
     {
         extend<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft, text, length, a, b, ab, bb);
@@ -128,7 +134,8 @@ inline void approxSearch(TBiIter it, std::vector<TValue> & hits, std::vector<typ
         if (goDown(it, Rev()))
         {
             do {
-                bool delta = !ordEqual(parentEdgeLabel(it, Rev()), text[b + 1]);
+                bool delta = !ordEqual(parentEdgeLabel(it, Rev()), text[b + 1])
+                             || (isDna5 && text[b + 1] == Dna5('N'));
                 approxSearch<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft - delta, text, length, a, b + 1, ab, bb, b_new, Rev());
             } while (goRight(it, Rev()));
         }
@@ -137,7 +144,7 @@ inline void approxSearch(TBiIter it, std::vector<TValue> & hits, std::vector<typ
     {
         for (uint64_t i = b + 1; i <= b_new; ++i)
         {
-            if (!goDown(it, text[i], Rev()))
+            if ((isDna5 && text[i] == Dna5('N')) || !goDown(it, text[i], Rev()))
                 return;
         }
         extendExact<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, text, length, a, b_new, ab, bb);
@@ -152,6 +159,8 @@ inline void approxSearch(TBiIter it, std::vector<TValue> & hits, std::vector<typ
                          uint64_t a_new,
                          Fwd const & /*tag*/)
 {
+    constexpr bool isDna5 = std::is_same<typename Value<TText>::Type, Dna5>::value;
+
     if (a == a_new)
     {
         extend<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft, text, length, a, b, ab, bb);
@@ -162,7 +171,8 @@ inline void approxSearch(TBiIter it, std::vector<TValue> & hits, std::vector<typ
         if (goDown(it, Fwd()))
         {
             do {
-                bool delta = !ordEqual(parentEdgeLabel(it, Fwd()), text[a - 1]);
+                bool delta = !ordEqual(parentEdgeLabel(it, Fwd()), text[a - 1])
+                             || (isDna5 && text[a - 1] == Dna5('N'));
                 approxSearch<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft - delta, text, length, a - 1, b, ab, bb, a_new, Fwd());
             } while (goRight(it, Fwd()));
         }
@@ -171,7 +181,7 @@ inline void approxSearch(TBiIter it, std::vector<TValue> & hits, std::vector<typ
     {
         for (int64_t i = a - 1; i >= static_cast<int64_t>(a_new); --i)
         {
-            if (!goDown(it, text[i], Fwd()))
+            if ((isDna5 && text[i] == Dna5('N')) || !goDown(it, text[i], Fwd()))
                 return;
         }
         extendExact<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, text, length, a_new, b, ab, bb);
@@ -284,8 +294,8 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
         {
             uint64_t overlap = params.length - (endPos - beginPos) + 1;
 
-            auto scheme = OptimalSearchSchemes<0, errors>::VALUE;
-            _optimalSearchSchemeComputeFixedBlocklength(scheme, overlap);
+            auto scheme = OptimalSearchSchemesGM<errors>::VALUE;
+            _optimalSearchSchemeComputeFixedBlocklengthGM(scheme, overlap);
 
             std::vector<typename TBiIter::TFwdIndexIter> itExact(endPos - beginPos);
             std::vector<TValue> hits(endPos - beginPos, 0);
@@ -336,14 +346,14 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                 };
 
                 TBiIter it(index);
-                _optimalSearchScheme(delegateRevCompl, it, needlesRevComplOverlap, scheme, HammingDistance());
+                _optimalSearchSchemeGM(delegateRevCompl, it, needlesRevComplOverlap, scheme, HammingDistance());
 
                 // hits of the reverse-complement are stored in reversed order.
                 std::reverse(hits.begin(), hits.end());
             }
 
             TBiIter it(index);
-            _optimalSearchScheme(delegate, it, needlesOverlap, scheme, HammingDistance());
+            _optimalSearchSchemeGM(delegate, it, needlesOverlap, scheme, HammingDistance());
             for (uint64_t j = beginPos; j < endPos; ++j)
             {
                 SEQAN_IF_CONSTEXPR (csvComputation)

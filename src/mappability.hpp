@@ -274,7 +274,11 @@ template <typename TChar, typename TAllocConfig>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
     if (opt.indels)
-        run<TChar, TAllocConfig, EditDistance>(opt, searchParams);
+    {
+        std::cerr << "ERROR: EditDistance is not officially supported yet. Coming soon!\n";
+        exit(1);
+        // run<TChar, TAllocConfig, EditDistance>(opt, searchParams);
+    }
     else
         run<TChar, TAllocConfig, HammingDistance>(opt, searchParams);
 }
@@ -452,7 +456,6 @@ int mappabilityMain(int argc, char const ** argv)
     }
     else
     {
-        std::cerr << "WARNING: Dna5 is still in beta-phase!\n";
         run<Dna5>(opt, searchParams);
     }
 

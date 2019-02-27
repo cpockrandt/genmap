@@ -1,9 +1,11 @@
 #pragma once
 
-using namespace seqan;
-
 #include <time.h>
 #include <sys/time.h>
+
+#include <seqan/index.h>
+
+using namespace seqan;
 
 inline auto retrieveDirectoryInformationLine(CharString const & info)
 {
