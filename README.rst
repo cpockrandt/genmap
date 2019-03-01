@@ -24,7 +24,20 @@ Until then major design changes of the interface and minor changes to its specif
 Binaries
 ^^^^^^^^
 
-Coming soon.
+Your CPU must support the ``POPCNT`` instruction.
+If you have a modern CPU, you can go with the optimized 64 bit version that additionally uses ``SSE4``.
+To verify whether your CPU supports ``POPCNT`` and ``SSE4``, you can check the output of ``cat /proc/cpuinfo | grep 'popcnt\|sse4'``.
+
+.. Source of download.svg: https://svgsilh.com/image/2203950.html
+
++---------------------------------+---------------------+----------------------------------+
+| .. image:: .github/download.svg | `64 bit`_           | requires ``POPCNT``              |
++   :alt: Download binaries       +---------------------+----------------------------------+
+|   :width: 56px                  | `64 bit optimized`_ | requires ``POPCNT`` and ``SSE4`` |
++---------------------------------+---------------------+----------------------------------+
+
+.. _64 bit: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap-0.9-Linux-x86_64.zip
+.. _64 bit optimized: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap-0.9-Linux-x86_64-sse4.zip
 
 Building from source
 ^^^^^^^^^^^^^^^^^^^^
