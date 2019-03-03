@@ -6,24 +6,33 @@ cmake_minimum_required (VERSION 3.0.0)
 
 include (CTest)
 
-# include (ExternalProject)
-# ExternalProject_Add ("googletest"
-#                      GIT_REPOSITORY "https://github.com/google/googletest.git"
-#                      GIT_TAG "release-1.8.1"
-#                      CMAKE_ARGS "-DBUILD_GMOCK=0 -DCMAKE_INSTALL_PREFIX=${PROJECT_BINARY_DIR}/contrib"
-#                      UPDATE_DISCONNECTED YES
-# )
+include (ExternalProject)
 
-# add_executable(my_test tests.cpp)
-#
-# add_dependencies(my_test googletest)
-# include_directories(${PROJECT_BINARY_DIR}/contrib/include)
-# target_link_libraries(my_test ${PROJECT_BINARY_DIR}/contrib/lib/libgtest.a)
-# target_link_libraries(my_test ${PROJECT_BINARY_DIR}/contrib/lib/libgtest_main.a)
-# target_link_libraries(my_test pthread)
+ExternalProject_Add(googletest
+                    PREFIX "${CMAKE_CURRENT_BINARY_DIR}/googletest"
+                    GIT_REPOSITORY "https://github.com/google/googletest.git"
+                    INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}"
+                    CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}"
+                    GIT_TAG release-1.8.0
+                    UPDATE_DISCONNECTED YES)
 
-# add_test(NAME    my_test
-#          COMMAND my_test)
+# TODO: remove this block
+find_package(SeqAn REQUIRED)
+include_directories (${SEQAN_INCLUDE_DIRS})
+set (SEQAN_APP_VERSION "0.0.0")
+add_definitions (-DSEQAN_APP_VERSION="${SEQAN_APP_VERSION}")
+
+add_executable(genmap_algo_test tests.cpp)
+add_dependencies(genmap_algo_test googletest)
+
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
+target_link_libraries(genmap_algo_test ${SEQAN_LIBRARIES})
+target_link_libraries(genmap_algo_test ${CMAKE_CURRENT_BINARY_DIR}/lib/libgtest.a)
+target_link_libraries(genmap_algo_test ${CMAKE_CURRENT_BINARY_DIR}/lib/libgtest_main.a)
+target_link_libraries(genmap_algo_test pthread)
+
+add_test(NAME    algo_test
+         COMMAND genmap_algo_test)
 
 # TODO: add dependencies
 

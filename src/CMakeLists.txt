@@ -174,9 +174,6 @@ set (GENMAP_SOURCE_FILES
 add_executable (genmap ${GENMAP_SOURCE_FILES})
 target_link_libraries (genmap ${SEQAN_LIBRARIES})
 
-add_executable (genmap_algo_test tests.cpp)
-target_link_libraries (genmap_algo_test ${SEQAN_LIBRARIES})
-
 # if (LAMBDA_MULTIOPT_BUILD)
 #     add_executable (lambda2-sse4 ${LAMBDA_SOURCE_FILES})
 #     target_link_libraries (lambda2-sse4 ${SEQAN_LIBRARIES})
