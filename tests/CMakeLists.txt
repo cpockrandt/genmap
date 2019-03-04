@@ -37,15 +37,15 @@ add_test(NAME    algo_test
 # TODO: add dependencies
 
 function(add_test_suite TEST_NAME_PREFIX TEST_CASE_FOLDER INDEX_FLAGS MAP_FLAGS)
-    # add_test(
-    #     NAME "${TEST_NAME_PREFIX}_raw_map"
-    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -r" "raw_map")
-    # add_test(
-    #     NAME "${TEST_NAME_PREFIX}_raw_freq8"
-    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -r -fs" "raw_freq8")
-    # add_test(
-    #     NAME "${TEST_NAME_PREFIX}_raw_freq16"
-    #     COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -r -fl" "raw_freq16")
+    add_test(
+        NAME "${TEST_NAME_PREFIX}_raw_map"
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -r" "raw_map")
+    add_test(
+        NAME "${TEST_NAME_PREFIX}_raw_freq8"
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -r -fs" "raw_freq8")
+    add_test(
+        NAME "${TEST_NAME_PREFIX}_raw_freq16"
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -r -fl" "raw_freq16")
     add_test(
         NAME "${TEST_NAME_PREFIX}_txt_map"
         COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -t" "txt_map")

@@ -18,7 +18,7 @@ void saveRaw(std::vector<T> const & c, std::string const & output_path)
     {
         for (T const v : c)
         {
-            float const f = (v != 0) ? 1.0 / static_cast<float>(v) : 0;
+            float const f = (v != 0) ? 1.0f / static_cast<float>(v) : 0;
             outfile.write(reinterpret_cast<const char*>(&f), sizeof(float));
         }
     }
@@ -47,11 +47,11 @@ void saveTxt(std::vector<T> const & c, std::string const & output_path, TChromos
         {
             for (auto it = seqBegin; it < seqEnd - 1; ++it)
             {
-                float const f = (*it != 0) ? 1.0 / static_cast<float>(*it) : 0;
+                float const f = (*it != 0) ? 1.0f / static_cast<float>(*it) : 0;
                 // outfile.write(reinterpret_cast<const char*>(&f), sizeof(float));
                 outfile << f << ' ';
             }
-            float const f = (*(seqEnd - 1) != 0) ? 1.0 / static_cast<float>(*(seqEnd - 1)) : 0;
+            float const f = (*(seqEnd - 1) != 0) ? 1.0f / static_cast<float>(*(seqEnd - 1)) : 0;
             outfile << f << ' '; // no space after last value
         }
         else
@@ -97,7 +97,7 @@ void saveWig(std::vector<T> const & c, std::string const & output_path, TChromos
                 // TODO: document this behavior (mappability of 0)
                 SEQAN_IF_CONSTEXPR (mappability)
                 {
-                    float const value = (current_val != 0) ? 1.0 / static_cast<float>(current_val) : 0;
+                    float const value = (current_val != 0) ? 1.0f / static_cast<float>(current_val) : 0;
                     wigFile << (pos - occ + 1 - begin_pos_string) << ' ' << value << '\n'; // pos in wig start at 1
                 }
                 else
@@ -156,7 +156,7 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
                         << '-' << '\t';                             // name
 
                 SEQAN_IF_CONSTEXPR (mappability)
-                    bedFile << ((current_val != 0) ? 1.0 / static_cast<float>(current_val) : 0) << '\n';
+                    bedFile << ((current_val != 0) ? 1.0f / static_cast<float>(current_val) : 0) << '\n';
                 else
                     bedFile << current_val << '\n';
 
