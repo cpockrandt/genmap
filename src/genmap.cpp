@@ -2,6 +2,7 @@
 
 #include <seqan/arg_parse.h>
 
+#include "genmap_helper.hpp"
 #include "indexing.hpp"
 #include "mappability.hpp"
 
