@@ -1,70 +1,205 @@
-sudo: false
+sudo: true
 language: cpp
 matrix:
   include:
+
+    ##########################################################################
+    # GCC on Linux
+    ##########################################################################
+
     - os: linux
       compiler: gcc-4.9
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-4.9', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip']
+          packages: ['cmake', 'g++-4.9']
       install: export CXX="g++-4.9"
-      env:
-        CMAKE_ARGS="-DGENMAP_STATIC_BUILD=1" # static and sanitizer is not allowed
 
     - os: linux
       compiler: gcc-5
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip']
+          packages: ['cmake', 'g++-5']
       install: export CXX="g++-5"
-      env: CMAKE_ARGS="" # TODO -fsanitize=address
+
+    - os: linux
+      compiler: gcc-6
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['cmake', 'g++-6']
+      install: export CXX="g++-6"
 
     - os: linux
       compiler: gcc-7
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip']
+          packages: ['cmake', 'g++-7']
       install: export CXX="g++-7"
-      env:
-        CMAKE_ARGS="-DCMAKE_CXX_FLAGS=-std=c++17" # TODO -fsanitize=address
 
     - os: linux
-      compiler: clang-3.9
-      addons:
-        apt:
-          sources: ['ubuntu-toolchain-r-test', 'llvm-toolchain-trusty-3.9']
-          packages: ['clang-3.9', 'g++-7', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip'] # g++ required for newer libstdc++
-      install: export CXX="clang++-3.9"
-
-    - os: linux
-      compiler: clang-5
+      compiler: gcc-8
       addons:
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-7', 'cmake', 'cmake-data', 'zlib1g-dev', 'libbz2-dev', 'libboost-dev', 'python', 'python-nose', 'python-jinja2', 'python-pip'] # g++ required for newer libstdc++
-      install: export CXX="/usr/local/clang-5.0.0/bin/clang++"
-      env: CMAKE_ARGS="-DCMAKE_BUILD_TYPE=RelWithDebInfo" LD_LIBRARY_PATH="/usr/local/clang-5.0.0/lib/:${LD_LIBRARY_PATH}"
+          packages: ['cmake', 'g++-8']
+      install: export CXX="g++-8"
 
+    ##########################################################################
+    # Clang on Linux
+    ##########################################################################
+
+    - os: linux
+      dist: trusty
+      compiler: clang-3.8
+      addons:
+        apt:
+          sources: ['llvm-toolchain-precise-3.8', 'ubuntu-toolchain-r-test']
+          packages: ['cmake', 'clang-3.8', 'g++-7'] # g++ required for newer libstdc++
+      install: export CXX="clang++-3.8"
+
+    - os: linux
+      dist: trusty
+      compiler: clang-3.9
+      addons:
+        apt:
+          sources: ['llvm-toolchain-trusty-3.9', 'ubuntu-toolchain-r-test']
+          packages: ['cmake', 'clang-3.9', 'g++-7'] # g++ required for newer libstdc++
+      install: export CXX="clang++-3.9"
+
+    - os: linux
+      dist: trusty
+      compiler: clang-4.0
+      addons:
+        apt:
+          sources: ['llvm-toolchain-trusty-4.0', 'ubuntu-toolchain-r-test']
+          packages: ['cmake', 'clang-4.0', 'g++-7'] # g++ required for newer libstdc++
+      install: export CXX="clang++-4.0"
+
+    - os: linux
+      dist: trusty
+      compiler: clang-5.0
+      addons:
+        apt:
+          sources: ['llvm-toolchain-trusty-5.0', 'ubuntu-toolchain-r-test']
+          packages: ['cmake', 'clang-5.0', 'g++-7'] # g++ required for newer libstdc++
+      install: export CXX="clang++-5.0"
+
+    - os: linux
+      dist: trusty
+      compiler: clang-6.0
+      addons:
+        apt:
+          sources: ['llvm-toolchain-trusty-6.0', 'ubuntu-toolchain-r-test']
+          packages: ['cmake', 'clang-6.0', 'g++-7'] # g++ required for newer libstdc++
+      install: export CXX="clang++-6.0"
+
+    - os: linux
+      dist: trusty
+      compiler: clang-7.0
+      addons:
+        apt:
+          sources: ['llvm-toolchain-trusty-7', 'ubuntu-toolchain-r-test']
+          packages: ['cmake', 'clang-7', 'g++-7'] # g++ required for newer libstdc++
+      install: export CXX="clang++-7"
+
+    ##########################################################################
+    # Clang on OSX (with Xcode)
+    ##########################################################################
+
+    - os: osx
+      osx_image: xcode7.3
+      compiler: clang
+
+    - os: osx
+      osx_image: xcode8.3
+      compiler: clang
+
+    - os: osx
+      osx_image: xcode9.4
+      compiler: clang
+
+    - os: osx
+      osx_image: xcode10.1
+      compiler: clang
+
+    ##########################################################################
+    # GCC on OSX
+    ##########################################################################
+
+    # Homebrew seems not to have the latest bugfixes :(
+    # https://github.com/nest/nest-simulator/issues/486
     # - os: osx
+    #   osx_image: xcode8.3
     #   compiler: gcc-4.9
     #   before_install:
     #     - brew update
     #     - brew install gcc@4.9
+    #     - sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer/
+    #     - sudo xcode-select -s /Library/Developer/CommandLineTools
     #   install: export CXX="g++-4.9"
-    #   env: CMAKE_ARGS="-DGENMAP_STATIC_BUILD=1"
     #
     # - os: osx
-    #   compiler: gcc-7
+    #   osx_image: xcode8.3
+    #   compiler: gcc-5
     #   before_install:
     #     - brew update
-    #     - brew install gcc@7
-    #   install: export CXX="g++-7"
-    #   env: CMAKE_ARGS=""
+    #     - travis_wait 30 brew install gcc@5
+    #     - sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer/
+    #     - sudo xcode-select -s /Library/Developer/CommandLineTools
+    #   install: export CXX="g++-5"
+
+    - os: osx
+      osx_image: xcode8.3
+      compiler: gcc-6
+      before_install:
+        - brew update
+        - travis_wait 30 brew install gcc@6
+      install: export CXX="g++-6"
+
+    - os: osx
+      osx_image: xcode8.3
+      compiler: gcc-7
+      before_install:
+        - brew update
+        - travis_wait 30 brew install gcc@7
+      install: export CXX="g++-7"
+
+    - os: osx
+      osx_image: xcode8.3
+      compiler: gcc-8
+      before_install:
+        - brew update
+        - travis_wait 30 brew install gcc@8
+      install: export CXX="g++-8"
+
+    # Debug builds on linux (gcc) with sanitizer, TODO: add coverage
+    - os: linux
+      compiler: gcc-7
+      addons:
+        apt:
+          sources: ['ubuntu-toolchain-r-test']
+          packages: ['cmake', 'g++-7']
+      install: export CXX="g++-7"
+      # ubuntu toolchain does not contain the latest bugfixes for /usr/bin/ld
+      env: CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Debug" CMAKE_CXX_FLAGS="-fsanitize=address -fuse-ld=gold"
+
+    # - os: linux
+    #   dist: trusty
+    #   compiler: clang-5.0
+    #   addons:
+    #     apt:
+    #       sources: ['llvm-toolchain-trusty-5.0', 'ubuntu-toolchain-r-test']
+    #       packages: ['cmake', 'clang-5.0', 'g++-7'] # g++ required for newer libstdc++
+    #   install: export CXX="clang++-5.0"
+    #   env: CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Debug" CMAKE_CXX_FLAGS="-fsanitize=address"
+
+    # TODO: native_build (4x OS+CXX)
 
 script:
   - mkdir -p build && cd build
-  - cmake .. -DGENMAP_NATIVE_BUILD=0 -DGENMAP_COMPILE_THREADS=2 ${CMAKE_ARGS}
-  - travis_wait make -j2 VERBOSE=1 && ctest . -j2 --output-on-failure
+  - cmake .. -DGENMAP_NATIVE_BUILD=0 -DGENMAP_COMPILE_THREADS=2 ${CMAKE_ARGS} -DCMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS}"
+  - travis_wait 60 make genmap genmap_algo_test genmap_algo_benchmark -j2 VERBOSE=1
+  - travis_wait 90 sleep infinity & ctest . -j2 --output-on-failure

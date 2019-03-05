@@ -8,6 +8,8 @@ set (ColourBold  "${Esc}[1m")
 set (ColourReset "${Esc}[m")
 set (ColourRed   "${Esc}[31m")
 
+message ("${ColourBold}Compiler Detection${ColourReset}") # This needs to go before "project ()".
+
 project (genmap CXX)
 
 # ----------------------------------------------------------------------------
@@ -26,8 +28,6 @@ set (MINIMUM_SEQAN_VERSION "2.4.0")
 # ----------------------------------------------------------------------------
 # Compiler detection
 # ----------------------------------------------------------------------------
-
-message ("${ColourBold}Compiler Detection${ColourReset}")
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.9.1)
