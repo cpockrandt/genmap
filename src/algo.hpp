@@ -270,7 +270,11 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
     // Number of loop iterations assigned to a thread at once
     // It should be significantly smaller than the number of loop iterations (numberOfKmers/stepSize), since
     // the running time of different loop iterations can vary vastly (e.g., repeats are slower than unique regions).
+    // This leads to an unused variable warning in Clang
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wunused"
     uint64_t const chunkSize = std::max<uint64_t>(1, numberOfKmers / (stepSize * params.threads * 50));
+    #pragma clang diagnostic pop
 
     uint64_t progressCount, progressMax, progressStep;
     initProgress<outputProgress>(progressCount, progressStep, progressMax, stepSize, numberOfKmers);
