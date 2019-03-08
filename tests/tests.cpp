@@ -69,7 +69,7 @@ _trivialBacktracking(TIndexIt indexIt, TNeedle const & needle, TNeedleIt needleI
                 do
                 {
                     // Mismatch.
-                    TThreshold delta = (isDna5 && (*needleIt == Dna5('N'))) || !ordEqual(parentEdgeLabel(indexIt), *needleIt);
+                    TThreshold delta = (isDna5 && *needleIt == Dna5('N')) || !ordEqual(parentEdgeLabel(indexIt), *needleIt);
                     _trivialBacktracking(indexIt, needle, needleIt + 1,
                                          static_cast<TThreshold>(errors + delta), threshold, frequency, TDistance());
 
@@ -157,11 +157,11 @@ void test(uint64_t const nbrChromosomes, uint64_t const lengthChromosomes, uint6
         auto const & text = indexText(index).concat;
 
         uint64_t const totalLength = seqan::length(text);
-        std::vector<uint8_t> frequencyActual(totalLength), frequencyExpected(totalLength);
+        std::vector<uint8_t> frequencyGenMap(totalLength), frequencyTrivial(totalLength);
 
         uint64_t const minK = errors + 1 + (errors >= 2);
 
-        for (uint64_t k = minK; k <= 10; ++k)
+        for (uint64_t k = minK; k <= 8; ++k)
         {
             SearchParams searchParams;
             searchParams.length = k;
@@ -169,8 +169,8 @@ void test(uint64_t const nbrChromosomes, uint64_t const lengthChromosomes, uint6
             searchParams.revCompl = rng() % 2;
             searchParams.excludePseudo = false;
 
-            frequencyExpected.assign(totalLength, 0);
-            computeMappabilityTrivial<errors, TDistance>(index, frequencyExpected, searchParams);
+            frequencyTrivial.assign(totalLength, 0);
+            computeMappabilityTrivial<TDistance, TChar>(index, frequencyTrivial, searchParams, errors);
 
             // iterate over all possible overlap values
             for (uint64_t overlap = minK; overlap <= k; ++overlap)
@@ -183,18 +183,18 @@ void test(uint64_t const nbrChromosomes, uint64_t const lengthChromosomes, uint6
                 std::vector<uint16_t> mappingSeqIdFile(0);
 
                 // TODO: TDistance
-                frequencyActual.assign(totalLength, 0);
-                computeMappability<errors, false>(index, text, frequencyActual, searchParams, false /*dir*/, chromLengths, locations, mappingSeqIdFile);
+                frequencyGenMap.assign(totalLength, 0);
+                computeMappability<errors, false>(index, text, frequencyGenMap, searchParams, false /*dir*/, chromLengths, locations, mappingSeqIdFile);
 
-                EXPECT_EQ(frequencyExpected, frequencyActual);
-                // if (frequencyExpected != frequencyActual)
+                EXPECT_EQ(frequencyTrivial, frequencyGenMap);
+                // if (frequencyTrivial != frequencyGenMap)
                 // {
                 //     std::cerr << "K: " << k << ", Overlap: " << overlap << '\n';
                 //     for (uint64_t ss = 0; ss < nbrChromosomes; ++ss)
                 //         std::cerr << genome[ss] << '\n';
-                //     std::copy(frequencyExpected.begin(), frequencyExpected.end(), std::ostream_iterator<int>(std::cerr, " "));
+                //     std::copy(frequencyTrivial.begin(), frequencyTrivial.end(), std::ostream_iterator<int>(std::cerr, " "));
                 //     std::cerr << '\n';
-                //     std::copy(frequencyActual.begin(), frequencyActual.end(), std::ostream_iterator<int>(std::cerr, " "));
+                //     std::copy(frequencyGenMap.begin(), frequencyGenMap.end(), std::ostream_iterator<int>(std::cerr, " "));
                 //     std::cerr << '\n';
                 //     exit(1);
                 // }
@@ -205,52 +205,52 @@ void test(uint64_t const nbrChromosomes, uint64_t const lengthChromosomes, uint6
 
 TEST(GenMapAlgo, exact_dna4)
 {
-    test<Dna, HammingDistance, 0>(5, 1000, 1);
+    test<Dna, HammingDistance, 0>(3, 1000, 1);
 }
 
 TEST(GenMapAlgo, hamming_1_dna4)
 {
-    test<Dna, HammingDistance, 1>(5, 1000, 1);
+    test<Dna, HammingDistance, 1>(3, 1000, 1);
 }
 
 TEST(GenMapAlgo, hamming_2_dna4)
 {
-    test<Dna, HammingDistance, 2>(5, 1000, 1);
+    test<Dna, HammingDistance, 2>(3, 1000, 1);
 }
 
 TEST(GenMapAlgo, hamming_3_dna4)
 {
-    test<Dna, HammingDistance, 3>(5, 1000, 1);
+    test<Dna, HammingDistance, 3>(3, 1000, 1);
 }
 
 TEST(GenMapAlgo, hamming_4_dna4)
 {
-    test<Dna, HammingDistance, 4>(5, 1000, 1);
+    test<Dna, HammingDistance, 4>(3, 1000, 1);
 }
 
 TEST(GenMapAlgo, exact_dna5)
 {
-    test<Dna5, HammingDistance, 0>(5, 1000, 1);
+    test<Dna5, HammingDistance, 0>(3, 1000, 1);
 }
 
 TEST(GenMapAlgo, hamming_1_dna5)
 {
-    test<Dna5, HammingDistance, 1>(5, 1000, 1);
+    test<Dna5, HammingDistance, 1>(3, 1000, 1);
 }
 
 TEST(GenMapAlgo, hamming_2_dna5)
 {
-    test<Dna5, HammingDistance, 2>(5, 1000, 1);
+    test<Dna5, HammingDistance, 2>(3, 1000, 1);
 }
 
 TEST(GenMapAlgo, hamming_3_dna5)
 {
-    test<Dna5, HammingDistance, 3>(5, 1000, 1);
+    test<Dna5, HammingDistance, 3>(3, 1000, 1);
 }
 
 TEST(GenMapAlgo, hamming_4_dna5)
 {
-    test<Dna5, HammingDistance, 4>(5, 1000, 1);
+    test<Dna5, HammingDistance, 4>(3, 1000, 1);
 }
 
 // TEST(GenMapAlgo, edit_1_dna4)
