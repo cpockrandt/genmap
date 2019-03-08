@@ -203,7 +203,7 @@ int indexMain(int const argc, char const ** argv)
 
     // TODO: describe both algorithms in terms of space consumption (disk and RAM)
     addOption(parser, ArgParseOption("A", "algorithm", "Algorithm for suffix array construction "
-        "(needed for the FM index).", ArgParseArgument::INPUT_FILE, "IN"));
+        "(needed for the FM index).", ArgParseArgument::STRING, "TEXT"));
     setDefaultValue(parser, "algorithm", "radix");
     setValidValues(parser, "algorithm", std::vector<std::string>{"radix", "skew"});
 
@@ -425,7 +425,7 @@ int indexMain(int const argc, char const ** argv)
         options.totalLength = (static_cast<uint64_t>(1) << bwtlen) - 2;
     }
 
-    if (options.useRadix && lengthSum(chromosomes) < 1'000'000)
+    if (options.useRadix && lengthSum(chromosomesDna5) < 1'000'000)
     {
         // There might be undefined behavior of radix sort for very small indices with a handful of bases.
         options.useRadix = false;

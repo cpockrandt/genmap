@@ -39,10 +39,10 @@ To verify whether your CPU supports ``POPCNT`` and ``SSE4``, you can check the o
 .. _64 bit: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap-0.9-Linux-x86_64.zip
 .. _64 bit optimized: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap-0.9-Linux-x86_64-sse4.zip
 
-Building from source
-^^^^^^^^^^^^^^^^^^^^
+Building from source (currently for Linux only)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-NOTE: Building from source can take up to 10 minutes depending on your machine.
+NOTE: Building from source can take up to 10 minutes depending on your machine and compiler.
 
 ::
 
@@ -71,13 +71,30 @@ Architecture
   Intel/AMD platforms that support ``POPCNT``
 
 Compiler
-  GCC ≥ 4.9, LLVM/Clang ≥ 3.9
+  GCC ≥ 4.9, LLVM/Clang ≥ 3.8
 
 Build system
   CMake ≥ 3.0
 
 Language support
   C++14
+
+Mappability example
+^^^^^^^^^^^^^^^^^^^
+
+Below you can see the (4,1)-frequency ``F`` of the nucleotide sequence ``T = ATCTAGCTTGCTAATCTA``.
+Only mismatches (Hamming distance) are considered.
+GenMap can also allow for insertions and deletions (Edit distance).
+
++----------+---+-------+-------+-------+-------+---+---+---+---+-------+-------+-------+-------+----+-------+-------+-------+-------+
+| **i**    | 0 |   1   |   2   |   3   |   4   | 5 | 6 | 7 | 8 |   9   |   10  |   11  |   12  | 13 |   14  |   15  |   16  |   17  |
++----------+---+-------+-------+-------+-------+---+---+---+---+-------+-------+-------+-------+----+-------+-------+-------+-------+
+| **T[i]** | A | **T** | **C** | **T** | **A** | G | C | T | T | **G** | **C** | **T** | **A** |  A | **T** | **C** | **T** | **A** |
++----------+---+-------+-------+-------+-------+---+---+---+---+-------+-------+-------+-------+----+-------+-------+-------+-------+
+| **F[i]** | 3 |   3   |   3   |   2   |   4   | 2 | 2 | 2 | 2 |   4   |   2   |   1   |   1   |  3 |   3   |   0   |   0   |   0   |
++----------+---+-------+-------+-------+-------+---+---+---+---+-------+-------+-------+-------+----+-------+-------+-------+-------+
+
+The frequency value ``F[1] = 3`` means that the 4-mer starting at position 1 ``T[1..3] = TCTA`` occurs three times in the sequence with up to one mismatch, namely at positions ``1 (TCTA)``, ``9 (GCTA)`` and ``14 (TCTA)``.
 
 Getting started
 ^^^^^^^^^^^^^^^

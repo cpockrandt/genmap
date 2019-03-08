@@ -344,7 +344,7 @@ int mappabilityMain(int argc, char const ** argv)
 
     addOption(parser, ArgParseOption("v", "verbose", "Outputs some additional information."));
 
-    addOption(parser, ArgParseOption("xo", "overlap", "Number of overlapping reads (o + 1 Strings will be searched at once beginning with their overlap region). Default: K * (0.7^e * MIN(MAX(K,30),100) / 100)", ArgParseArgument::INTEGER, "INT"));
+    addOption(parser, ArgParseOption("xo", "overlap", "Number of overlapping reads (xo + 1 Strings will be searched at once beginning with their overlap region). Default: K * (0.7^e * MIN(MAX(K,30),100) / 100)", ArgParseArgument::INTEGER, "INT"));
     hideOption(parser, "overlap");
 
     ArgumentParser::ParseResult res = parse(parser, argc, argv);
@@ -450,6 +450,7 @@ int mappabilityMain(int argc, char const ** argv)
             std::cout << "- Index was built on a single fasta file.\n" << std::flush;
     }
 
+    // TODO: remove brackets, opt.alphabet and replace by local bool.
     if (opt.alphabet == "dna4")
     {
         run<Dna>(opt, searchParams);
