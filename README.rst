@@ -4,7 +4,7 @@ GenMap - Fast and Exact Computation of Genome Mappability |buildstatus|
 .. |BUILDSTATUS| image:: https://travis-ci.org/cpockrandt/genmap.svg?branch=master
     :target: https://travis-ci.org/cpockrandt/genmap
 
-GenMap is a tool to compute the mappability respectively frequency of nucleotide sequences.
+GenMap is a tool to compute the mappability respectively frequency of nucleotide sequences (DNA and RNA).
 In particular, it computes the (k,e)-frequency, i.e., how often each k-mer from the sequence occurs with up to e errors
 in the sequence itself.
 The (k,e)-mappability is the inverse of the (k,e)-frequency.

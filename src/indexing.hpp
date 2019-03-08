@@ -181,7 +181,7 @@ int indexMain(int const argc, char const ** argv)
     // Argument Parser
     ArgumentParser parser("GenMap index");
     sharedSetup(parser);
-    addDescription(parser, "Index creation. Only supports Dna (A, C, G, T, N). "
+    addDescription(parser, "Index creation. Only supports DNA and RNA (A, C, G, T/U, N). "
                            "Other characters will be converted to N.");
 
     // sorted in descending lexicographical order, since setValidValues() prints them in this order
