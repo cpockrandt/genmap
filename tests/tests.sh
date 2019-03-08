@@ -43,9 +43,12 @@ ${BINDIR}/bin/genmap map -I "${MYTMP}/index" -O "${MYTMP}/output" ${FLAGS} -xo 1
 diff -r --strip-trailing-cr "${SRCDIR}/tests/test_cases/case_${CASE}/${EXPECTED_FOLDER}" "${MYTMP}/output"
 [ $? -eq 0 ] || errorout "Files are not equal!"
 
-${BINDIR}/bin/genmap map -I "${MYTMP}/index" -O "${MYTMP}/output" ${FLAGS} -xo 2
-diff -r --strip-trailing-cr "${SRCDIR}/tests/test_cases/case_${CASE}/${EXPECTED_FOLDER}" "${MYTMP}/output"
-[ $? -eq 0 ] || errorout "Files are not equal!"
+# case 1e and 1f do not a larger overlap since E=1 and K=3
+if [ "$CASE" != "1e" ] && [ "$CASE" != "1f" ]; then
+    ${BINDIR}/bin/genmap map -I "${MYTMP}/index" -O "${MYTMP}/output" ${FLAGS} -xo 2
+    diff -r --strip-trailing-cr "${SRCDIR}/tests/test_cases/case_${CASE}/${EXPECTED_FOLDER}" "${MYTMP}/output"
+    [ $? -eq 0 ] || errorout "Files are not equal!"
+fi
 
 # gunzip < "${SRCDIR}/tests/db_${SALPHIN}.fasta.gz" > db.fasta
 # [ $? -eq 0 ] || errorout "Could not unzip database file"

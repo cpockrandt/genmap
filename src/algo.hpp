@@ -2,6 +2,11 @@
 
 using namespace seqan;
 
+template <typename TChar>
+using ModComplement = ModView<FunctorComplement<TChar> >;
+template <typename TText>
+using ModRevCompl = ModifiedString<ModifiedString<TText, ModComplement<typename Value<TText>::Type>>, ModReverse>;
+
 // template <typename TMappVector, typename TChromosomeLength>
 // void resetLimits(TMappVector const &, unsigned const, TChromosomeLength const)
 // { }
@@ -335,8 +340,8 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
 
             if (params.revCompl)
             {
-                ModifiedString<ModifiedString<typename std::remove_reference<decltype(needles)>::type, ModComplementDna>, ModReverse> needlesRevCompl(needles);
-                ModifiedString<ModifiedString<typename std::remove_reference<decltype(needlesOverlap)>::type, ModComplementDna>, ModReverse> needlesRevComplOverlap(needlesOverlap);
+                ModRevCompl<typename std::remove_reference<decltype(needles)>::type> needlesRevCompl(needles);
+                ModRevCompl<typename std::remove_reference<decltype(needlesOverlap)>::type> needlesRevComplOverlap(needlesOverlap);
                 using TNeedlesRevComplOverlap = decltype(needlesRevComplOverlap);
 
                 // TODO: could store the exact hits as well and use these values!

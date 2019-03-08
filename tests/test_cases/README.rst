@@ -4,7 +4,7 @@ GenMap - Fast and Exact Computation of Genome Mappability
 Details on test cases
 ^^^^^^^^^^^^^^^^^^^^^
 
-There are a few hand-written test cases to check the output formats of GenMap and possible edge cases.
+There are a few hand-written test cases to check the output formats of GenMap and possible edge cases. If not stated otherwise, the alphabet is Dna4 (A, C, G, T).
 
 Single fasta file with a single sequence (i.e., only one chromosome)
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -14,6 +14,18 @@ case 1a
 
 case 1b
   3-mers with 0 errors with the reverse complement
+
+case 1c
+  3-mers with 0 errors without the reverse complement. **Dna5** alphabet (including Ns).
+
+case 1d
+  3-mers with 0 errors with the reverse complement. **Dna5** alphabet (including Ns).
+
+case 1e
+  3-mers with 1 error without the reverse complement. **Dna5** alphabet (including Ns).
+
+case 1f
+  3-mers with 1 error with the reverse complement. **Dna5** alphabet (including Ns).
 
 Single fasta file with multiple sequences
 """""""""""""""""""""""""""""""""""""""""
@@ -47,7 +59,7 @@ case 3b
 case 3c
     case 3a with ``--exclude-pseudo``
 
-case 3c
+case d
     case 3c with reverse complement
 
 Single fasta file in directory with multiple sequences

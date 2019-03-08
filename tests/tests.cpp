@@ -101,8 +101,8 @@ uint64_t trivialBacktracking(TIndex & index, TNeedle const & needle, TThreshold 
     return frequency;
 }
 
-template <unsigned errors, typename TDistance, typename TIndex, typename TContainer>
-inline void computeMappabilityTrivial(TIndex & index, TContainer & c, SearchParams const & searchParams)
+template <typename TDistance, typename TChar, typename TIndex, typename TContainer>
+inline void computeMappabilityTrivial(TIndex & index, TContainer & c, SearchParams const & searchParams, unsigned const errors)
 {
     using value_type = typename TContainer::value_type;
 
@@ -120,7 +120,7 @@ inline void computeMappabilityTrivial(TIndex & index, TContainer & c, SearchPara
             value_type hits = std::min(trivialBacktracking(index, needle, errors, TDistance()), max_val);
             if (searchParams.revCompl && hits < max_val)
             {
-                DnaString needleRevCompl(needle);
+                String<TChar> needleRevCompl(needle);
                 reverseComplement(needleRevCompl);
                 hits = std::min(hits + trivialBacktracking(index, needleRevCompl, errors, TDistance()), max_val);
             }
