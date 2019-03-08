@@ -243,13 +243,13 @@ inline void run(Options const & opt, SearchParams const & searchParams)
     {
         if (opt.totalLengthWidth == 32)
             run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint16_t, uint32_t, uint32_t>(opt, searchParams);
-        else if (opt.totalLengthWidth == 64)
-            run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint16_t, uint32_t, uint64_t>(opt, searchParams);
+        // else if (opt.totalLengthWidth == 64)
+        //     run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint16_t, uint32_t, uint64_t>(opt, searchParams);
     }
-    else if (opt.seqNoWidth == 32 && opt.maxSeqLengthWidth == 16 && opt.totalLengthWidth == 64)
-        run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint32_t, uint16_t, uint64_t>(opt, searchParams);
-    else if (opt.seqNoWidth == 64 && opt.maxSeqLengthWidth == 64 && opt.totalLengthWidth == 64)
-        run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint64_t, uint64_t, uint64_t>(opt, searchParams);
+    // else if (opt.seqNoWidth == 32 && opt.maxSeqLengthWidth == 16 && opt.totalLengthWidth == 64)
+    //     run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint32_t, uint16_t, uint64_t>(opt, searchParams);
+    // else if (opt.seqNoWidth == 64 && opt.maxSeqLengthWidth == 64 && opt.totalLengthWidth == 64)
+    //     run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint64_t, uint64_t, uint64_t>(opt, searchParams);
 }
 
 template <typename TChar, typename TAllocConfig, typename TDistance, typename TValue>
@@ -273,22 +273,22 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 template <typename TChar, typename TAllocConfig>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
-    if (opt.indels)
-    {
-        std::cerr << "ERROR: EditDistance is not officially supported yet. Coming soon!\n";
-        exit(1);
-        // run<TChar, TAllocConfig, EditDistance>(opt, searchParams);
-    }
-    else
+    // if (opt.indels)
+    // {
+    //     std::cerr << "ERROR: EditDistance is not officially supported yet. Coming soon!\n";
+    //     exit(1);
+    //     // run<TChar, TAllocConfig, EditDistance>(opt, searchParams);
+    // }
+    // else
         run<TChar, TAllocConfig, HammingDistance>(opt, searchParams);
 }
 
 template <typename TChar>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
-    if (opt.mmap)
-        run<TChar, MMap<> >(opt, searchParams);
-    else
+    // if (opt.mmap)
+    //     run<TChar, MMap<> >(opt, searchParams);
+    // else
         run<TChar, Alloc<> >(opt, searchParams);
 }
 
@@ -450,6 +450,7 @@ int mappabilityMain(int argc, char const ** argv)
             std::cout << "- Index was built on a single fasta file.\n" << std::flush;
     }
 
+    // TODO: remove brackets, opt.alphabet and replace by local bool.
     if (opt.alphabet == "dna4")
     {
         run<Dna>(opt, searchParams);

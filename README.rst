@@ -94,7 +94,7 @@ GenMap can also allow for insertions and deletions (Edit distance).
 | **F[i]** | 3 |   3   |   3   |   2   |   4   | 2 | 2 | 2 | 2 |   4   |   2   |   1   |   1   |  3 |   3   |   0   |   0   |   0   |
 +----------+---+-------+-------+-------+-------+---+---+---+---+-------+-------+-------+-------+----+-------+-------+-------+-------+
 
-The frequency value ``F[1] = 3`` means that the 4-mer starting at position 1 (``T[1..3] = TCTA``) occurs three times in the sequence with up to one mismatch, namely at positions ``1 (TCTA)``, ``9 (GCTA)`` and ``14 (TCTA)``.
+The frequency value ``F[1] = 3`` means that the 4-mer starting at position 1 ``T[1..3] = TCTA`` occurs three times in the sequence with up to one mismatch, namely at positions ``1 (TCTA)``, ``9 (GCTA)`` and ``14 (TCTA)``.
 
 Getting started
 ^^^^^^^^^^^^^^^

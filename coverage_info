@@ -1,0 +1,31 @@
+cmake ../../mappability -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="--coverage" -DCMAKE_CXX_COMPILER=/usr/bin/g++-7
+make -j
+
+ctest . -R fasta # TODO: no -j ???
+
+cd src/CMakeFiles/genmap.dir
+gcov-7 genmap.cpp.gcno
+lcov -c --directory /home/chris/Dev/mappability/src --no-external --output-file genmap.cpp.info --gcov-tool /usr/bin/gcov-7
+lcov -c --directory . --kernel-directory /home/chris/Dev/mappability/src --output-file genmap.info --gcov-tool /usr/bin/gcov-7
+genhtml genmap.info --output-directory out
+
+# file:///home/chris/Dev/mappability-build/debug/src/CMakeFiles/genmap.dir/out/index.html
+
+
+gcov-7 src/CMakeFiles/genmap.dir/genmap.cpp.gcno
+lcov -c --directory /home/chris/Dev/mappability/src/ --no-external --kernel-directory /home/chris/Dev/mappability/src/ --output-file genmap.info --gcov-tool /usr/bin/gcov-7
+genhtml genmap.info --output-directory out
+
+
+
+
+
+
+gcov-7 src/CMakeFiles/genmap.dir/genmap.cpp.gcno
+lcov -c --directory . --no-external --output-file genmap.info --gcov-tool /usr/bin/gcov-7
+genhtml genmap.info --output-directory out
+
+
+
+gcov-7 src/CMakeFiles/genmap.dir/genmap.cpp.gcno
+lcov -c --directory ../src/ --no-external --kernel-directory ../src --output-file genmap.info --gcov-tool /usr/bin/gcov-7
