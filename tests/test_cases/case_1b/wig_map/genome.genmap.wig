@@ -1,21 +1,21 @@
-variableStep chrom=seq1 span=2
+variableStep chrom=seq0 span=2
 1 0.333333
 3 0.5
-variableStep chrom=seq1 span=1
+variableStep chrom=seq0 span=1
 5 0.333333
 6 0.5
-variableStep chrom=seq1 span=2
+variableStep chrom=seq0 span=2
 7 0.25
-variableStep chrom=seq1 span=4
+variableStep chrom=seq0 span=4
 9 0.5
-variableStep chrom=seq1 span=2
+variableStep chrom=seq0 span=2
 13 0.333333
-variableStep chrom=seq1 span=1
+variableStep chrom=seq0 span=1
 15 0.5
-variableStep chrom=seq1 span=2
+variableStep chrom=seq0 span=2
 16 0.25
 18 0.5
-variableStep chrom=seq1 span=1
+variableStep chrom=seq0 span=1
 20 0.333333
-variableStep chrom=seq1 span=2
+variableStep chrom=seq0 span=2
 21 0
