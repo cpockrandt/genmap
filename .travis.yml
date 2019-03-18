@@ -201,5 +201,5 @@ matrix:
 script:
   - mkdir -p build && cd build
   - cmake .. -DGENMAP_NATIVE_BUILD=0 -DGENMAP_COMPILE_THREADS=2 ${CMAKE_ARGS} -DCMAKE_CXX_FLAGS="${CMAKE_CXX_FLAGS}"
-  - travis_wait 60 make genmap genmap_algo_test genmap_algo_benchmark -j2 VERBOSE=1
+  - travis_wait 60 make genmap genmap_algo_test -j2 VERBOSE=1
   - travis_wait 90 sleep infinity & ctest . -j2 --output-on-failure
