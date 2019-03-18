@@ -14,4 +14,7 @@ add_executable (genmap_algo_benchmark bench.cpp)
 add_dependencies (genmap_algo_benchmark googlebenchmark)
 set_source_files_properties (bench.cpp PROPERTIES COMPILE_FLAGS "-I${CMAKE_CURRENT_BINARY_DIR}/include")
 target_link_libraries (genmap_algo_benchmark "-L${CMAKE_CURRENT_BINARY_DIR}/lib -lbenchmark")
+target_link_libraries (genmap_algo_benchmark ${SEQAN_LIBRARIES})
 target_link_libraries (genmap_algo_benchmark pthread) # required by google benchmark
+
+add_definitions (-DSEQAN_APP_VERSION="${SEQAN_APP_VERSION}") # TODO: remove

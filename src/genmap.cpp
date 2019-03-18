@@ -2,6 +2,8 @@
 
 #include <seqan/arg_parse.h>
 
+static constexpr bool outputProgress = true; // TODO: remove global variable
+
 #include "genmap_helper.hpp"
 #include "indexing.hpp"
 #include "mappability.hpp"

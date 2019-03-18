@@ -7,7 +7,7 @@
 #include <seqan/seq_io.h>
 #include <seqan/index.h>
 
-static constexpr bool outputProgress = true; // TODO: remove global variable
+using namespace seqan;
 
 enum OutputType
 {
@@ -41,8 +41,6 @@ struct Options
 #include "common.hpp"
 #include "algo.hpp"
 #include "output.hpp"
-
-using namespace seqan;
 
 template <typename TSpec>
 inline std::string retrieve(StringSet<CharString, TSpec> const & info, std::string const & key)
@@ -292,6 +290,82 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         run<TChar, Alloc<> >(opt, searchParams);
 }
 
+inline void run(Options & opt, SearchParams const & searchParams)
+{
+    // TODO: error message if output files already exist or directory is not writeable
+    // TODO: nice error messages if index is incorrect or doesnt exist
+    if (back(opt.indexPath) != '/')
+        opt.indexPath += '/';
+    opt.indexPath += "index";
+
+    StringSet<CharString, Owner<ConcatDirect<> > > info;
+    std::string infoPath = std::string(toCString(opt.indexPath)) + ".info";
+    open(info, toCString(infoPath));
+    opt.alphabet = "dna" + retrieve(info, "alphabet_size");
+    opt.seqNoWidth = std::stoi(retrieve(info, "sa_dimensions_i1"));
+    opt.maxSeqLengthWidth = std::stoi(retrieve(info, "sa_dimensions_i2"));
+    opt.totalLengthWidth = std::stoi(retrieve(info, "bwt_dimensions"));
+    opt.sampling = std::stoi(retrieve(info, "sampling_rate"));
+    opt.directory = retrieve(info, "fasta_directory") == "true";
+
+    if (opt.verbose)
+    {
+        std::cout << "Index was loaded (" << opt.alphabet << " alphabet, sampling rate of " << opt.sampling << ").\n"
+                     "- The BWT is represented by " << opt.totalLengthWidth << " bit values.\n"
+                     "- The sampled suffix array is represented by pairs of " << opt.seqNoWidth <<
+                     " and " << opt.maxSeqLengthWidth  << " bit values.\n";
+
+        if (opt.directory)
+            std::cout << "- Index was built on an entire directory.\n" << std::flush;
+        else
+            std::cout << "- Index was built on a single fasta file.\n" << std::flush;
+    }
+
+    // TODO: remove brackets, opt.alphabet and replace by local bool.
+    if (opt.alphabet == "dna4")
+    {
+        run<Dna>(opt, searchParams);
+    }
+    else
+    {
+        run<Dna5>(opt, searchParams);
+    }
+}
+
+inline uint64_t computeOverlap(unsigned const length, unsigned const errors,
+                               uint64_t const manual_value, bool const manual_set)
+{
+    uint64_t overlap;
+
+    // (K - O >= E + 2 must hold since common overlap has length K - O and will be split into E + 2 parts)
+    uint64_t const maxPossibleOverlap = std::min(length - 1, length - errors - 2);
+
+    if (manual_set)
+    {
+        overlap = manual_value;
+
+        if (overlap > maxPossibleOverlap)
+        {
+            std::cerr << "ERROR: overlap cannot be larger than min(K - 1, K - E + 2) = "
+                      << maxPossibleOverlap << ".\n";
+            exit(ArgumentParser::PARSE_ERROR);
+        }
+    }
+    else
+    {
+        if (errors == 0)
+            overlap = length * 0.7;
+        else
+            overlap = length * std::min(std::max(length, 30u), 100u) * pow(0.7f, errors) / 100.0;
+
+        if (overlap > maxPossibleOverlap) // TODO: std::min(overlap, maxPossibleOverlap)
+            overlap = maxPossibleOverlap;
+    }
+
+    // the return value is the length of common overlap
+    return length - overlap;
+}
+
 int mappabilityMain(int argc, char const ** argv)
 {
     // Argument parser
@@ -394,71 +468,13 @@ int mappabilityMain(int argc, char const ** argv)
     searchParams.revCompl = isSet(parser, "reverse-complement");
     searchParams.excludePseudo = isSet(parser, "exclude-pseudo");
 
-    // store in temporary variables to avoid parsing arguments twice
     bool const isSetOverlap = isSet(parser, "overlap");
+    uint64_t overlap;
     if (isSetOverlap)
-        getOptionValue(searchParams.overlap, parser, "overlap");
-    else if (opt.errors == 0)
-        searchParams.overlap = searchParams.length * 0.7;
-    else
-        searchParams.overlap = searchParams.length * std::min(std::max(searchParams.length, 30u), 100u) * pow(0.7f, opt.errors) / 100.0;
+        getOptionValue(overlap, parser, "overlap");
+    searchParams.overlap = computeOverlap(searchParams.length, opt.errors, overlap, isSetOverlap);
 
-    // (K - O >= E + 2 must hold since common overlap has length K - O and will be split into E + 2 parts)
-    uint64_t const maxPossibleOverlap = std::min(searchParams.length - 1, searchParams.length - opt.errors - 2);
-    if (searchParams.overlap > maxPossibleOverlap)
-    {
-        if (!isSetOverlap)
-        {
-            searchParams.overlap = maxPossibleOverlap;
-        }
-        else
-        {
-            std::cerr << "ERROR: overlap cannot be larger than min(K - 1, K - E + 2) = " << maxPossibleOverlap << ".\n";
-            return ArgumentParser::PARSE_ERROR;
-        }
-    }
-
-    // searchParams.overlap - length of common overlap
-    searchParams.overlap = searchParams.length - searchParams.overlap;
-
-    // TODO: error message if output files already exist or directory is not writeable
-    // TODO: nice error messages if index is incorrect or doesnt exist
-    if (back(opt.indexPath) != '/')
-        opt.indexPath += '/';
-    opt.indexPath += "index";
-
-    StringSet<CharString, Owner<ConcatDirect<> > > info;
-    std::string infoPath = std::string(toCString(opt.indexPath)) + ".info";
-    open(info, toCString(infoPath));
-    opt.alphabet = "dna" + retrieve(info, "alphabet_size");
-    opt.seqNoWidth = std::stoi(retrieve(info, "sa_dimensions_i1"));
-    opt.maxSeqLengthWidth = std::stoi(retrieve(info, "sa_dimensions_i2"));
-    opt.totalLengthWidth = std::stoi(retrieve(info, "bwt_dimensions"));
-    opt.sampling = std::stoi(retrieve(info, "sampling_rate"));
-    opt.directory = retrieve(info, "fasta_directory") == "true";
-
-    if (opt.verbose)
-    {
-        std::cout << "Index was loaded (" << opt.alphabet << " alphabet, sampling rate of " << opt.sampling << ").\n"
-                     "- The BWT is represented by " << opt.totalLengthWidth << " bit values.\n"
-                     "- The sampled suffix array is represented by pairs of " << opt.seqNoWidth <<
-                     " and " << opt.maxSeqLengthWidth  << " bit values.\n";
-
-        if (opt.directory)
-            std::cout << "- Index was built on an entire directory.\n" << std::flush;
-        else
-            std::cout << "- Index was built on a single fasta file.\n" << std::flush;
-    }
-
-    // TODO: remove brackets, opt.alphabet and replace by local bool.
-    if (opt.alphabet == "dna4")
-    {
-        run<Dna>(opt, searchParams);
-    }
-    else
-    {
-        run<Dna5>(opt, searchParams);
-    }
+    run(opt, searchParams);
 
     return 0;
 }
