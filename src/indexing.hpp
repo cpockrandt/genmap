@@ -61,7 +61,7 @@ void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
         // Print some size information on the index.
         if (options.verbose)
         {
-            std::cout << "Index will be constructed using " << (isDna5 ? "dna5" : "dna4") << " alphabet.\n"
+            std::cout << "Index will be constructed using " << (isDna5 ? "dna5/rna5" : "dna4/rna4") << " alphabet.\n"
                          "- The BWT is represented by " << bwtDigits << " bit values.\n"
                          "- The sampled suffix array is represented by pairs of " << seqNoDigits <<
                          " and " << seqPosDigits << " bit values.\n";
@@ -258,16 +258,16 @@ int indexMain(int const argc, char const ** argv)
     options.useRadix = algorithm == "radix";
     options.verbose = isSet(parser, "verbose");
 
-    // Check whether the output path exists and is writeable!
+    // Check whether the index path exists and is writeable!
     if (fileExists(toCString(options.indexPath)))
     {
-        std::cerr << "ERROR: The output directory for the index already exists at " << options.indexPath << '\n'
-                  << "Please remove it, or choose a different location.\n";
+        std::cerr << "ERROR: The directory for the index already exists at " << options.indexPath << '\n'
+                  << "       Please remove it, or choose a different location.\n";
         return ArgumentParser::PARSE_ERROR;
     }
     else if (mkdir(toCString(options.indexPath), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH))
     {
-        std::cerr << "ERROR: Cannot create output directory at " << options.indexPath << '\n';
+        std::cerr << "ERROR: Cannot create directory at " << options.indexPath << '\n';
         return ArgumentParser::PARSE_ERROR;
     }
 
@@ -355,7 +355,7 @@ int indexMain(int const argc, char const ** argv)
         SeqFileIn seqFileIn(toCString(fastaPath));
         readRecords(ids, chromosomes2, seqFileIn);
         if (options.verbose)
-            std::cout << "Number of sequences in the fasta file: " << length(chromosomes) << '\n';
+            std::cout << "Number of sequences in the fasta file: " << length(chromosomes2) << '\n';
 
         for (uint64_t i = 0; i < length(chromosomes2); ++i)
         {
@@ -430,7 +430,7 @@ int indexMain(int const argc, char const ** argv)
         // There might be undefined behavior of radix sort for very small indices with a handful of bases.
         options.useRadix = false;
         std::cout << "NOTE: Your input is quite small (i.e., less than 1 megabase)."
-                  << "Hence, Skew7 is used for index construction anyway to avoid parallelization overhead.\n"
+                  << "      Hence, Skew7 is used for index construction anyway to avoid parallelization overhead.\n"
                   << std::flush;
     }
 

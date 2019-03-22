@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <limits>
 #include <cmath>
+#include <sys/stat.h>
 
 #include <seqan/arg_parse.h>
 #include <seqan/seq_io.h>
@@ -69,8 +70,6 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
         std::cout << '\n' << std::flush;
 
     std::string output_path = std::string(toCString(opt.outputPath));
-    if (back(output_path) != '/')
-        output_path += '/';
     output_path += fastaFile.substr(0, fastaFile.find_last_of('.')) + ".genmap";
 
     if (opt.rawFile)
@@ -303,7 +302,7 @@ int mappabilityMain(int argc, char const ** argv)
     addOption(parser, ArgParseOption("I", "index", "Path to the index", ArgParseArgument::INPUT_FILE, "IN"));
 	setRequired(parser, "index");
 
-    addOption(parser, ArgParseOption("O", "output", "Path to output directory and prefix filename (error number and length will be appended to the output file)", ArgParseArgument::OUTPUT_FILE, "OUT"));
+    addOption(parser, ArgParseOption("O", "output", "Path to output directory", ArgParseArgument::OUTPUT_FILE, "OUT"));
     setRequired(parser, "output");
 
     addOption(parser, ArgParseOption("E", "errors", "Number of errors", ArgParseArgument::INTEGER, "INT"));
@@ -357,6 +356,21 @@ int mappabilityMain(int argc, char const ** argv)
     getOptionValue(opt.errors, parser, "errors");
     getOptionValue(opt.indexPath, parser, "index");
     getOptionValue(opt.outputPath, parser, "output");
+
+    // Check whether the output path exists
+    {
+        struct stat st;
+        if (!(stat(toCString(opt.outputPath), &st) == 0 && S_ISDIR(st.st_mode)))
+        {
+            std::cerr << "ERROR: The output directory " << opt.outputPath << " does not exist\n"
+                      << "       Please create it, or choose a different location.\n";
+            return ArgumentParser::PARSE_ERROR;
+        }
+
+        if (back(opt.outputPath) != '/')
+            appendValue(opt.outputPath, '/');
+    }
+
     opt.mmap = isSet(parser, "memory-mapping");
     opt.indels = isSet(parser, "indels");
     opt.wigFile = isSet(parser, "wig");
@@ -439,6 +453,7 @@ int mappabilityMain(int argc, char const ** argv)
 
     if (opt.verbose)
     {
+        // TODO: dna5/rna5
         std::cout << "Index was loaded (" << opt.alphabet << " alphabet, sampling rate of " << opt.sampling << ").\n"
                      "- The BWT is represented by " << opt.totalLengthWidth << " bit values.\n"
                      "- The sampled suffix array is represented by pairs of " << opt.seqNoWidth <<
