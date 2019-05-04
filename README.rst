@@ -128,7 +128,7 @@ You might want to check out prebuilt indices for `download <#pre-built-indices>`
 
 ::
 
-    $ ./genmap index -G /path/to/fasta.fasta -I /path/to/index/folder
+    $ ./genmap index -F /path/to/fasta.fasta -I /path/to/index/folder
 
 A new folder ``/path/to/index/folder`` will be created to store the index and all associated files.
 
