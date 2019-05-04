@@ -16,7 +16,8 @@ void sharedSetup(ArgumentParser & parser)
     setShortCopyright(parser, "2019 Christopher Pockrandt, released under the 3-clause-BSD; "
                               "2016-2019 Knut Reinert and Freie Universität Berlin, released under the 3-clause-BSD");
 
-    setCitation(parser, "Pockrandt et al (2019); doi: TODO");
+    setCitation(parser, "Pockrandt et al (2019). GenMap: Fast and Exact Computation of Genome Mappability.\n"
+                        "doi: https://doi.org/10.1101/611160");
 
     setLongCopyright(parser,
         " Copyright (c) 2019, Christopher Pockrandt\n"

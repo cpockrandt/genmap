@@ -18,10 +18,9 @@ multiple fasta files, please check out our GitHub `Wiki pages <https://github.co
 For questions or feature requests feel free to open an issue on GitHub or send an e-mail to
 ``christopher.pockrandt [ÄT] fu-berlin.de``.
 
-The corresponding paper will be uploaded to biorxiv.org in mid-March.
-Until then major design changes of the interface and minor changes to its specification are possible.
+Christopher Pockrandt, Mai Alzamel, Costas S. Iliopoulos, Knut Reinert. **GenMap: Fast and Exact Computation of Genome Mappability**. `bioRxiv`_, presented on RECOMB-Seq, 2019.
 
-.. x contents:: Table of Contents
+.. _bioRxiv: https://doi.org/10.1101/611160
 
 Binaries
 ^^^^^^^^
