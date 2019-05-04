@@ -105,9 +105,9 @@ struct OptimalSearchSchemesGM<3, TVoidType>
 {
     static constexpr std::array<OptimalSearchGM<5>, 4> VALUE
     {{
-        { {{1, 2, 3, 4, 5}}, {{0, 0, 0, 0, 3}}, {{0, 2, 2, 3, 3}}, {{0, 0, 0, 0, 0}}, 0 },
+        { {{1, 2, 3, 4, 5}}, {{0, 0, 0, 0, 3}}, {{0, 1, 2, 3, 3}}, {{0, 0, 0, 0, 0}}, 0 },
         { {{2, 3, 4, 5, 1}}, {{0, 0, 0, 2, 2}}, {{0, 1, 2, 2, 3}}, {{0, 0, 0, 0, 0}}, 0 },
-        { {{3, 4, 5, 2, 1}}, {{0, 0, 1, 1, 1}}, {{0, 1, 1, 2, 3}}, {{0, 0, 0, 0, 0}}, 0 },
+        { {{3, 4, 5, 2, 1}}, {{0, 0, 1, 1, 1}}, {{0, 1, 1, 3, 3}}, {{0, 0, 0, 0, 0}}, 0 },
         { {{5, 4, 3, 2, 1}}, {{0, 0, 0, 0, 0}}, {{0, 0, 3, 3, 3}}, {{0, 0, 0, 0, 0}}, 0 }
     }};
 };
@@ -118,18 +118,20 @@ constexpr std::array<OptimalSearchGM<5>, 4> OptimalSearchSchemesGM<3, TVoidType>
 template <typename TVoidType>
 struct OptimalSearchSchemesGM<4, TVoidType>
 {
-    static constexpr std::array<OptimalSearchGM<6>, 5> VALUE
+    static constexpr std::array<OptimalSearchGM<6>, 7> VALUE
     {{
-        { {{1, 2, 3, 4, 5, 6}}, {{0, 0, 0, 0, 0, 4}}, {{0, 3, 3, 3, 4, 4}}, {{0, 0, 0, 0, 0, 0}}, 0 },
+        { {{1, 2, 3, 4, 5, 6}}, {{0, 0, 0, 0, 0, 4}}, {{0, 2, 3, 3, 4, 4}}, {{0, 0, 0, 0, 0, 0}}, 0 },
+        { {{3, 4, 5, 6, 2, 1}}, {{0, 0, 0, 1, 4, 4}}, {{0, 0, 1, 1, 4, 4}}, {{0, 0, 0, 0, 0, 0}}, 0 },
         { {{2, 3, 4, 5, 6, 1}}, {{0, 0, 0, 0, 0, 0}}, {{0, 2, 2, 3, 3, 4}}, {{0, 0, 0, 0, 0, 0}}, 0 },
-        { {{3, 2, 4, 5, 6, 1}}, {{0, 1, 1, 1, 1, 1}}, {{0, 2, 2, 3, 3, 4}}, {{0, 0, 0, 0, 0, 0}}, 0 },
+        { {{3, 2, 4, 5, 6, 1}}, {{0, 1, 1, 1, 1, 1}}, {{0, 1, 2, 3, 3, 4}}, {{0, 0, 0, 0, 0, 0}}, 0 },
+        { {{4, 3, 2, 5, 6, 1}}, {{0, 0, 2, 2, 2, 2}}, {{0, 0, 2, 3, 3, 4}}, {{0, 0, 0, 0, 0, 0}}, 0 },
         { {{4, 3, 2, 5, 6, 1}}, {{0, 1, 2, 2, 2, 2}}, {{0, 1, 2, 3, 3, 4}}, {{0, 0, 0, 0, 0, 0}}, 0 },
         { {{6, 5, 4, 3, 2, 1}}, {{0, 0, 0, 0, 3, 3}}, {{0, 0, 4, 4, 4, 4}}, {{0, 0, 0, 0, 0, 0}}, 0 }
     }};
 };
 
 template <typename TVoidType>
-constexpr std::array<OptimalSearchGM<6>, 5> OptimalSearchSchemesGM<4, TVoidType>::VALUE;
+constexpr std::array<OptimalSearchGM<6>, 7> OptimalSearchSchemesGM<4, TVoidType>::VALUE;
 
 // Given the blocklengths (absolute, not cumulative values), assign it to all
 // OptimalSearches in a OptimalSearchScheme. The order of blocklength has to be from left to
