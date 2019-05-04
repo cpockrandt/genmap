@@ -1,5 +1,8 @@
-GenMap - Fast and Exact Computation of Genome Mappability |buildstatus|
------------------------------------------------------------------------
+GenMap 1.0 |buildstatus|
+------------------------
+
+Fast and Exact Computation of Genome Mappability
+================================================
 
 .. |BUILDSTATUS| image:: https://travis-ci.org/cpockrandt/genmap.svg?branch=master
     :target: https://travis-ci.org/cpockrandt/genmap
@@ -35,22 +38,22 @@ To verify whether your CPU supports these instructions sets you can check the ou
 .. Source of linux.svg: https://svgsilh.com/image/2025536.html
 .. Source of apple.svg: https://svgsilh.com/image/2962084.html
 
-+---------------------------------+---------------------------+-----------------------------+
-| **Platform**                    | **Details**               | **Additional requirements** |
-+---------------------------------+---------------------------+-----------------------------+
-| .. image:: .github/linux.svg    | `Linux 64 bit`_           | \-                          |
-+   :alt: Download Linux binaries +---------------------------+-----------------------------+
-|   :height: 60px                 | `Linux 64 bit optimized`_ | requires up to SSE4         |
-+---------------------------------+---------------------------+-----------------------------+
-| .. image:: .github/apple.svg    | `Mac 64 bit`_             | \-                          |
-+   :alt: Download Mac binaries   +---------------------------+-----------------------------+
-|   :height: 60px                 | `Mac 64 bit optimized`_   | requires up to SSE4         |
-+---------------------------------+---------------------------+-----------------------------+
++---------------------------------+---------------------------+------------------+-----------------------------+
+| **Platform**                    | **Download**              | **Version**      | **Additional requirements** |
++---------------------------------+---------------------------+------------------+-----------------------------+
+| .. image:: .github/linux.svg    | `Linux 64 bit`_           | 1.0 (2019-05-27) | \-                          |
++   :alt: Download Linux binaries +---------------------------+------------------+-----------------------------+
+|   :height: 60px                 | `Linux 64 bit optimized`_ | 1.0 (2019-05-27) | requires up to SSE4         |
++---------------------------------+---------------------------+------------------+-----------------------------+
+| .. image:: .github/apple.svg    | `Mac 64 bit`_             | 1.0 (2019-05-27) | \-                          |
++   :alt: Download Mac binaries   +---------------------------+------------------+-----------------------------+
+|   :height: 60px                 | `Mac 64 bit optimized`_   | 1.0 (2019-05-27) | requires up to SSE4         |
++---------------------------------+---------------------------+------------------+-----------------------------+
 
-.. _Linux 64 bit: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/genmap-0.9-Linux-x86_64.zip
-.. _Linux 64 bit optimized: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/genmap-0.9-Linux-x86_64-sse4.zip
-.. _Mac 64 bit: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/genmap-0.9-Darwin-x86_64.zip
-.. _Mac 64 bit optimized: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/genmap-0.9-Darwin-x86_64-sse4.zip
+.. _Linux 64 bit: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/genmap-1.0-Linux-x86_64.zip
+.. _Linux 64 bit optimized: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/genmap-1.0-Linux-x86_64-sse4.zip
+.. _Mac 64 bit: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/genmap-1.0-Darwin-x86_64.zip
+.. _Mac 64 bit optimized: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/genmap-1.0-Darwin-x86_64-sse4.zip
 
 Building from source
 ^^^^^^^^^^^^^^^^^^^^
@@ -212,3 +215,18 @@ If you need other genomes indexed and do not have the computational resources, p
 .. _`dm6 index`:    http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/dm6-dna5.tar.gz
 .. _`ce11 index`:   http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/ce11-dna5.tar.gz
 .. _`hv index`:     http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/hv-dna5.tar.gz
+
+Changelog
+^^^^^^^^^
+
+1.0 (2019-05-27)
+""""""""""""""""
+
+* faster computation of mappability for 3 and 4 errors
+* included the reference to the paper (preprint)
+* minor fixes in documentation and error messages
+
+0.9 (2019-03-23)
+""""""""""""""""
+
+* preliminary version of GenMap released
