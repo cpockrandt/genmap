@@ -252,9 +252,25 @@ int indexMain(int const argc, char const ** argv)
     toLower(algorithm);
     options.directory = isSetFastaDirectory;
     if (isSetFastaDirectory)
+    {
         getOptionValue(fastaPath, parser, "fasta-directory");
+        struct stat st;
+        if (!(stat(toCString(fastaPath), &st) == 0 && S_ISDIR(st.st_mode)))
+        {
+            std::cerr << "ERROR: The fasta directory does not exist!\n";
+            return ArgumentParser::PARSE_ERROR;
+        }
+    }
     else
+    {
         getOptionValue(fastaPath, parser, "fasta-file");
+        if (!fileExists(toCString(fastaPath)))
+        {
+            std::cerr << "ERROR: The fasta file does not exist!\n";
+            return ArgumentParser::PARSE_ERROR;
+        }
+    }
+
     options.useRadix = algorithm == "radix";
     options.verbose = isSet(parser, "verbose");
 
