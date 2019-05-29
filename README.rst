@@ -50,10 +50,10 @@ To verify whether your CPU supports these instructions sets you can check the ou
 |   :height: 60px                 | `Mac 64 bit optimized`_   | 1.0 (2019-05-27) | requires up to SSE4         |
 +---------------------------------+---------------------------+------------------+-----------------------------+
 
-.. _Linux 64 bit: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/genmap-1.0-Linux-x86_64.zip
-.. _Linux 64 bit optimized: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/genmap-1.0-Linux-x86_64-sse4.zip
-.. _Mac 64 bit: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/genmap-1.0-Darwin-x86_64.zip
-.. _Mac 64 bit optimized: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/genmap-1.0-Darwin-x86_64-sse4.zip
+.. _Linux 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0/genmap-1.0-Linux-x86_64.zip
+.. _Linux 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0/genmap-1.0-Linux-x86_64-sse4.zip
+.. _Mac 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0/genmap-1.0-Darwin-x86_64.zip
+.. _Mac 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0/genmap-1.0-Darwin-x86_64-sse4.zip
 
 Building from source
 ^^^^^^^^^^^^^^^^^^^^
