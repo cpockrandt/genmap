@@ -98,23 +98,14 @@ Language support
 Mappability example
 ^^^^^^^^^^^^^^^^^^^
 
-Below you can see the (4,1)-mappability and frequency ``M`` and ``F`` of the nucleotide sequence ``T = ATCTAGCTTGCTAATCTA``.
+Below you can see the (4,1)-mappability and frequency ``M`` and ``F`` of the nucleotide sequence ``T = ATCTAGGCTAATCTA``.
 Only mismatches (Hamming distance) are considered.
-GenMap can also allow for insertions and deletions (Edit/Levenshtein distance, coming soon).
 
-.. TODO: smaller example s.t. no scrolling is necessary
+.. image:: .github/example.png
+   :align: center
+   :alt: example of mappability
 
-+----------+-------+-------+-------+-------+-------+-----+-----+-----+-----+-------+-------+-------+-------+------+-------+-------+-------+-------+
-| **i**    |   0   |   1   |   2   |   3   |   4   |  5  |  6  |  7  |  8  |   9   |   10  |   11  |   12  |  13  |   14  |   15  |   16  |   17  |
-+----------+-------+-------+-------+-------+-------+-----+-----+-----+-----+-------+-------+-------+-------+------+-------+-------+-------+-------+
-| **T[i]** |   A   | **T** | **C** | **T** | **A** |  G  |  C  |  T  |  T  | **G** | **C** | **T** | **A** |   A  | **T** | **C** | **T** | **A** |
-+----------+-------+-------+-------+-------+-------+-----+-----+-----+-----+-------+-------+-------+-------+------+-------+-------+-------+-------+
-| **M[i]** |  0.33 |  0.33 |  0.33 |  0.5  |  0.25 | 0.5 | 0.5 | 0.5 | 0.5 |  0.25 |  0.5  |  1.0  |  1.0  | 0.33 |  0.33 |   0   |   0   |   0   |
-+----------+-------+-------+-------+-------+-------+-----+-----+-----+-----+-------+-------+-------+-------+------+-------+-------+-------+-------+
-| **F[i]** |   3   |   3   |   3   |   2   |   4   |  2  |  2  |  2  |  2  |   4   |   2   |   1   |   1   |   3  |   3   |   0   |   0   |   0   |
-+----------+-------+-------+-------+-------+-------+-----+-----+-----+-----+-------+-------+-------+-------+------+-------+-------+-------+-------+
-
-The mappability value ``M[1] = 0.33`` means that the 4-mer starting at position 1 ``T[1..3] = TCTA`` occurs three times in the sequence with up to one mismatch, namely at positions ``1 (TCTA)``, ``9 (GCTA)`` and ``14 (TCTA)``.
+The mappability value ``M[1] = 0.33`` means that the 4-mer starting at position 1 ``T[1..3] = TCTA`` occurs three times in the sequence with up to one mismatch, namely at positions ``1 (TCTA)``, ``6 (GCTA)`` and ``11 (TCTA)``.
 
 The mappability can be exported in various formats that allow post-processing or display in genome browsers.
 
