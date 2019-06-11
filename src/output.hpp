@@ -55,8 +55,8 @@ void saveTxt(std::vector<T> const & c, std::string const & output_path, TChromos
         }
         else
         {
-            std::copy(seqBegin, seqEnd - 1, std::ostream_iterator<T>(outfile, " "));
-            outfile << *(seqEnd - 1); // no space after last value
+            std::copy(seqBegin, seqEnd - 1, std::ostream_iterator<uint16_t>(outfile, " "));
+            outfile << static_cast<uint16_t>(*(seqEnd - 1)); // no space after last value
         }
         outfile << '\n';
 
