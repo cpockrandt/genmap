@@ -1,6 +1,12 @@
 Changelog
 ^^^^^^^^^
 
+1.0.1 (2019-06-11)
+""""""""""""""""""
+
+* ``--frequency-small`` would output unreadable ascii characters in ``--txt`` format
+* some typo fixes
+
 1.0.0 (2019-05-27)
 """"""""""""""""""
 

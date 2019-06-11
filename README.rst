@@ -1,5 +1,5 @@
-GenMap 1.0 |buildstatus|
-------------------------
+GenMap 1.0.1 |buildstatus|
+--------------------------
 
 Fast and Exact Computation of Genome Mappability
 ================================================
@@ -38,22 +38,22 @@ To verify whether your CPU supports these instructions sets you can check the ou
 .. Source of linux.svg: https://svgsilh.com/image/2025536.html
 .. Source of apple.svg: https://svgsilh.com/image/2962084.html
 
-+---------------------------------+---------------------------+------------------+-----------------------------+
-| **Platform**                    | **Download**              | **Version**      | **Additional requirements** |
-+---------------------------------+---------------------------+------------------+-----------------------------+
-| .. image:: .github/linux.svg    | `Linux 64 bit`_           | 1.0 (2019-05-27) | \-                          |
-+   :alt: Download Linux binaries +---------------------------+------------------+-----------------------------+
-|   :height: 60px                 | `Linux 64 bit optimized`_ | 1.0 (2019-05-27) | requires up to SSE4         |
-+---------------------------------+---------------------------+------------------+-----------------------------+
-| .. image:: .github/apple.svg    | `Mac 64 bit`_             | 1.0 (2019-05-27) | \-                          |
-+   :alt: Download Mac binaries   +---------------------------+------------------+-----------------------------+
-|   :height: 60px                 | `Mac 64 bit optimized`_   | 1.0 (2019-05-27) | requires up to SSE4         |
-+---------------------------------+---------------------------+------------------+-----------------------------+
++---------------------------------+---------------------------+--------------------+-----------------------------+
+| **Platform**                    | **Download**              | **Version**        | **Additional requirements** |
++---------------------------------+---------------------------+--------------------+-----------------------------+
+| .. image:: .github/linux.svg    | `Linux 64 bit`_           | 1.0.1 (2019-06-11) | \-                          |
++   :alt: Download Linux binaries +---------------------------+--------------------+-----------------------------+
+|   :height: 60px                 | `Linux 64 bit optimized`_ | 1.0.1 (2019-06-11) | requires up to SSE4         |
++---------------------------------+---------------------------+--------------------+-----------------------------+
+| .. image:: .github/apple.svg    | `Mac 64 bit`_             | 1.0.1 (2019-06-11) | \-                          |
++   :alt: Download Mac binaries   +---------------------------+--------------------+-----------------------------+
+|   :height: 60px                 | `Mac 64 bit optimized`_   | 1.0.1 (2019-06-11) | requires up to SSE4         |
++---------------------------------+---------------------------+--------------------+-----------------------------+
 
-.. _Linux 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0/genmap-1.0-Linux-x86_64.zip
-.. _Linux 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0/genmap-1.0-Linux-x86_64-sse4.zip
-.. _Mac 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0/genmap-1.0-Darwin-x86_64.zip
-.. _Mac 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0/genmap-1.0-Darwin-x86_64-sse4.zip
+.. _Linux 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0.1/genmap-1.0.1-Linux-x86_64.zip
+.. _Linux 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0.1/genmap-1.0.1-Linux-x86_64-sse4.zip
+.. _Mac 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0.1/genmap-1.0.1-Darwin-x86_64.zip
+.. _Mac 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0.1/genmap-1.0.1-Darwin-x86_64-sse4.zip
 
 Building from source
 ^^^^^^^^^^^^^^^^^^^^
