@@ -206,18 +206,3 @@ If you need other genomes indexed and do not have the computational resources, p
 .. _`dm6 index`:    http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/dm6-dna5.tar.gz
 .. _`ce11 index`:   http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/ce11-dna5.tar.gz
 .. _`hv index`:     http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/hv-dna5.tar.gz
-
-Changelog
-^^^^^^^^^
-
-1.0 (2019-05-27)
-""""""""""""""""
-
-* faster computation of mappability for 3 and 4 errors
-* included the reference to the paper (preprint)
-* minor fixes in documentation and error messages
-
-0.9 (2019-03-23)
-""""""""""""""""
-
-* preliminary version of GenMap released
