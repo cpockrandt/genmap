@@ -182,7 +182,6 @@ void test(uint64_t const nbrChromosomes, uint64_t const lengthChromosomes, uint6
                 std::map<TLocation, std::pair<std::vector<TLocation>, std::vector<TLocation> > > locations;
                 std::vector<uint16_t> mappingSeqIdFile(0);
 
-                // TODO: TDistance
                 frequencyGenMap.assign(totalLength, 0);
                 computeMappability<errors, false>(index, text, frequencyGenMap, searchParams, false /*dir*/, chromLengths, locations, mappingSeqIdFile);
 
@@ -252,46 +251,6 @@ TEST(GenMapAlgo, hamming_4_dna5)
 {
     test<Dna5, HammingDistance, 4>(3, 1000, 1);
 }
-
-// TEST(GenMapAlgo, edit_1_dna4)
-// {
-//     test<Dna, EditDistance, 1>(5, 1000, 1);
-// }
-//
-// TEST(GenMapAlgo, edit_2_dna4)
-// {
-//     test<Dna, EditDistance, 2>(5, 1000, 1);
-// }
-//
-// TEST(GenMapAlgo, edit_3_dna4)
-// {
-//     test<Dna, EditDistance, 3>(5, 1000, 1);
-// }
-//
-// TEST(GenMapAlgo, edit_4_dna4)
-// {
-//     test<Dna, EditDistance, 4>(5, 1000, 1);
-// }
-//
-// TEST(GenMapAlgo, edit_1_dna5)
-// {
-//     test<Dna5, EditDistance, 1>(5, 1000, 1);
-// }
-//
-// TEST(GenMapAlgo, edit_2_dna5)
-// {
-//     test<Dna5, EditDistance, 2>(5, 1000, 1);
-// }
-//
-// TEST(GenMapAlgo, edit_3_dna5)
-// {
-//     test<Dna5, EditDistance, 3>(5, 1000, 1);
-// }
-//
-// TEST(GenMapAlgo, edit_4_dna5)
-// {
-//     test<Dna5, EditDistance, 4>(5, 1000, 1);
-// }
 
 int main(int argc, char ** argv)
 {

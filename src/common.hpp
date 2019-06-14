@@ -69,7 +69,6 @@ struct SearchParams
     unsigned length;
     unsigned overlap;
     unsigned threads;
-    // bool indels;
     bool revCompl;
     bool excludePseudo;
 };

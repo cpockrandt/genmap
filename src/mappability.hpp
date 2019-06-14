@@ -19,7 +19,6 @@ enum OutputType
 struct Options
 {
     bool mmap;
-    bool indels;
     bool wigFile; // group files into mergable flags, i.e., BED | WIG, etc.
     bool bedFile;
     bool rawFile;
@@ -268,25 +267,13 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         run<TChar, TAllocConfig, TDistance, uint8_t>(opt, searchParams);
 }
 
-template <typename TChar, typename TAllocConfig>
-inline void run(Options const & opt, SearchParams const & searchParams)
-{
-    if (opt.indels)
-    {
-        std::cerr << "ERROR: EditDistance is not officially supported yet. Coming soon!\n";
-        exit(1);
-    }
-    else
-        run<TChar, TAllocConfig, HammingDistance>(opt, searchParams);
-}
-
 template <typename TChar>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
     if (opt.mmap)
-        run<TChar, MMap<> >(opt, searchParams);
+        run<TChar, MMap<>, HammingDistance>(opt, searchParams);
     else
-        run<TChar, Alloc<> >(opt, searchParams);
+        run<TChar, Alloc<>, HammingDistance>(opt, searchParams);
 }
 
 int mappabilityMain(int argc, char const ** argv)
@@ -311,9 +298,6 @@ int mappabilityMain(int argc, char const ** argv)
     addOption(parser, ArgParseOption("c", "reverse-complement", "Searches each k-mer on the reverse strand as well."));
 
     addOption(parser, ArgParseOption("ep", "exclude-pseudo", "Mappability only counts the number of fasta files that contain the k-mer, not the total number of occurrences (i.e., neglects so called- pseudo genes / sequences). This has no effect on the csv output."));
-
-    addOption(parser, ArgParseOption("i", "indels", "Turns on indels (EditDistance). "
-        "If not selected, only mismatches will be considered."));
 
     addOption(parser, ArgParseOption("fs", "frequency-small", "Stores frequencies using 8 bit per value (max. value 255) instead of the mappbility using a float per value (32 bit). Applies to all formats (raw, txt, wig, bed)."));
     addOption(parser, ArgParseOption("fl", "frequency-large", "Stores frequencies using 16 bit per value (max. value 65535) instead of the mappbility using a float per value (32 bit). Applies to all formats (raw, txt, wig, bed)."));
@@ -370,7 +354,6 @@ int mappabilityMain(int argc, char const ** argv)
     }
 
     opt.mmap = isSet(parser, "memory-mapping");
-    opt.indels = isSet(parser, "indels");
     opt.wigFile = isSet(parser, "wig");
     opt.bedFile = isSet(parser, "bed");
     opt.rawFile = isSet(parser, "raw");
