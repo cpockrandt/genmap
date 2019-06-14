@@ -17,10 +17,6 @@ variableStep chrom=seq0 span=4
 variableStep chrom=seq0 span=1
 18 0.166667
 19 0.333333
-variableStep chrom=seq0 span=3
-20 0
-variableStep chrom=seq1 span=3
-1 0
 variableStep chrom=seq2 span=1
 1 0.166667
 2 0.333333
@@ -30,7 +26,3 @@ variableStep chrom=seq2 span=1
 6 0.333333
 variableStep chrom=seq2 span=4
 7 1
-variableStep chrom=seq2 span=3
-11 0
-variableStep chrom=seq3 span=3
-1 0

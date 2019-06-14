@@ -91,20 +91,24 @@ void saveWig(std::vector<T> const & c, std::string const & output_path, TChromos
         {
             if (pos == end_pos_string || current_val != c[pos])
             {
-                if (last_occ != occ)
-                    wigFile << "variableStep chrom=" << chromNames[i] << " span=" << occ << '\n';
                 // TODO: document this behavior (mappability of 0)
-                SEQAN_IF_CONSTEXPR (mappability)
+                if (current_val != 0)
                 {
-                    float const value = (current_val != 0) ? 1.0f / static_cast<float>(current_val) : 0;
-                    wigFile << (pos - occ + 1 - begin_pos_string) << ' ' << value << '\n'; // pos in wig start at 1
-                }
-                else
-                {
-                    wigFile << (pos - occ + 1 - begin_pos_string) << ' ' << current_val << '\n'; // pos in wig start at 1
+                    if (last_occ != occ)
+                        wigFile << "variableStep chrom=" << chromNames[i] << " span=" << occ << '\n';
+
+                    SEQAN_IF_CONSTEXPR (mappability)
+                    {
+                        float const value = (current_val != 0) ? 1.0f / static_cast<float>(current_val) : 0;
+                        wigFile << (pos - occ + 1 - begin_pos_string) << ' ' << value << '\n'; // pos in wig start at 1
+                    }
+                    else
+                    {
+                        wigFile << (pos - occ + 1 - begin_pos_string) << ' ' << current_val << '\n'; // pos in wig start at 1
+                    }
+                    last_occ = occ;
                 }
 
-                last_occ = occ;
                 occ = 0;
                 if (pos < end_pos_string)
                     current_val = c[pos];
@@ -149,15 +153,18 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
         {
             if (pos == end_pos_string || current_val != c[pos])
             {
-                bedFile << chromNames[i] << '\t'                    // chrom name
-                        << (pos - occ - begin_pos_string) << '\t'   // start pos (begins with 0)
-                        << (pos - begin_pos_string) << '\t'         // end pos
-                        << '-' << '\t';                             // name
+                if (current_val != 0)
+                {
+                    bedFile << chromNames[i] << '\t'                    // chrom name
+                            << (pos - occ - begin_pos_string) << '\t'   // start pos (begins with 0)
+                            << (pos - begin_pos_string) << '\t'     // end pos
+                            << '-' << '\t';                             // name
 
-                SEQAN_IF_CONSTEXPR (mappability)
-                    bedFile << ((current_val != 0) ? 1.0f / static_cast<float>(current_val) : 0) << '\n';
-                else
-                    bedFile << current_val << '\n';
+                    SEQAN_IF_CONSTEXPR (mappability)
+                        bedFile << ((current_val != 0) ? 1.0f / static_cast<float>(current_val) : 0) << '\n';
+                    else
+                        bedFile << current_val << '\n';
+                }
 
                 occ = 0;
                 if (pos < end_pos_string)

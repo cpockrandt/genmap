@@ -7,14 +7,9 @@ variableStep chrom=seq0 span=1
 6 4
 7 6
 8 4
-variableStep chrom=seq0 span=2
-9 0
-variableStep chrom=seq0 span=1
 11 4
 12 6
 13 4
 14 1
 variableStep chrom=seq0 span=2
 15 2
-variableStep chrom=seq0 span=4
-17 0
