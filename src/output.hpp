@@ -151,7 +151,7 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
             {
                 bedFile << chromNames[i] << '\t'                    // chrom name
                         << (pos - occ - begin_pos_string) << '\t'   // start pos (begins with 0)
-                        << (pos - begin_pos_string - 1) << '\t'     // end pos
+                        << (pos - begin_pos_string) << '\t'         // end pos
                         << '-' << '\t';                             // name
 
                 SEQAN_IF_CONSTEXPR (mappability)
