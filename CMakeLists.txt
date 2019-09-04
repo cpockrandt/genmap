@@ -19,7 +19,7 @@ project (genmap CXX)
 # change this after every release
 set (SEQAN_APP_VERSION_MAJOR "1")
 set (SEQAN_APP_VERSION_MINOR "0")
-set (SEQAN_APP_VERSION_PATCH "1")
+set (SEQAN_APP_VERSION_PATCH "2")
 # don't change the following
 set (SEQAN_APP_VERSION "${SEQAN_APP_VERSION_MAJOR}.${SEQAN_APP_VERSION_MINOR}.${SEQAN_APP_VERSION_PATCH}")
 # adapt when necessary

@@ -1,6 +1,11 @@
 Changelog
 ^^^^^^^^^
 
+1.0.2 (2019-09-04)
+""""""""""""""""""
+
+* BED output format fixed (end position was off by one, i.e. closed interval instead of half-closed interval) 
+
 1.0.1 (2019-06-11)
 """"""""""""""""""
 
