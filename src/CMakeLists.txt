@@ -45,7 +45,7 @@ if (GENMAP_STATIC_BUILD)
         set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
         message (WARNING "WARNING: Builds on Mac are never fully static.")
     else (APPLE)
-        set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static")
+        set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgcc -static-libstdc++")
     endif (APPLE)
     # on linux cmake adds -rdynamic automatically which clang can't handle in static builds
     if (CMAKE_SYSTEM_NAME MATCHES "Linux")

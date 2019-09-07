@@ -1,7 +1,6 @@
 #include <vector>
 #include <cstdint>
 #include <limits>
-#include <cmath>
 #include <sys/stat.h>
 
 #include <seqan/arg_parse.h>
