@@ -66,7 +66,19 @@ Please note that building from source can easily take 10 minutes and longer depe
     $ mkdir genmap-build && cd genmap-build
     $ cmake ../genmap -DCMAKE_BUILD_TYPE=Release
     $ make genmap
-    $ ./bin/genmap
+
+You can install genmap as follows
+
+::
+
+    $ sudo make install
+    $ genmap
+
+or run the binary directly:
+
+::
+
+    $ ./genmap
 
 If you are using a very old version of Git (< 1.6.5) the flag ``--recursive`` does not exist.
 In this case you need to clone the submodule separately before you can run ``cmake``:

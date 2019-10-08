@@ -100,6 +100,7 @@ set (GENMAP_SOURCE_FILES genmap.cpp
 
 add_executable (genmap ${GENMAP_SOURCE_FILES})
 target_link_libraries (genmap ${SEQAN_LIBRARIES})
+install(TARGETS genmap DESTINATION bin)
 
 # if (LAMBDA_MULTIOPT_BUILD)
 #     add_executable (lambda2-sse4 ${LAMBDA_SOURCE_FILES})
