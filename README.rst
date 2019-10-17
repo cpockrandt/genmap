@@ -1,11 +1,14 @@
-GenMap 1.0.2 |buildstatus|
---------------------------
+GenMap 1.0.2 |buildstatus| |bioconda|
+-------------------------------------
 
 Fast and Exact Computation of Genome Mappability
 ================================================
 
 .. |BUILDSTATUS| image:: https://travis-ci.org/cpockrandt/genmap.svg?branch=master
     :target: https://travis-ci.org/cpockrandt/genmap
+
+.. |BIOCONDA| image:: https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat
+    :target: https://anaconda.org/bioconda/genmap
 
 GenMap is a tool to compute the mappability respectively frequency of nucleotide sequences (DNA and RNA).
 In particular, it computes the (k,e)-frequency, i.e., how often each k-mer from the sequence occurs with up to e errors
@@ -24,6 +27,13 @@ For questions or feature requests feel free to open an issue on GitHub or send a
 Christopher Pockrandt, Mai Alzamel, Costas S. Iliopoulos, Knut Reinert. **GenMap: Fast and Exact Computation of Genome Mappability**. `bioRxiv`_, presented on RECOMB-Seq, 2019.
 
 .. _bioRxiv: https://doi.org/10.1101/611160
+
+Bioconda
+^^^^^^^^
+
+::
+
+    $ conda install -c bioconda genmap
 
 Binaries
 ^^^^^^^^
