@@ -1,0 +1,32 @@
+\documentclass[20pt,border=5pt]{standalone}
+
+\usepackage[table]{xcolor}
+\usepackage{tabu}
+\definecolor{myclr1}{HTML}{0366d6}
+\definecolor{mygrey}{gray}{0.75}
+\definecolor{mygrey2}{gray}{0.85}
+\definecolor{mygrey3}{gray}{0.92}
+
+\newcommand{\redBit}[1]{\begingroup\color{myclr1}\textbf{#1}\endgroup}
+
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+
+\begin{document}
+
+\LARGE
+
+\taburulecolor{mygrey}
+\def\arraystretch{1.3}
+% \setlength\tabcolsep{8.5pt}
+\begin{tabular}{|r|C{10mm}|C{10mm}|C{10mm}|C{10mm}|C{10mm}|C{10mm}|C{10mm}|C{10mm}|C{10mm}|C{10mm}|C{10mm}|C{10mm}|C{10mm}|C{10mm}|C{10mm}|}
+\hline
+$i\phantom{]}$ & 0 & \redBit{1} & 2 & 3 & 4 & 5 & \redBit{6} & 7 & 8 & 9 & 10 & \redBit{11} & 12 & 13 & 14 \\
+\hline
+$T[i]$ & A & \cellcolor{mygrey2}\redBit{T} & \cellcolor{mygrey2}\redBit{C} & \cellcolor{mygrey2}\redBit{T} & \cellcolor{mygrey2}\redBit{A} & G & \cellcolor{mygrey3}{G} & \cellcolor{mygrey3}{C} & \cellcolor{mygrey3}{T} & \cellcolor{mygrey3}{A} & A & \cellcolor{mygrey3}{T} & \cellcolor{mygrey3}{C} & \cellcolor{mygrey3}{T} & \cellcolor{mygrey3}{A} \\
+\hline
+$M[i]$ & .33 & \redBit{.33} & .33 & .5 & .25 & .5 & .25 & .5 & 1.0 & 1.0 & .33 & .33 & .0 & .0 & .0 \\
+\hline
+$F[i]$ & 2 & \redBit{3} & 2 & 1 & 1 & 1 & 3 & 2 & 1 & 1 & 2 & 3 & 0 & 0 & 0 \\
+\hline
+\end{tabular}
+\end{document}
