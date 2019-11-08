@@ -8,7 +8,7 @@ ExternalProject_Add (googletest
                      GIT_REPOSITORY "https://github.com/google/googletest.git"
                      INSTALL_DIR "${CMAKE_CURRENT_BINARY_DIR}"
                      CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}"
-                     GIT_TAG release-1.8.0
+                     GIT_TAG release-1.10.0
                      UPDATE_DISCONNECTED YES)
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}") # TODO: --coverage
