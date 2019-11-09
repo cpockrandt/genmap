@@ -204,7 +204,7 @@ int indexMain(int const argc, char const ** argv)
     // TODO: describe both algorithms in terms of space consumption (disk and RAM)
     addOption(parser, ArgParseOption("A", "algorithm", "Algorithm for suffix array construction "
         "(needed for the FM index).", ArgParseArgument::STRING, "TEXT"));
-    setDefaultValue(parser, "algorithm", "radix");
+    setDefaultValue(parser, "algorithm", "skew");
     setValidValues(parser, "algorithm", std::vector<std::string>{"radix", "skew"});
 
     addOption(parser, ArgParseOption("S", "sampling", "Sampling rate of suffix array",
