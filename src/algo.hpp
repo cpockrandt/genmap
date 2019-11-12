@@ -7,10 +7,6 @@ using ModComplement = ModView<FunctorComplement<TChar> >;
 template <typename TText>
 using ModRevCompl = ModifiedString<ModifiedString<TText, ModComplement<typename Value<TText>::Type>>, ModReverse>;
 
-// template <typename TMappVector, typename TChromosomeLength>
-// void resetLimits(TMappVector const &, unsigned const, TChromosomeLength const)
-// { }
-
 template <bool csvComputation, typename TMappVector, typename TChromLengths, typename TCumChromLengths, typename TLocations>
 void resetLimits(TMappVector & c, unsigned const kmerLength, TChromLengths const & chromLengths, TCumChromLengths const & cumChromLengths, TLocations & locations)
 {
@@ -18,35 +14,28 @@ void resetLimits(TMappVector & c, unsigned const kmerLength, TChromLengths const
     using TEntry = std::pair<TLocation, std::pair<std::vector<TLocation>, std::vector<TLocation> > >;
 
     // skip first, since the first cumulative length is 0
+    // TODO: this will mess up if a sequence in the fasta file is shorter than kmerLength.
     for (uint64_t i = 1; i < length(cumChromLengths); ++i)
     {
+        // Remove csv entries for kmers overlapping multiple sequences accidentally.
         for (uint64_t j = 1; j < kmerLength; ++j)
         {
             c[cumChromLengths[i] - j] = 0;
         }
 
-        // TODO: if sequences are shorter that the kmer (and possibly span more than 2 sequences), this will lead to errors!
-        // Remove csv entries for kmers overlapping multiple sequences accidentally.
         SEQAN_IF_CONSTEXPR (csvComputation)
         {
-            // for single fasta files it is guaranteed that every entry exists and it only has to be resetted if the kmer is overlapping
-            // for directories some kmers might be missing
-
-            // add empty entries in csv for sequences that are shorter that K and reset the last k-1 entries of each sequence
+            // remove empty entries, i.e., the last K-1 of every sequence
             TEntry entry;
             entry.first.i1 = i - 1;
             entry.first.i2 = (chromLengths[i - 1] >= kmerLength) ? (chromLengths[i - 1] - kmerLength + 1) : 0;
             while (entry.first.i2 < chromLengths[i - 1])
             {
                 auto const insertPos = locations.lower_bound(entry.first);
+                // key_comp() equals <, i.e., this if condition checks whether they two objects are equal
                 if (insertPos != locations.end() && !(locations.key_comp()(entry.first, insertPos->first)))
                 {
-                    insertPos->second.first.clear();
-                    insertPos->second.second.clear();
-                }
-                else
-                {
-                    locations.insert(insertPos, entry);
+                    locations.erase(insertPos);
                 }
                 ++entry.first.i2;
             }
@@ -409,10 +398,10 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                     {
                         std::set<typename Value<TLocation, 1>::Type> distinct_sequences;
                         for (auto const & location : entry.second.first) // forward strand
-                            distinct_sequences.insert(mappingSeqIdFile[location.i1]);
+                            distinct_sequences.emplace(mappingSeqIdFile[location.i1]);
                         assert(entry.second.second.size() == 0 || params.revCompl);
                         for (auto const & location : entry.second.second) // reverse strand
-                            distinct_sequences.insert(mappingSeqIdFile[location.i1]);
+                            distinct_sequences.emplace(mappingSeqIdFile[location.i1]);
 
                         hits[j - beginPos] = distinct_sequences.size();
 
@@ -428,23 +417,21 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
                         if (entry.first.i2 > chromLengths[entry.first.i1] - params.length)
                         {
                             #pragma omp critical
-                            locations.insert(entry);
+                            locations.emplace(entry);
                         }
 
                         for (auto const & exact_occ : getOccurrences(itExact[j - beginPos]))
                         {
-                            entry.first = exact_occ;
-                            // TODO: avoid copying
                             #pragma omp critical
-                            locations.insert(entry);
+                            locations.emplace(exact_occ, entry.second);
                         }
                     }
-                    else
+                    // is there at least a hit on the forward or the reverse strand?
+                    else if (entry.second.first.size() + entry.second.second.size() > 0)//if (countOccurrences(itExact[j - beginPos]) > 0)
                     {
                         myPosLocalize(entry.first, j, chromCumLengths); // TODO: inefficient for read data sets
-                        // TODO: avoid copying
                         #pragma omp critical
-                        locations.insert(entry);
+                        locations.emplace(entry);
                     }
                 }
 
