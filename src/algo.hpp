@@ -7,38 +7,16 @@ using ModComplement = ModView<FunctorComplement<TChar> >;
 template <typename TText>
 using ModRevCompl = ModifiedString<ModifiedString<TText, ModComplement<typename Value<TText>::Type>>, ModReverse>;
 
-template <bool csvComputation, typename TMappVector, typename TChromLengths, typename TCumChromLengths, typename TLocations>
-void resetLimits(TMappVector & c, unsigned const kmerLength, TChromLengths const & chromLengths, TCumChromLengths const & cumChromLengths, TLocations & locations)
+template <bool csvComputation, typename TMappVector, typename TCumChromLengths>
+void resetLimits(TMappVector & c, unsigned const kmerLength, TCumChromLengths const & cumChromLengths)
 {
-    using TLocation = typename TLocations::key_type;
-    using TEntry = std::pair<TLocation, std::pair<std::vector<TLocation>, std::vector<TLocation> > >;
-
     // skip first, since the first cumulative length is 0
-    // TODO: this will mess up if a sequence in the fasta file is shorter than kmerLength.
     for (uint64_t i = 1; i < length(cumChromLengths); ++i)
     {
-        // Remove csv entries for kmers overlapping multiple sequences accidentally.
-        for (uint64_t j = 1; j < kmerLength; ++j)
+        // std::min(): make sure that we don't mess up if a sequence is shorter than K
+        for (uint64_t j = 1; j < std::min<uint64_t>(kmerLength, cumChromLengths[i] - cumChromLengths[i - 1] + 1); ++j)
         {
             c[cumChromLengths[i] - j] = 0;
-        }
-
-        SEQAN_IF_CONSTEXPR (csvComputation)
-        {
-            // remove empty entries, i.e., the last K-1 of every sequence
-            TEntry entry;
-            entry.first.i1 = i - 1;
-            entry.first.i2 = (chromLengths[i - 1] >= kmerLength) ? (chromLengths[i - 1] - kmerLength + 1) : 0;
-            while (entry.first.i2 < chromLengths[i - 1])
-            {
-                auto const insertPos = locations.lower_bound(entry.first);
-                // key_comp() equals <, i.e., this if condition checks whether they two objects are equal
-                if (insertPos != locations.end() && !(locations.key_comp()(entry.first, insertPos->first)))
-                {
-                    locations.erase(insertPos);
-                }
-                ++entry.first.i2;
-            }
         }
     }
 }
@@ -407,31 +385,28 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
 
                         // NOTE: If you want to filter certain k-mers in the csv file based on the mappability value
                         // (with respect to --exclude-pseudo) you can unset 'entry' here.
-
                     }
 
                     if (!directory && countOccurrences(itExact[j - beginPos]) > 1)
                     {
-                        // the for-loop does not insert an entry for kmers originating from a position such that the kmer spans two sequences. Hence we insert it here. The occurrences will later be cleared by resetLimits, but at least the position exists in the map.
-                        myPosLocalize(entry.first, j, chromCumLengths); // TODO: inefficient for read data sets   0 > 0
-                        if (entry.first.i2 > chromLengths[entry.first.i1] - params.length)
-                        {
-                            #pragma omp critical
-                            locations.emplace(entry);
-                        }
-
                         for (auto const & exact_occ : getOccurrences(itExact[j - beginPos]))
                         {
-                            #pragma omp critical
-                            locations.emplace(exact_occ, entry.second);
+                            if (static_cast<int64_t>(exact_occ.i2) <= static_cast<int64_t>(chromLengths[exact_occ.i1]) - params.length)
+                            {
+                                #pragma omp critical
+                                locations.emplace(exact_occ, entry.second);
+                            }
                         }
                     }
                     // is there at least a hit on the forward or the reverse strand?
                     else if (entry.second.first.size() + entry.second.second.size() > 0)//if (countOccurrences(itExact[j - beginPos]) > 0)
                     {
                         myPosLocalize(entry.first, j, chromCumLengths); // TODO: inefficient for read data sets
-                        #pragma omp critical
-                        locations.emplace(entry);
+                        if (static_cast<int64_t>(entry.first.i2) <= static_cast<int64_t>(chromLengths[entry.first.i1]) - params.length)
+                        {
+                            #pragma omp critical
+                            locations.emplace(entry);
+                        }
                     }
                 }
 
@@ -457,5 +432,5 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
     // Hence, it also searches k-mers that overlap two strings that actually do not exist.
     // At the end we overwrite the frequency of those k-mers with 0.
     // TODO: k-mers spanning two strings should not be searched if there are many short strings (i.e., fasta of reads).
-    resetLimits<csvComputation>(c, params.length, chromLengths, chromCumLengths, locations);
+    resetLimits<csvComputation>(c, params.length, chromCumLengths);
 }
