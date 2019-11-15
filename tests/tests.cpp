@@ -141,14 +141,18 @@ void test(uint64_t const nbrChromosomes, uint64_t const lengthChromosomes, uint6
         TGenome genome;
 
         // TODO: replace with stringSetLimits
-        StringSet<uint64_t> chromLengths; // needed for localization and reset
+        StringSet<uint64_t> chromLengths, chromCumLengths; // needed for localization and reset
 
+        uint64_t cumLength = 0;
+        appendValue(chromCumLengths, 0);
         for (uint64_t ss = 0; ss < nbrChromosomes; ++ss)
         {
             String<TChar> chr;
             randomText(chr, rng, lengthChromosomes);
             appendValue(genome, chr);
             appendValue(chromLengths, lengthChromosomes);
+            cumLength += lengthChromosomes;
+            appendValue(chromCumLengths, cumLength);
         }
         // auto const chromLengths = stringSetLimits(genome);
 
@@ -183,7 +187,8 @@ void test(uint64_t const nbrChromosomes, uint64_t const lengthChromosomes, uint6
                 std::vector<uint16_t> mappingSeqIdFile(0);
 
                 frequencyGenMap.assign(totalLength, 0);
-                computeMappability<errors, false>(index, text, frequencyGenMap, searchParams, false /*dir*/, chromLengths, locations, mappingSeqIdFile);
+                std::vector<std::pair<uint64_t, uint64_t> > intervals;
+                computeMappability<errors, false>(index, text, frequencyGenMap, searchParams, false /*dir*/, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals);
 
                 EXPECT_EQ(frequencyTrivial, frequencyGenMap);
                 // if (frequencyTrivial != frequencyGenMap)

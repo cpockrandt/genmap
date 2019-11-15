@@ -5,6 +5,7 @@
 
 #include <seqan/arg_parse.h>
 #include <seqan/seq_io.h>
+#include <seqan/bed_io.h>
 #include <seqan/index.h>
 
 static constexpr bool outputProgress = true; // TODO: remove global variable
@@ -29,6 +30,7 @@ struct Options
     bool verbose;
     CharString indexPath;
     CharString outputPath;
+    CharString selectionPath;
     CharString alphabet;
     uint32_t seqNoWidth;
     uint32_t maxSeqLengthWidth;
@@ -57,11 +59,12 @@ inline std::string retrieve(StringSet<CharString, TSpec> const & info, std::stri
     exit(1);
 }
 
-template <typename TVector, typename TChromosomeNames, typename TChromosomeLengths, typename TLocations, typename TDirectoryInformation>
+template <typename TVector, typename TChromosomeNames, typename TChromosomeLengths, typename TLocations, typename TDirectoryInformation, typename TCSVIntervals>
 inline void outputMappability(TVector const & c, Options const & opt, SearchParams const & searchParams,
                               std::string const & fastaFile, TChromosomeNames const & chromNames,
                               TChromosomeLengths const & chromLengths, TLocations & locations,
-                              TDirectoryInformation const & directoryInformation)
+                              TDirectoryInformation const & directoryInformation,
+                              TCSVIntervals const & csvIntervals)
 {
     std::cout << "Start writing output files ...";
     if (opt.verbose)
@@ -119,10 +122,11 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
     if (opt.csvFile)
     {
         double start = get_wall_time();
+        bool const outputSelection = opt.selectionPath != "";
         if (opt.outputType == OutputType::mappability)
-            saveCsv<true>(output_path, locations, searchParams, directoryInformation);
+            saveCsv<true>(output_path, locations, searchParams, directoryInformation, csvIntervals, outputSelection);
         else
-            saveCsv<false>(output_path, locations, searchParams, directoryInformation);
+            saveCsv<false>(output_path, locations, searchParams, directoryInformation, csvIntervals, outputSelection);
         if (opt.verbose)
             std::cout << "- CSV file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
@@ -132,10 +136,12 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
 }
 
 template <typename TDistance, typename value_type, bool csvComputation, typename TSeqNo, typename TSeqPos,
-          typename TIndex, typename TText, typename TChromosomeNames, typename TChromosomeLengths, typename TDirectoryInformation>
+          typename TIndex, typename TText, typename TChromosomeNames, typename TChromosomeLengths, typename TDirectoryInformation,
+          typename TIntervals, typename TCSVIntervals>
 inline void run(TIndex & index, TText const & text, Options const & opt, SearchParams const & searchParams,
-                std::string const & fastaFile, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths,
-                TDirectoryInformation const & directoryInformation, std::vector<TSeqNo> const & mappingSeqIdFile)
+                std::string const & fastaFile, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths, TChromosomeLengths const & chromCumLengths,
+                TDirectoryInformation const & directoryInformation, std::vector<TSeqNo> const & mappingSeqIdFile,
+                TIntervals const & intervals, TCSVIntervals const & csvIntervals)
 {
     std::vector<value_type> c(length(text), 0);
 
@@ -146,15 +152,15 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
     double start = get_wall_time();
     switch (opt.errors)
     {
-        case 0:  computeMappability<0, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations, mappingSeqIdFile);
+        case 0:  computeMappability<0, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals);
                  break;
-        case 1:  computeMappability<1, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations, mappingSeqIdFile);
+        case 1:  computeMappability<1, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals);
                  break;
-        case 2:  computeMappability<2, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations, mappingSeqIdFile);
+        case 2:  computeMappability<2, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals);
                  break;
-        case 3:  computeMappability<3, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations, mappingSeqIdFile);
+        case 3:  computeMappability<3, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals);
                  break;
-        case 4:  computeMappability<4, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, locations, mappingSeqIdFile);
+        case 4:  computeMappability<4, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals);
                  break;
         default: std::cerr << "E > 4 not yet supported.\n";
                  exit(1);
@@ -168,7 +174,7 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
     if (opt.verbose)
         std::cout << "Mappability computed in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
 
-    outputMappability(c, opt, searchParams, fastaFile, chromNames, chromLengths, locations, directoryInformation);
+    outputMappability(c, opt, searchParams, fastaFile, chromNames, chromLengths, locations, directoryInformation, csvIntervals);
 }
 
 template <typename TChar, typename TAllocConfig, typename TDistance, typename value_type, bool csvComputation,
@@ -207,29 +213,114 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         }
     }
 
+    // local begin and end positions (with respect to the corresponding sequence). id is sequence (std::string)
+    std::map<std::string, std::vector<std::pair<uint64_t, uint64_t> > > intervals;
+    if (opt.selectionPath != "")
+    {
+        BedFileIn bedIn(toCString(opt.selectionPath));
+        BedRecord<Bed3> record;
+        while (!atEnd(bedIn))
+        {
+            readRecord(record, bedIn);
+            std::string const seqId{toCString(record.ref)};
+
+            auto const lb = intervals.lower_bound(seqId);
+            if(lb != intervals.end() && !(intervals.key_comp()(seqId, lb->first)))
+                lb->second.emplace_back(std::make_pair(record.beginPos, record.endPos));
+            else
+                intervals.insert(lb, {seqId, {{record.beginPos, record.endPos}}});
+        }
+    }
+
     auto const & text = indexText(index);
+    std::map<std::string, uint64_t> chromosomeNamesDict;
     StringSet<CharString, Owner<ConcatDirect<> > > chromosomeNames;
-    StringSet<uint64_t> chromosomeLengths; // ConcatDirect on PODs does not seem to support clear() ...
+    StringSet<uint64_t> chromosomeLengths, chromCumLengths; // ConcatDirect on PODs does not seem to support clear() ...
     uint64_t startPos = 0;
     uint64_t fastaFileLength = 0;
+    uint64_t cumLength = 0;
     std::string fastaFile = std::get<0>(retrieveDirectoryInformationLine(directoryInformation[0]));
+    appendValue(chromCumLengths, 0);
+    uint64_t chromosomeNamesId = 0;
+    // cumulative begin and end positions (with respect to the entire fasta file)
+    std::vector<std::pair<uint64_t, uint64_t>> intervalsForSingleFasta;
+    std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> csvIntervalsForSingleFasta; // non-cumulative for csv-output filter
+
     for (uint64_t i = 0; i < length(directoryInformation); ++i)
     {
         auto const row = retrieveDirectoryInformationLine(directoryInformation[i]);
         if (std::get<0>(row) != fastaFile)
         {
-            auto const & fastaInfix = infixWithLength(text.concat, startPos, fastaFileLength);
-            run<TDistance, value_type, csvComputation, TSeqNo, TSeqPos>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths, directoryInformation, mappingSeqIdFile);
+            if (opt.csvFile)
+            {
+                // sort for csv output
+                std::sort(csvIntervalsForSingleFasta.begin(), csvIntervalsForSingleFasta.end(), [](auto const & t1, auto const & t2) {
+                    if (std::get<0>(t1) != std::get<0>(t2))
+                        return std::get<0>(t1) < std::get<0>(t2);
+                    if (std::get<1>(t1) != std::get<1>(t2))
+                        return std::get<1>(t1) < std::get<1>(t2);
+                    return std::get<2>(t1) < std::get<2>(t2); // this is useless since the user should not input any overlapping intervals!
+                });
+            }
+
+            // do not compute/output mappability if only a subset shall be computed and the current fasta file does not contain any of the intervals of interest
+            if (!(opt.selectionPath != "" && intervalsForSingleFasta.empty()))
+            {
+                // compute mappability for each fasta file
+                auto const & fastaInfix = infixWithLength(text.concat, startPos, fastaFileLength);
+                run<TDistance, value_type, csvComputation, TSeqNo, TSeqPos>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths, chromCumLengths, directoryInformation, mappingSeqIdFile, intervalsForSingleFasta, csvIntervalsForSingleFasta);
+            }
+
 
             startPos += fastaFileLength;
             fastaFile = std::get<0>(row);
             fastaFileLength = 0;
+            chromosomeNamesDict.clear();
             clear(chromosomeNames);
+            chromosomeNamesId = 0;
             clear(chromosomeLengths);
+            clear(chromCumLengths);
+            cumLength = 0;
+            appendValue(chromCumLengths, 0);
+            intervalsForSingleFasta.clear();
+            csvIntervalsForSingleFasta.clear();
         }
+
         fastaFileLength += std::get<1>(row);
+        chromosomeNamesDict.insert({toCString(std::get<2>(row)), chromosomeNamesId});
+
+        // TODO: output warning if sequences in bed file do not appear in fasta/index
+        auto intervalList = intervals.find(std::get<2>(row));
+        if (intervalList != intervals.end())
+        {
+            for (auto const & interval : intervalList->second)
+            {
+                uint64_t const begin = cumLength + interval.first;
+                uint64_t const end   = cumLength + interval.second;
+
+                // check whether range is correct!
+                if (interval.first >= std::get<1>(row) || interval.second > std::get<1>(row))
+                {
+                    std::cerr << "Error in BED file! Coordinates exceed sequence length: "
+                              << "Seq. \"" << std::get<2>(row) << "\" has a length of " << std::get<1>(row) << ", "
+                              << "but half-closed interval [" << interval.first << ", " << interval.second << ") given.\n";
+                    exit(1);
+                }
+
+                intervalsForSingleFasta.emplace_back(std::make_pair(begin, end));
+
+                if (opt.csvFile)
+                {
+                    csvIntervalsForSingleFasta.emplace_back(std::make_tuple(chromosomeNamesId, interval.first, interval.second));
+                }
+            }
+        }
+
+        ++chromosomeNamesId;
         appendValue(chromosomeNames, std::get<2>(row));
         appendValue(chromosomeLengths, std::get<1>(row));
+        cumLength += std::get<1>(row);
+        appendValue(chromCumLengths, cumLength);
     }
 }
 
@@ -295,6 +386,8 @@ int mappabilityMain(int argc, char const ** argv)
     addOption(parser, ArgParseOption("K", "length", "Length of k-mers", ArgParseArgument::INTEGER, "INT"));
     setRequired(parser, "length");
 
+    addOption(parser, ArgParseOption("S", "selection", "Path to a bed file (3 columns) with selected coordinates to compute the mappability (e.g., exon coordinates)", ArgParseArgument::OUTPUT_FILE, "OUT"));
+
     addOption(parser, ArgParseOption("c", "reverse-complement", "Searches each k-mer on the reverse strand as well."));
 
     addOption(parser, ArgParseOption("ep", "exclude-pseudo", "Mappability only counts the number of fasta files that contain the k-mer, not the total number of occurrences (i.e., neglects so called- pseudo genes / sequences). This has no effect on the csv output."));
@@ -338,6 +431,8 @@ int mappabilityMain(int argc, char const ** argv)
     getOptionValue(opt.errors, parser, "errors");
     getOptionValue(opt.indexPath, parser, "index");
     getOptionValue(opt.outputPath, parser, "output");
+    if (isSet(parser, "selection"))
+        getOptionValue(opt.selectionPath, parser, "selection");
 
     // Check whether the output path exists
     {
@@ -413,7 +508,7 @@ int mappabilityMain(int argc, char const ** argv)
         }
     }
 
-    // searchParams.overlap - length of common overlap
+    // searchParams.overlap = length of common overlap
     searchParams.overlap = searchParams.length - searchParams.overlap;
 
     // TODO: error message if output files already exist or directory is not writeable
@@ -446,15 +541,11 @@ int mappabilityMain(int argc, char const ** argv)
             std::cout << "- Index was built on a single fasta file.\n" << std::flush;
     }
 
-    // TODO: remove brackets, opt.alphabet and replace by local bool.
+    // TODO: remove opt.alphabet and replace by bool
     if (opt.alphabet == "dna4")
-    {
         run<Dna>(opt, searchParams);
-    }
     else
-    {
         run<Dna5>(opt, searchParams);
-    }
 
     return 0;
 }

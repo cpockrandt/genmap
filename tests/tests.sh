@@ -16,6 +16,11 @@ INDEX_FLAGS=$4
 FLAGS=$5
 EXPECTED_FOLDER=$6
 
+# Add -S argument for computing a subset of the mappability vector if a bed file exists
+if [ -f "${SRCDIR}/tests/test_cases/case_${CASE}/subset.bed" ]; then
+    FLAGS="$FLAGS -S ${SRCDIR}/tests/test_cases/case_${CASE}/subset.bed"
+fi
+
 # check existence of commands
 which mktemp diff > /dev/null
 [ $? -eq 0 ] || errorout "Not all required programs found. Needs: mktemp diff"

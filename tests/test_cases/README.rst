@@ -27,6 +27,9 @@ case 1e
 case 1f
   3-mers with 1 error with the reverse complement. **Dna5** alphabet (including Ns).
 
+case 1g
+  3-mers with 1 error with the reverse complement. **Dna5** alphabet (including Ns). Computing a subset defined in a bed file.
+
 Single fasta file with multiple sequences
 """""""""""""""""""""""""""""""""""""""""
 
@@ -41,6 +44,9 @@ case 2c
 
 case 2d
   case 2c with reverse complement
+
+case 2e
+  case 2d but only computing a subset defined in a bed file.
 
 Multiple fasta files in directory with single and multiple sequences
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -59,8 +65,11 @@ case 3b
 case 3c
     case 3a with ``--exclude-pseudo``
 
-case d
+case 3d
     case 3c with reverse complement
+
+case 3e
+    case 3d but only computing a subset defined in a bed file.
 
 Single fasta file in directory with multiple sequences
 """"""""""""""""""""""""""""""""""""""""""""""""""""""

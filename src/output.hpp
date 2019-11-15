@@ -69,6 +69,7 @@ void saveTxt(std::vector<T> const & c, std::string const & output_path, TChromos
     outfile.close();
 }
 
+// TODO: do not output sequences in .chrom.sizes if no entries are written to .wig
 template <bool mappability, typename T, typename TChromosomeNames, typename TChromosomeLengths>
 void saveWig(std::vector<T> const & c, std::string const & output_path, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths)
 {
@@ -183,9 +184,10 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
     bedFile.close();
 }
 
-template <bool mappability, typename TLocations, typename TDirectoryInformation>
+template <bool mappability, typename TLocations, typename TDirectoryInformation, typename TCSVIntervals>
 void saveCsv(std::string const & output_path, TLocations const & locations,
-             SearchParams const & searchParams, TDirectoryInformation const & directoryInformation)
+             SearchParams const & searchParams, TDirectoryInformation const & directoryInformation,
+             TCSVIntervals const & csvIntervals, bool const outputSelection)
 {
     char buffer[BUFFER_SIZE];
 
@@ -209,18 +211,35 @@ void saveCsv(std::string const & output_path, TLocations const & locations,
     csvFile << "\"k-mer\"";
     for (auto const & fastaFile : fastaFiles)
         csvFile << ";\"+ strand " << fastaFile.first << "\"";
-    if (searchParams.revCompl) // TODO: make it constexpr?
+    if (searchParams.revCompl)
     {
         for (auto const & fastaFile : fastaFiles)
             csvFile << ";\"- strand " << fastaFile.first << "\"";
     }
     csvFile << '\n';
 
+    auto interval = csvIntervals.begin();
+
     for (auto const & kmerLocations : locations)
     {
         auto const & kmerPos = kmerLocations.first;
         auto const & plusStrandLoc = kmerLocations.second.first;
         auto const & minusStrandLoc = kmerLocations.second.second;
+
+        while (interval != csvIntervals.end() &&
+               ((std::get<0>(*interval) < kmerPos.i1) ||
+               (std::get<0>(*interval) == kmerPos.i1 && std::get<2>(*interval) <= kmerPos.i2)))
+        {
+            ++interval;
+        }
+
+        if (outputSelection &&
+            !(std::get<0>(*interval) == kmerPos.i1 &&
+              std::get<1>(*interval) <= kmerPos.i2 &&
+              kmerPos.i2 < std::get<2>(*interval)))
+        {
+            continue;
+        }
 
         csvFile << kmerPos.i1 << ',' << kmerPos.i2;
 
