@@ -1,4 +1,4 @@
-GenMap 1.0.2 |buildstatus| |bioconda|
+GenMap 1.1.0 |buildstatus| |bioconda|
 -------------------------------------
 
 Fast and Exact Computation of Genome Mappability

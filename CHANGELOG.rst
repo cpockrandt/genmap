@@ -1,6 +1,13 @@
 Changelog
 ^^^^^^^^^
 
+1.1.0 (2019-11-17777777)
+""""""""""""""""""
+
+* compute mappability of selected regions using a bed file
+* suppress 0 values in BED and WIG files
+* change default algorithm for indexing to Skew
+
 1.0.2 (2019-09-04)
 """"""""""""""""""
 
