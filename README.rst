@@ -51,19 +51,19 @@ To verify whether your CPU supports these instructions sets you can check the ou
 +---------------------------------+---------------------------+--------------------+-----------------------------+
 | **Platform**                    | **Download**              | **Version**        | **Additional requirements** |
 +---------------------------------+---------------------------+--------------------+-----------------------------+
-| .. image:: .github/linux.svg    | `Linux 64 bit`_           | 1.0.2 (2019-09-04) | \-                          |
+| .. image:: .github/linux.svg    | `Linux 64 bit`_           | 1.1.0 (2019-11-17) | \-                          |
 +   :alt: Download Linux binaries +---------------------------+--------------------+-----------------------------+
-|   :height: 60px                 | `Linux 64 bit optimized`_ | 1.0.2 (2019-09-04) | requires up to SSE4         |
+|   :height: 60px                 | `Linux 64 bit optimized`_ | 1.1.0 (2019-11-17) | requires up to SSE4         |
 +---------------------------------+---------------------------+--------------------+-----------------------------+
-| .. image:: .github/apple.svg    | `Mac 64 bit`_             | 1.0.2 (2019-09-04) | \-                          |
+| .. image:: .github/apple.svg    | `Mac 64 bit`_             | 1.1.0 (2019-11-17) | \-                          |
 +   :alt: Download Mac binaries   +---------------------------+--------------------+-----------------------------+
-|   :height: 60px                 | `Mac 64 bit optimized`_   | 1.0.2 (2019-09-04) | requires up to SSE4         |
+|   :height: 60px                 | `Mac 64 bit optimized`_   | 1.1.0 (2019-11-17) | requires up to SSE4         |
 +---------------------------------+---------------------------+--------------------+-----------------------------+
 
-.. _Linux 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0.2/genmap-1.0.2-Linux-x86_64.zip
-.. _Linux 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0.2/genmap-1.0.2-Linux-x86_64-sse4.zip
-.. _Mac 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0.2/genmap-1.0.2-Darwin-x86_64.zip
-.. _Mac 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.0.2/genmap-1.0.2-Darwin-x86_64-sse4.zip
+.. _Linux 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.1.0/genmap-1.1.0-Linux-x86_64.zip
+.. _Linux 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.1.0/genmap-1.1.0-Linux-x86_64-sse4.zip
+.. _Mac 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.1.0/genmap-1.1.0-Darwin-x86_64.zip
+.. _Mac 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.1.0/genmap-1.1.0-Darwin-x86_64-sse4.zip
 
 Building from source
 ^^^^^^^^^^^^^^^^^^^^
