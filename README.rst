@@ -1,5 +1,5 @@
-GenMap |VERSION|: Fast and Exact Computation of Genome Mappability
-==================================================================
+GenMap: Fast and Exact Computation of Genome Mappability
+========================================================
 
 .. image:: https://img.shields.io/conda/dn/bioconda/genmap.svg?style=flag&label=BioConda%20install
     :target: https://anaconda.org/bioconda/genmap
@@ -211,6 +211,8 @@ If you need other genomes indexed and do not have the computational resources, p
 +------------------------------------------+-----------------------------+--------------------+
 | Worm C. elegans (`ce11 WBcel235`_)       | 0.2 GB                      | `ce11 index`_      |
 +------------------------------------------+-----------------------------+--------------------+
+| Wheat Triticum aestivum (`ta rel. 45`_)  | 25.8 GB                     | `ta45 index`_      |
++------------------------------------------+-----------------------------+--------------------+
 
 .. | Barley (`hordeum vulgare`_)              | x.x GB                      | `hv index`_        |
 .. +------------------------------------------+-----------------------------+--------------------+
@@ -225,6 +227,8 @@ If you need other genomes indexed and do not have the computational resources, p
 .. _`dm6 rel. 6`:      https://www.ncbi.nlm.nih.gov/assembly/GCF_000001215.4
 .. sequence: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/002/985/GCF_000002985.6_WBcel235/GCF_000002985.6_WBcel235_genomic.fna.gz
 .. _`ce11 WBcel235`:   https://www.ncbi.nlm.nih.gov/assembly/GCF_000002985.6
+.. sequence: ftp://ftp.ensemblgenomes.org/pub/plants/release-45/fasta/triticum_aestivum/dna/Triticum_aestivum.IWGSC.dna.toplevel.fa.gz
+.. _`ta rel. 45`:      https://plants.ensembl.org/Triticum_aestivum/Info/Index
 .. sequence: ftp://ftp.ensemblgenomes.org/pub/plants/release-42/fasta/hordeum_vulgare/dna/Hordeum_vulgare.IBSC_v2.dna.toplevel.fa.gz
 .. _`hordeum vulgare`: https://plants.ensembl.org/Hordeum_vulgare/Info/Index
 
@@ -233,4 +237,5 @@ If you need other genomes indexed and do not have the computational resources, p
 .. _`GRCm38 index`: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/mm10-dna5.tar.gz
 .. _`dm6 index`:    http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/dm6-dna5.tar.gz
 .. _`ce11 index`:   http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/ce11-dna5.tar.gz
+.. _`ta45 index`:     http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/triticum_aestivum-dna5.tar.gz
 .. _`hv index`:     http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/hv-dna5.tar.gz
