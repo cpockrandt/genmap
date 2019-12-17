@@ -197,45 +197,37 @@ Pre-built indices
 
 Building an index on a large genome takes some time and requires a lot of space. Hence, we provide indexed genomes for download.
 If you need other genomes indexed and do not have the computational resources, please send an e-mail to ``christopher.pockrandt [ÄT] fu-berlin.de``.
+The genomes where built with a higher sampling value (`-S 20`) to reduce the index size.
+To increase speed when computing the mappability and outputting csv files, you can build your own index with a lower sampling value.
+The genomes do not contain alt scaffolds (i.e., only chromosomes and unplaced/unlocalized fragments).
 
-+------------------------------------------+-----------------------------+--------------------+
-| **Genome**                               | **Index size (compressed)** | **Download**       |
-+------------------------------------------+-----------------------------+--------------------+
-| Human GRCh38 (`hg38 patch 13`_)          | 6.6 GB                      | `GRCh38 index`_    |
-+------------------------------------------+-----------------------------+--------------------+
-| Human GRCh37 (`hg19 patch 13`_)          | 6.4 GB                      | `GRCh37 index`_    |
-+------------------------------------------+-----------------------------+--------------------+
-| Mouse GRCm38 (`mm10 patch 6`_)           | 5.7 GB                      | `GRCm38 index`_    |
-+------------------------------------------+-----------------------------+--------------------+
-| Fruitfly D. melanogaster (`dm6 rel. 6`_) | 0.3 GB                      | `dm6 index`_       |
-+------------------------------------------+-----------------------------+--------------------+
-| Worm C. elegans (`ce11 WBcel235`_)       | 0.2 GB                      | `ce11 index`_      |
-+------------------------------------------+-----------------------------+--------------------+
-| Wheat Triticum aestivum (`ta rel. 45`_)  | 25.8 GB                     | `ta45 index`_      |
-+------------------------------------------+-----------------------------+--------------------+
++------------------------------+-----------------------------+--------------------+
+| **Genome**                   | **Index size (compressed)** | **Download**       |
++------------------------------+-----------------------------+--------------------+
+| Human GRCh38 [1]_            | 5.4 GB                      | `GRCh38 index`_    |
++------------------------------+-----------------------------+--------------------+
+| Human hs37-1kg [2]_          | 5.4 GB                      | `hs37-1kg index`_  |
++------------------------------+-----------------------------+--------------------+
+| `Mouse GRCm38`_              | 4.9 GB                      | `GRCm38 index`_    |
++------------------------------+-----------------------------+--------------------+
+| `\D. melanogaster dm6`_      | 0.2 GB                      | `dm6 index`_       |
++------------------------------+-----------------------------+--------------------+
+| `\C. elegans ce11`_          | 0.1 GB                      | `ce11 index`_      |
++------------------------------+-----------------------------+--------------------+
+| Wheat T. aestivum ta45 [3]_  | 21.9 GB                     | `ta45 index`_      |
++------------------------------+-----------------------------+--------------------+
 
-.. | Barley (`hordeum vulgare`_)              | x.x GB                      | `hv index`_        |
-.. +------------------------------------------+-----------------------------+--------------------+
+.. [1] ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz
+.. [2] ftp://ftp-trace.ncbi.nih.gov/1000genomes/ftp/technical/reference/human_g1k_v37.fasta.gz
+.. [3] ftp://ftp.ensemblgenomes.org/pub/plants/release-45/fasta/triticum_aestivum/dna/Triticum_aestivum.IWGSC.dna.toplevel.fa.gz
 
-.. sequence: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.28_GRCh38.p13/GCA_000001405.28_GRCh38.p13_genomic.fna.gz
-.. _`hg38 patch 13`:   https://www.ncbi.nlm.nih.gov/assembly/GCA_000001405.28
-.. sequence: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/405/GCF_000001405.25_GRCh37.p13/GCF_000001405.25_GRCh37.p13_genomic.fna.gz
-.. _`hg19 patch 13`:   https://www.ncbi.nlm.nih.gov/assembly/GCF_000001405.25
-.. sequence: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/635/GCF_000001635.26_GRCm38.p6/GCF_000001635.26_GRCm38.p6_genomic.fna.gz
-.. _`mm10 patch 6`:    https://www.ncbi.nlm.nih.gov/assembly/GCF_000001635.26
-.. sequence: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/001/215/GCF_000001215.4_Release_6_plus_ISO1_MT/GCF_000001215.4_Release_6_plus_ISO1_MT_genomic.fna.gz
-.. _`dm6 rel. 6`:      https://www.ncbi.nlm.nih.gov/assembly/GCF_000001215.4
-.. sequence: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/002/985/GCF_000002985.6_WBcel235/GCF_000002985.6_WBcel235_genomic.fna.gz
-.. _`ce11 WBcel235`:   https://www.ncbi.nlm.nih.gov/assembly/GCF_000002985.6
-.. sequence: ftp://ftp.ensemblgenomes.org/pub/plants/release-45/fasta/triticum_aestivum/dna/Triticum_aestivum.IWGSC.dna.toplevel.fa.gz
-.. _`ta rel. 45`:      https://plants.ensembl.org/Triticum_aestivum/Info/Index
-.. sequence: ftp://ftp.ensemblgenomes.org/pub/plants/release-42/fasta/hordeum_vulgare/dna/Hordeum_vulgare.IBSC_v2.dna.toplevel.fa.gz
-.. _`hordeum vulgare`: https://plants.ensembl.org/Hordeum_vulgare/Info/Index
+.. _`Mouse GRCm38`:           http://hgdownload.soe.ucsc.edu/goldenPath/mm10/chromosomes (merged into one fasta file)
+.. _`D. melanogaster dm6`:    http://hgdownload.soe.ucsc.edu/goldenPath/dm6/bigZips/dm6.fa.gz
+.. _`C. elegans ce11`:        http://hgdownload.soe.ucsc.edu/goldenPath/ce11/chromosomes (merged into one fasta file)
 
-.. _`GRCh38 index`: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/grch38-dna5.tar.gz
-.. _`GRCh37 index`: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/grch37-dna5.tar.gz
-.. _`GRCm38 index`: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/mm10-dna5.tar.gz
-.. _`dm6 index`:    http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/dm6-dna5.tar.gz
-.. _`ce11 index`:   http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/ce11-dna5.tar.gz
-.. _`ta45 index`:     http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/triticum_aestivum-dna5.tar.gz
-.. _`hv index`:     http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/hv-dna5.tar.gz
+.. _`GRCh38 index`:   http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/grch38-no-alt.tar.gz
+.. _`hs37-1kg index`: http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/hs37-1kg.tar.gz
+.. _`GRCm38 index`:   http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/grcm38.tar.gz
+.. _`dm6 index`:      http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/dm6.tar.gz
+.. _`ce11 index`:     http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/ce11.tar.gz
+.. _`ta45 index`:     http://ftp.imp.fu-berlin.de/pub/cpockrandt/genmap/indices/ta45.tar.gz
