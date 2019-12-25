@@ -1,6 +1,7 @@
 #include <type_traits>
 #include <sys/types.h>
 #include <dirent.h>
+#include <cctype>
 
 #include <seqan/arg_parse.h>
 #include <seqan/seq_io.h>
@@ -176,6 +177,59 @@ int buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
     return 0;
 }
 
+template <typename TDirInfo, typename TChromosomes>
+void readFasta(char const * fastaPath, StringSet<CharString, Owner<ConcatDirect<> > > & ids, TDirInfo & directoryInformation, TChromosomes & chromosomes, std::string const & file)
+{
+    StringSet<CharString> chromosomes2;
+
+    SeqFileIn seqFileIn(toCString(fastaPath));
+    readRecords(ids, chromosomes2, seqFileIn);
+
+    if (lengthSum(chromosomes2) == 0)
+    {
+        std::cerr << "WARNING: The fasta file " << fastaPath << " seems to be empty. Excluded from indexing.\n";
+        return;
+    }
+
+    // truncate ids after first space and check if they are still unique
+    StringSet<CharString, Owner<ConcatDirect<> > > ids_short;
+    for (uint64_t i = 0; i < length(ids); ++i)
+    {
+        CharString const & id = ids[i];
+
+        uint32_t whitespace_pos = 0;
+        while (whitespace_pos < length(id) && !std::isspace(static_cast<unsigned char>(id[whitespace_pos])))
+        {
+            ++whitespace_pos;
+        }
+
+        appendValue(ids_short, prefix(id, whitespace_pos));
+    }
+
+    // if shortened ids are still unique, use them instead
+    {
+        StringSet<CharString> ids_short_copy(ids_short);
+        std::sort(begin(ids_short_copy), end(ids_short_copy));
+        if (std::unique(begin(ids_short_copy), end(ids_short_copy)) == end(ids_short_copy))
+        {
+            ids = ids_short;
+        }
+    }
+
+    for (uint64_t i = 0; i < length(chromosomes2); ++i)
+    {
+        // skip empty sequences
+        if (length(chromosomes2[i]) == 0)
+            continue;
+
+        std::string const id = toCString(static_cast<CharString>(ids[i]));
+        std::string const len = std::to_string(length(chromosomes2[i]));
+
+        appendValue(directoryInformation, file + ";" + len + ";" + id);
+        appendValue(chromosomes, chromosomes2[i]);
+    }
+}
+
 int indexMain(int const argc, char const ** argv)
 {
     // Argument Parser
@@ -315,35 +369,13 @@ int indexMain(int const argc, char const ** argv)
 
         for (auto const & file : filenames)
         {
+            StringSet<CharString, Owner<ConcatDirect<> > > ids;
+
             std::string fullPath = toCString(fastaPath);
             if (fullPath.back() != '/')
                 fullPath += '/';
             fullPath += file;
-            SeqFileIn seqFileIn(toCString(fullPath));
-
-            StringSet<CharString, Owner<ConcatDirect<> > > ids;
-            StringSet<CharString> chromosomes2;
-            readRecords(ids, chromosomes2, seqFileIn);
-            if (lengthSum(chromosomes2) == 0)
-            {
-                std::cerr << "WARNING: The fasta file " << file << " seems to be empty. Excluded from indexing.\n";
-                continue;
-            }
-
-            for (uint64_t i = 0; i < length(chromosomes2); ++i)
-            {
-                // skip empty sequences
-                if (length(chromosomes2[i]) == 0)
-                    continue;
-
-                std::string const id = toCString(static_cast<CharString>(ids[i]));
-                std::string const len = std::to_string(length(chromosomes2[i]));
-                // NOTE: maybe parsing of sequence names in fasta files is necessary
-                appendValue(directoryInformation, file + ";" + len + ";" + id);
-                appendValue(chromosomes, chromosomes2[i]);
-            }
-
-            clear(ids);
+            readFasta(toCString(fullPath), ids, directoryInformation, chromosomes, file);
         }
 
         if (length(chromosomes) == 0)
@@ -366,33 +398,16 @@ int indexMain(int const argc, char const ** argv)
     else
     {
         StringSet<CharString, Owner<ConcatDirect<> > > ids;
-        StringSet<CharString> chromosomes2;
 
-        SeqFileIn seqFileIn(toCString(fastaPath));
-        readRecords(ids, chromosomes2, seqFileIn);
-        if (options.verbose)
-            std::cout << "Number of sequences in the fasta file: " << length(chromosomes2) << '\n';
+        std::string const file = extractFileName(toCString(fastaPath));
+        readFasta(toCString(fastaPath), ids, directoryInformation, chromosomes, file);
+    }
 
-        for (uint64_t i = 0; i < length(chromosomes2); ++i)
-        {
-            // skip empty sequences
-            if (length(chromosomes2[i]) == 0)
-                continue;
-
-            std::string const id = toCString(static_cast<CharString>(ids[i]));
-            std::string const len = std::to_string(length(chromosomes2[i]));
-            std::string const file = extractFileName(toCString(fastaPath));
-            // NOTE: maybe parsing of sequence names in fasta files is necessary
-            appendValue(directoryInformation, file + ";" + len + ";" + id);
-            appendValue(chromosomes, chromosomes2[i]);
-        }
-
-        if (length(chromosomes) == 0)
-        {
-            rmdir(toCString(indexPathDir));
-            std::cerr << "ERROR: The fasta file seems to be empty.\n";
-            return ArgumentParser::PARSE_ERROR;
-        }
+    if (length(chromosomes) == 0)
+    {
+        rmdir(toCString(indexPathDir));
+        std::cerr << "ERROR: There is no non-empty sequence in the fasta file(s).\n";
+        return ArgumentParser::PARSE_ERROR;
     }
 
     save(directoryInformation, toCString(std::string(toCString(options.indexPath)) + ".ids"));
@@ -405,7 +420,7 @@ int indexMain(int const argc, char const ** argv)
     clear(chromosomes);
 
     // check whether it can be converted to Dna4 and analyze the data for determining the index dimensions later.
-    bool canConvert = true; // TODO: test this code block
+    bool canConvert = true;
     options.seqNumber = length(chromosomesDna5);
     options.maxSeqLength = 0;
     options.totalLength = length(chromosomesDna5); // to account for a sentinel character for each chromosome in the FM index.
