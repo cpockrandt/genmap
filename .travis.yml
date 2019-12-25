@@ -146,34 +146,34 @@ matrix:
     #   compiler: gcc-5
     #   before_install:
     #     - brew update
-    #     - travis_wait 30 brew install gcc@5
+    #     - travis_wait 60 brew install gcc@5
     #     - sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer/
     #     - sudo xcode-select -s /Library/Developer/CommandLineTools
     #   install: export CXX="g++-5"
 
-    - os: osx
-      osx_image: xcode8.3
-      compiler: gcc-6
-      before_install:
-        - brew update
-        - travis_wait 30 brew install gcc@6
-      install: export CXX="g++-6"
-
-    - os: osx
-      osx_image: xcode8.3
-      compiler: gcc-7
-      before_install:
-        - brew update
-        - travis_wait 30 brew install gcc@7
-      install: export CXX="g++-7"
-
-    - os: osx
-      osx_image: xcode8.3
-      compiler: gcc-8
-      before_install:
-        - brew update
-        - travis_wait 30 brew install gcc@8
-      install: export CXX="g++-8"
+    # - os: osx
+    #   osx_image: xcode8.3
+    #   compiler: gcc-6
+    #   before_install:
+    #     - brew update
+    #     - travis_wait 60 brew install gcc@6
+    #   install: export CXX="g++-6"
+    #
+    # - os: osx
+    #   osx_image: xcode8.3
+    #   compiler: gcc-7
+    #   before_install:
+    #     - brew update
+    #     - travis_wait 60 brew install gcc@7
+    #   install: export CXX="g++-7"
+    #
+    # - os: osx
+    #   osx_image: xcode8.3
+    #   compiler: gcc-8
+    #   before_install:
+    #     - brew update
+    #     - travis_wait 60 brew install gcc@8
+    #   install: export CXX="g++-8"
 
     # Debug builds on linux (gcc) with sanitizer, TODO: add coverage
     - os: linux
