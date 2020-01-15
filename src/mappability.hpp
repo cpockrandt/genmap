@@ -25,6 +25,7 @@ struct Options
     bool rawFile;
     bool txtFile;
     bool csvFile;
+    bool outputPathIncludesFilename;
     OutputType outputType;
     bool directory;
     bool verbose;
@@ -71,7 +72,8 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
         std::cout << '\n' << std::flush;
 
     std::string output_path = std::string(toCString(opt.outputPath));
-    output_path += fastaFile.substr(0, fastaFile.find_last_of('.')) + ".genmap";
+    if (!opt.outputPathIncludesFilename)
+        output_path += fastaFile.substr(0, fastaFile.find_last_of('.')) + ".genmap";
 
     if (opt.rawFile)
     {
@@ -378,7 +380,7 @@ int mappabilityMain(int argc, char const ** argv)
     addOption(parser, ArgParseOption("I", "index", "Path to the index", ArgParseArgument::INPUT_FILE, "IN"));
 	setRequired(parser, "index");
 
-    addOption(parser, ArgParseOption("O", "output", "Path to output directory", ArgParseArgument::OUTPUT_FILE, "OUT"));
+    addOption(parser, ArgParseOption("O", "output", "Path to output directory (or path to filename if only a single fasta files has been indexed)", ArgParseArgument::OUTPUT_FILE, "OUT"));
     setRequired(parser, "output");
 
     addOption(parser, ArgParseOption("E", "errors", "Number of errors", ArgParseArgument::INTEGER, "INT"));
@@ -433,20 +435,6 @@ int mappabilityMain(int argc, char const ** argv)
     getOptionValue(opt.outputPath, parser, "output");
     if (isSet(parser, "selection"))
         getOptionValue(opt.selectionPath, parser, "selection");
-
-    // Check whether the output path exists
-    {
-        struct stat st;
-        if (!(stat(toCString(opt.outputPath), &st) == 0 && S_ISDIR(st.st_mode)))
-        {
-            std::cerr << "ERROR: The output directory " << opt.outputPath << " does not exist\n"
-                      << "       Please create it, or choose a different location.\n";
-            return ArgumentParser::PARSE_ERROR;
-        }
-
-        if (back(opt.outputPath) != '/')
-            appendValue(opt.outputPath, '/');
-    }
 
     opt.mmap = isSet(parser, "memory-mapping");
     opt.wigFile = isSet(parser, "wig");
@@ -526,6 +514,65 @@ int mappabilityMain(int argc, char const ** argv)
     opt.totalLengthWidth = std::stoi(retrieve(info, "bwt_dimensions"));
     opt.sampling = std::stoi(retrieve(info, "sampling_rate"));
     opt.directory = retrieve(info, "fasta_directory") == "true";
+
+    // Check whether the output path exists
+    {
+        struct stat st;
+        // is outputPath a directory and does it exist?
+        if (stat(toCString(opt.outputPath), &st) == 0 && S_ISDIR(st.st_mode))
+        {
+            // okay (default case)
+            opt.outputPathIncludesFilename = false;
+            if (back(opt.outputPath) != '/')
+                appendValue(opt.outputPath, '/');
+        }
+        // does outputPath include a filename?
+        else if (!opt.directory)
+        {
+            // remove file name in temporary variable
+            CharString outputPath2 = opt.outputPath;
+            if (back(outputPath2) == '.')
+            {
+                // if it ends with . or .., it is always considered a directory
+                appendValue(opt.outputPath, '/');
+                opt.outputPathIncludesFilename = false;
+            }
+            else
+            {
+                int32_t last_slash_pos = length(outputPath2) - 1;
+                // check for >= 0 in case it does not contain '/' at all (file in same directory)
+                while (last_slash_pos >= 0 && outputPath2[last_slash_pos] != '/')
+                    --last_slash_pos;
+                if (last_slash_pos >= 0)
+                {
+                    erase(outputPath2, last_slash_pos, length(outputPath2));
+                }
+                else
+                {
+                    // since we checked at the very beginning whether it is an existing directory,
+                    // we now assume that it is a filename and (in the current working directory)
+                    // hence the path without the filename is '.'
+                    outputPath2 = ".";
+                }
+                opt.outputPathIncludesFilename = true;
+            }
+
+            // check if the parent directory exists
+            if (!(stat(toCString(outputPath2), &st) == 0 && S_ISDIR(st.st_mode)))
+            {
+                std::cerr << "ERROR: The output cannot be written to the file " << opt.outputPath << ".\n"
+                          << "       It seems the directory " << outputPath2 << " does not exist.\n";
+                return ArgumentParser::PARSE_ERROR;
+            }
+        }
+        else
+        {
+            std::cerr << "ERROR: The output directory " << opt.outputPath << " does not exist.\n"
+                      << "       A filename can only be specified for single indexed fasta files (not for indexed fasta directories).\n"
+                      << "       Please create it, or choose a different location.\n";
+            return ArgumentParser::PARSE_ERROR;
+        }
+    }
 
     if (opt.verbose)
     {
