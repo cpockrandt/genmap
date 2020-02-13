@@ -402,7 +402,7 @@ int mappabilityMain(int argc, char const ** argv)
 
     addOption(parser, ArgParseOption("S", "selection", "Path to a bed file (3 columns) with selected coordinates to compute the mappability (e.g., exon coordinates)", ArgParseArgument::OUTPUT_FILE, "OUT"));
 
-    addOption(parser, ArgParseOption("c", "reverse-complement", "Searches each k-mer on the reverse strand as well."));
+    addOption(parser, ArgParseOption("nc", "no-reverse-complement", "Searches the k-mers *NOT* on the reverse strand."));
 
     addOption(parser, ArgParseOption("ep", "exclude-pseudo", "Mappability only counts the number of fasta files that contain the k-mer, not the total number of occurrences (i.e., neglects so called- pseudo genes / sequences). This has no effect on the csv output."));
 
@@ -487,7 +487,7 @@ int mappabilityMain(int argc, char const ** argv)
 
     getOptionValue(searchParams.length, parser, "length");
     getOptionValue(searchParams.threads, parser, "threads");
-    searchParams.revCompl = isSet(parser, "reverse-complement");
+    searchParams.revCompl = !isSet(parser, "no-reverse-complement");
     searchParams.excludePseudo = isSet(parser, "exclude-pseudo");
 
     // store in temporary variables to avoid parsing arguments twice
