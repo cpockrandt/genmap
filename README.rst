@@ -88,6 +88,8 @@ To verify whether your CPU supports these instructions sets you can check the ou
 Building from source
 """"""""""""""""""""
 
+If you want to build it from source, we recommend cloning the git repository as shown below.
+The tarballs on GitHub do not contain git submodules (i.e., SeqAn).
 Please note that building from source can easily take 10 minutes and longer depending on your machine and compiler.
 
 ::
