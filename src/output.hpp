@@ -134,7 +134,7 @@ void saveWig(std::vector<T> const & c, std::string const & output_path, TChromos
 }
 
 template <bool mappability, typename T, typename TChromosomeNames, typename TChromosomeLengths>
-void saveBed(std::vector<T> const & c, std::string const & output_path, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths)
+void saveBedGraph(std::vector<T> const & c, std::string const & output_path, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths, bool const bedGraphFormat)
 {
     uint64_t pos = 0;
     uint64_t begin_pos_string = 0;
@@ -142,8 +142,8 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
 
     char buffer[BUFFER_SIZE];
 
-    std::ofstream bedFile(output_path + ".bed");
-    bedFile.rdbuf()->pubsetbuf(buffer, BUFFER_SIZE);
+    std::ofstream bedgraphFile(output_path + (bedGraphFormat ? ".bedgraph" : ".bed"));
+    bedgraphFile.rdbuf()->pubsetbuf(buffer, BUFFER_SIZE);
 
     for (uint64_t i = 0; i < length(chromLengths); ++i)
     {
@@ -156,15 +156,17 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
             {
                 if (current_val != 0)
                 {
-                    bedFile << chromNames[i] << '\t'                    // chrom name
-                            << (pos - occ - begin_pos_string) << '\t'   // start pos (begins with 0)
-                            << (pos - begin_pos_string) << '\t'     // end pos
-                            << '-' << '\t';                             // name
+                    bedgraphFile << chromNames[i] << '\t'                    // chrom name
+                                 << (pos - occ - begin_pos_string) << '\t'   // start pos (begins with 0)
+                                 << (pos - begin_pos_string) << '\t';        // name
+
+                    if (!bedGraphFormat)
+                        bedgraphFile << '-' << '\t';
 
                     SEQAN_IF_CONSTEXPR (mappability)
-                        bedFile << ((current_val != 0) ? 1.0f / static_cast<float>(current_val) : 0) << '\n';
+                        bedgraphFile << ((current_val != 0) ? 1.0f / static_cast<float>(current_val) : 0) << '\n';
                     else
-                        bedFile << current_val << '\n';
+                        bedgraphFile << current_val << '\n';
                 }
 
                 occ = 0;
@@ -181,7 +183,7 @@ void saveBed(std::vector<T> const & c, std::string const & output_path, TChromos
         if (i + 1 < length(chromLengths))
             end_pos_string += chromLengths[i + 1];
     }
-    bedFile.close();
+    bedgraphFile.close();
 }
 
 template <bool mappability, typename TLocations, typename TDirectoryInformation, typename TCSVIntervals>

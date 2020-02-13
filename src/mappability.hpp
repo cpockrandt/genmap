@@ -22,6 +22,7 @@ struct Options
     bool mmap;
     bool wigFile; // group files into mergable flags, i.e., BED | WIG, etc.
     bool bedFile;
+    bool bedgraphFile;
     bool rawFile;
     bool txtFile;
     bool csvFile;
@@ -110,13 +111,24 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
             std::cout << "- WIG file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
 
+    if (opt.bedgraphFile)
+    {
+        double start = get_wall_time();
+        if (opt.outputType == OutputType::mappability)
+            saveBedGraph<true>(c, output_path, chromNames, chromLengths, true /* bedgraph-file */);
+        else
+            saveBedGraph<false>(c, output_path, chromNames, chromLengths, true /* bedgraph-file */);
+        if (opt.verbose)
+            std::cout << "- bedgraph file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
+    }
+
     if (opt.bedFile)
     {
         double start = get_wall_time();
         if (opt.outputType == OutputType::mappability)
-            saveBed<true>(c, output_path, chromNames, chromLengths);
+            saveBedGraph<true>(c, output_path, chromNames, chromLengths, false /* bed-file */);
         else
-            saveBed<false>(c, output_path, chromNames, chromLengths);
+            saveBedGraph<false>(c, output_path, chromNames, chromLengths, false /* bed-file */);
         if (opt.verbose)
             std::cout << "- BED file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
@@ -394,8 +406,8 @@ int mappabilityMain(int argc, char const ** argv)
 
     addOption(parser, ArgParseOption("ep", "exclude-pseudo", "Mappability only counts the number of fasta files that contain the k-mer, not the total number of occurrences (i.e., neglects so called- pseudo genes / sequences). This has no effect on the csv output."));
 
-    addOption(parser, ArgParseOption("fs", "frequency-small", "Stores frequencies using 8 bit per value (max. value 255) instead of the mappbility using a float per value (32 bit). Applies to all formats (raw, txt, wig, bed)."));
-    addOption(parser, ArgParseOption("fl", "frequency-large", "Stores frequencies using 16 bit per value (max. value 65535) instead of the mappbility using a float per value (32 bit). Applies to all formats (raw, txt, wig, bed)."));
+    addOption(parser, ArgParseOption("fs", "frequency-small", "Stores frequencies using 8 bit per value (max. value 255) instead of the mappbility using a float per value (32 bit). Applies to all formats (raw, txt, wig, bedgraph)."));
+    addOption(parser, ArgParseOption("fl", "frequency-large", "Stores frequencies using 16 bit per value (max. value 65535) instead of the mappbility using a float per value (32 bit). Applies to all formats (raw, txt, wig, bedgraph)."));
 
     addOption(parser, ArgParseOption("r", "raw",
         "Output raw files, i.e., the binary format of std::vector<T> with T = float, uint8_t or uint16_t (depending on whether -fs or -fl is set). For each fasta file that was indexed a separate file is created. File type is .map, .freq8 or .freq16."));
@@ -406,8 +418,13 @@ int mappabilityMain(int argc, char const ** argv)
     addOption(parser, ArgParseOption("w", "wig",
         "Output wig files, e.g., for adding a custom feature track to genome browsers. For each fasta file that was indexed a separate wig file and chrom.size file is created."));
 
-    addOption(parser, ArgParseOption("b", "bed",
-        "Output bed files. For each fasta file that was indexed a separate bed-file is created."));
+    addOption(parser, ArgParseOption("bg", "bedgraph",
+        "Output bedgraph files. For each fasta file that was indexed a separate bedgraph-file is created."));
+
+    ArgParseOption bedFileOption("b", "bed",
+        "Output bed files. For each fasta file that was indexed a separate bed-file is created.");
+    hideOption(bedFileOption);
+    addOption(parser, bedFileOption);
 
     addOption(parser, ArgParseOption("d", "csv",
         "Output a detailed csv file reporting the locations of each k-mer (WARNING: This will produce large files and makes computing the mappability significantly slower)."));
@@ -438,15 +455,16 @@ int mappabilityMain(int argc, char const ** argv)
 
     opt.mmap = isSet(parser, "memory-mapping");
     opt.wigFile = isSet(parser, "wig");
+    opt.bedgraphFile = isSet(parser, "bedgraph");
     opt.bedFile = isSet(parser, "bed");
     opt.rawFile = isSet(parser, "raw");
     opt.txtFile = isSet(parser, "txt");
     opt.csvFile = isSet(parser, "csv");
     opt.verbose = isSet(parser, "verbose");
 
-    if (!opt.wigFile && !opt.bedFile && !opt.rawFile && !opt.txtFile && !opt.csvFile)
+    if (!opt.wigFile && !opt.bedgraphFile && !opt.bedFile && !opt.rawFile && !opt.txtFile && !opt.csvFile)
     {
-        std::cerr << "ERROR: Please choose at least one output format (i.e., --wig, --bed, --raw, --txt, --csv).\n";
+        std::cerr << "ERROR: Please choose at least one output format (i.e., --wig, --bedgraph, --bed, --raw, --txt, --csv).\n";
         return ArgumentParser::PARSE_ERROR;
     }
 

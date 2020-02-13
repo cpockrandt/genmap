@@ -41,9 +41,9 @@ function (add_test_suite TEST_NAME_PREFIX TEST_CASE_FOLDER INDEX_FLAGS MAP_FLAGS
     add_test (NAME "${TEST_NAME_PREFIX}_wig_freq16"
               COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -w -fl" "wig_freq16")
     add_test (NAME "${TEST_NAME_PREFIX}_bed_map"
-              COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -b" "bed_map")
+              COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -bg" "bed_map")
     add_test (NAME "${TEST_NAME_PREFIX}_bed_freq16"
-              COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -b -fl" "bed_freq16")
+              COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -bg -fl" "bed_freq16")
     add_test (NAME "${TEST_NAME_PREFIX}_csv"
               COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -d" "csv")
 
