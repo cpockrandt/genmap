@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -xe
 
 errorout()
 {
@@ -44,12 +44,16 @@ ${BINDIR}/bin/genmap map -I "${MYTMP}/index" -O "${MYTMP}/output" ${FLAGS}
 diff -r --strip-trailing-cr "${SRCDIR}/tests/test_cases/case_${CASE}/${EXPECTED_FOLDER}" "${MYTMP}/output"
 [ $? -eq 0 ] || errorout "Files are not equal!"
 
-${BINDIR}/bin/genmap map -I "${MYTMP}/index" -O "${MYTMP}/output" ${FLAGS} -xo 1
-diff -r --strip-trailing-cr "${SRCDIR}/tests/test_cases/case_${CASE}/${EXPECTED_FOLDER}" "${MYTMP}/output"
-[ $? -eq 0 ] || errorout "Files are not equal!"
-
 # case 1e and 1f do not allow a larger overlap since E=1 and K=3
-if [ "$CASE" != "1e" ] && [ "$CASE" != "1f" ]; then
+if [ "$CASE" != "1e" ] && [ "$CASE" != "1f" ] && [ "$CASE" != "1g" ]; then
+    ${BINDIR}/bin/genmap map -I "${MYTMP}/index" -O "${MYTMP}/output" ${FLAGS} -xo 1
+    diff -r --strip-trailing-cr "${SRCDIR}/tests/test_cases/case_${CASE}/${EXPECTED_FOLDER}" "${MYTMP}/output"
+    [ $? -eq 0 ] || errorout "Files are not equal!"
+fi
+
+testnumber=`echo ${CASE} | cut -c1-1` # 1g -> 1 (retrieves the first character of ${CASE})
+
+if [ "$testnumber" != "1" ]; then
     ${BINDIR}/bin/genmap map -I "${MYTMP}/index" -O "${MYTMP}/output" ${FLAGS} -xo 2
     diff -r --strip-trailing-cr "${SRCDIR}/tests/test_cases/case_${CASE}/${EXPECTED_FOLDER}" "${MYTMP}/output"
     [ $? -eq 0 ] || errorout "Files are not equal!"
