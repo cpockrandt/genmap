@@ -77,13 +77,13 @@ To verify whether your CPU supports these instructions sets you can check the ou
 |   :height: 60px                 | `Mac 64 bit optimized`_   | |VERSION| (|BUILD_DATE|) | requires SSE4               |
 +---------------------------------+---------------------------+--------------------------+-----------------------------+
 
-.. _Linux 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.1.0/genmap-1.1.0-Linux-x86_64.zip
-.. _Linux 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.1.0/genmap-1.1.0-Linux-x86_64-sse4.zip
-.. _Mac 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.1.0/genmap-1.1.0-Darwin-x86_64.zip
-.. _Mac 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.1.0/genmap-1.1.0-Darwin-x86_64-sse4.zip
+.. _Linux 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.2.0/genmap-1.2.0-Linux-x86_64.zip
+.. _Linux 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.2.0/genmap-1.2.0-Linux-x86_64-sse4.zip
+.. _Mac 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.2.0/genmap-1.2.0-Darwin-x86_64.zip
+.. _Mac 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.2.0/genmap-1.2.0-Darwin-x86_64-sse4.zip
 
-.. |VERSION| replace:: 1.1.0
-.. |BUILD_DATE| replace:: 2019-11-17
+.. |VERSION| replace:: 1.2.0
+.. |BUILD_DATE| replace:: 2020-02-21
 
 Building from source
 """"""""""""""""""""

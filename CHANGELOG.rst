@@ -1,6 +1,24 @@
 Changelog
 ^^^^^^^^^
 
+1.2.0 (2020-02-21)
+""""""""""""""""""
+
+Features
+--------
+
+* **BREAKING CHANGE!** k-mers are searched on both strands by default. Can be turned off with ``--no-reverse-complement``
+* bedgraph output (``*.bg``) replaces bed output (``*.bed``) (bed output is still supported with ``--bed`` but deprecated and removed from the help string)
+* allow user to specify a filename with ``--output`` if only a single fasta file has been indexed (previously only the directory could be specified)
+
+Fixes
+-----
+
+* truncate fasta identifiers after first space
+* allow indexing fasta files with ``*.fas`` filename ending
+* runtime speedup when BED file is provided for computation on a subset of the input (``--selection``)
+* reduced progress output on terminal when processing multiple fasta files
+
 1.1.0 (2019-11-17)
 """"""""""""""""""
 
@@ -11,7 +29,7 @@ Changelog
 1.0.2 (2019-09-04)
 """"""""""""""""""
 
-* BED output format fixed (end position was off by one, i.e. closed interval instead of half-closed interval) 
+* BED output format fixed (end position was off by one, i.e. closed interval instead of half-closed interval)
 
 1.0.1 (2019-06-11)
 """"""""""""""""""
