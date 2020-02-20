@@ -85,21 +85,32 @@ std::string mytime()
 }
 
 template <bool outputProgress>
-inline void printProgress(uint64_t &, uint64_t const, uint64_t const);
+inline void printProgress(uint64_t &, uint64_t const, uint64_t const, uint64_t const, uint64_t const);
 
 template <>
-inline void printProgress<false>(uint64_t &, uint64_t const, uint64_t const)
+inline void printProgress<false>(uint64_t &, uint64_t const, uint64_t const, uint64_t const, uint64_t const)
 { }
 
 template <>
-inline void printProgress<true>(uint64_t & progress_count, uint64_t const progress_step, uint64_t const progress_max)
+inline void printProgress<true>(uint64_t & progress_count, uint64_t const progress_step, uint64_t const progress_max,
+                                uint64_t const currentFileNo, uint64_t const totalFileNo)
 {
     #pragma omp atomic
     ++progress_count;
+
     if (omp_get_thread_num() == 0 && (progress_count & progress_step) == 0)
     {
         float progress = static_cast<float>(progress_count)/progress_max;
-        std::cout << "\rProgress: " << (truncf(progress*10000)/100) << "%   " << std::flush;
+
+        if (totalFileNo == 1)
+        {
+            std::cout << "\rProgress: " << (truncf(progress*10000)/100) << "%\x1b[K" << std::flush; // \e[K - clr_eol (remove anything after the cursor)
+        }
+        else
+        {
+            std::cout << "\r" // go up one line
+                      << "File " << currentFileNo << " / " << totalFileNo << ". Progress: " << (truncf(progress*10000)/100) << "%\x1b[K" << std::flush;
+        }
     }
 }
 

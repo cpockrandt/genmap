@@ -189,7 +189,7 @@ void test(uint64_t const nbrChromosomes, uint64_t const lengthChromosomes, uint6
                 frequencyGenMap.assign(totalLength, 0);
                 std::vector<std::pair<uint64_t, uint64_t> > intervals;
                 bool completeSameKmers;
-                computeMappability<errors, false>(index, text, frequencyGenMap, searchParams, false /*dir*/, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers);
+                computeMappability<errors, false>(index, text, frequencyGenMap, searchParams, false /*dir*/, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, 1/*currentFileNo*/, 1/*totalFileNo*/);
 
                 EXPECT_EQ(frequencyTrivial, frequencyGenMap);
                 // if (frequencyTrivial != frequencyGenMap)

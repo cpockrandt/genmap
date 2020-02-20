@@ -405,7 +405,8 @@ template <unsigned errors, bool csvComputation, typename TIndex, typename TText,
 inline void computeMappability(TIndex & index, TText const & text, TContainer & c, SearchParams const & params,
                                bool const directory, TChromosomeLengths const & chromLengths, TChromosomeLengths const & chromCumLengths, TLocations & locations,
                                TMapping const & mappingSeqIdFile, std::vector<std::pair<uint64_t, uint64_t>> const & intervals,
-                               bool & completeSameKmers)
+                               bool & completeSameKmers,
+                               uint64_t const currentFileNo, uint64_t const totalFileNo)
 {
     auto const & limits = stringSetLimits(indexText(index));
     uint64_t const textLength = length(text);
@@ -433,7 +434,7 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
         for (uint64_t i = 0; i < numberOfKmers; i += stepSize)
         {
             computeMappabilitySingleBlock<errors, csvComputation>(index, text, c, params, directory, chromLengths, locations, mappingSeqIdFile, i, i + stepSize, textLength, chromCumLengths, limits, intervals, overlap, true);
-            printProgress<outputProgress>(progressCount, progressStep, progressMax);
+            printProgress<outputProgress>(progressCount, progressStep, progressMax, currentFileNo, totalFileNo);
         }
     }
     else
@@ -469,7 +470,7 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
         for (auto interval = intervals_details.begin(); interval < intervals_details.end(); ++interval)
         {
             computeMappabilitySingleBlock<errors, csvComputation>(index, text, c, params, directory, chromLengths, locations, mappingSeqIdFile, (*interval).first, (*interval).second, textLength, chromCumLengths, limits, intervals, overlap, completeSameKmers);
-            printProgress<outputProgress>(progressCount, progressStep, progressMax);
+            printProgress<outputProgress>(progressCount, progressStep, progressMax, currentFileNo, totalFileNo);
         }
     }
 
