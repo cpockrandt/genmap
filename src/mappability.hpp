@@ -61,12 +61,12 @@ inline std::string retrieve(StringSet<CharString, TSpec> const & info, std::stri
     exit(1);
 }
 
-template <typename TVector, typename TChromosomeNames, typename TChromosomeLengths, typename TLocations, typename TDirectoryInformation, typename TCSVIntervals>
-inline void outputMappability(TVector const & c, Options const & opt, SearchParams const & searchParams,
+template <typename TVector, typename TChromosomeNames, typename TChromosomeLengths, typename TLocations, typename TDirectoryInformation, typename TIntervals, typename TCSVIntervals>
+inline void outputMappability(TVector & c, Options const & opt, SearchParams const & searchParams,
                               std::string const & fastaFile, TChromosomeNames const & chromNames,
                               TChromosomeLengths const & chromLengths, TLocations & locations,
                               TDirectoryInformation const & directoryInformation,
-                              TCSVIntervals const & csvIntervals)
+                              TIntervals const & intervals, TCSVIntervals const & csvIntervals, bool const completeSameKmers)
 {
     std::cout << "Start writing output files ...";
     if (opt.verbose)
@@ -75,6 +75,27 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
     std::string output_path = std::string(toCString(opt.outputPath));
     if (!opt.outputPathIncludesFilename)
         output_path += fastaFile.substr(0, fastaFile.find_last_of('.')) + ".genmap";
+
+    bool const outputSelection = opt.selectionPath != "";
+
+    // reset mappability values that have been computed by accident using optimizations (copying values from same k-mers)
+    if (outputSelection && completeSameKmers && (opt.rawFile || opt.txtFile || opt.wigFile || opt.bedgraphFile || opt.bedFile))
+    {
+        uint64_t last_interval_end = 0;
+        for (auto const & interval : intervals) // triplets: chromosomeNamesId, interval.first, interval.second
+        {
+            for (uint64_t i = last_interval_end; i < std::get<0>(interval); ++i)
+            {
+                c[i] = 0;
+            }
+            last_interval_end = std::get<1>(interval);
+        }
+
+        for (uint64_t i = last_interval_end; i < c.size(); ++i)
+        {
+            c[i] = 0;
+        }
+    }
 
     if (opt.rawFile)
     {
@@ -136,7 +157,6 @@ inline void outputMappability(TVector const & c, Options const & opt, SearchPara
     if (opt.csvFile)
     {
         double start = get_wall_time();
-        bool const outputSelection = opt.selectionPath != "";
         if (opt.outputType == OutputType::mappability)
             saveCsv<true>(output_path, locations, searchParams, directoryInformation, csvIntervals, outputSelection);
         else
@@ -163,18 +183,20 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
              std::pair<std::vector<Pair<TSeqNo, TSeqPos> >,
                        std::vector<Pair<TSeqNo, TSeqPos> > > > locations;
 
+    bool completeSameKmers = true;
+
     double start = get_wall_time();
     switch (opt.errors)
     {
-        case 0:  computeMappability<0, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals);
+        case 0:  computeMappability<0, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers);
                  break;
-        case 1:  computeMappability<1, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals);
+        case 1:  computeMappability<1, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers);
                  break;
-        case 2:  computeMappability<2, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals);
+        case 2:  computeMappability<2, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers);
                  break;
-        case 3:  computeMappability<3, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals);
+        case 3:  computeMappability<3, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers);
                  break;
-        case 4:  computeMappability<4, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals);
+        case 4:  computeMappability<4, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers);
                  break;
         default: std::cerr << "E > 4 not yet supported.\n";
                  exit(1);
@@ -188,7 +210,7 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
     if (opt.verbose)
         std::cout << "Mappability computed in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
 
-    outputMappability(c, opt, searchParams, fastaFile, chromNames, chromLengths, locations, directoryInformation, csvIntervals);
+    outputMappability(c, opt, searchParams, fastaFile, chromNames, chromLengths, locations, directoryInformation, intervals, csvIntervals, completeSameKmers);
 }
 
 template <typename TChar, typename TAllocConfig, typename TDistance, typename value_type, bool csvComputation,

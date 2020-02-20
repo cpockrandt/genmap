@@ -71,6 +71,9 @@ case 3d
 case 3e
     case 3d but only computing a subset defined in a bed file.
 
+case 3f
+    case 3e but with a larger subset (i.e., uses additional optimizations).
+
 Single fasta file in directory with multiple sequences
 """"""""""""""""""""""""""""""""""""""""""""""""""""""
 

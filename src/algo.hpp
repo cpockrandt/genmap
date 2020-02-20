@@ -221,7 +221,7 @@ template <unsigned errors, bool csvComputation, typename TIndex, typename TText,
 inline void computeMappabilitySingleBlock(TIndex & index, TText const & text, TContainer & c, SearchParams const & params,
                                           bool const directory, TChromosomeLengths const & chromLengths, TLocations & locations, TMapping const & mappingSeqIdFile,
                                           uint64_t const i, uint64_t const j, uint64_t const textLength, TChromosomeLengths const & chromCumLengths, TLimits const & limits,
-                                          std::vector<std::pair<uint64_t, uint64_t>> const & intervals, unsigned const overlap)
+                                          std::vector<std::pair<uint64_t, uint64_t>> const & intervals, unsigned const overlap, bool const completeSameKmers)
 {
     typedef typename TContainer::value_type TValue;
     typedef Iter<TIndex, VSTree<TopDown<> > > TBiIter;
@@ -385,7 +385,7 @@ inline void computeMappabilitySingleBlock(TIndex & index, TText const & text, TC
                 }
             }
 
-            if (!directory && intervals.empty() && countOccurrences(itExact[j - beginPos]) > 1) // guaranteed to exist, since there has to be at least one match!
+            if (!directory && (intervals.empty() || completeSameKmers) && countOccurrences(itExact[j - beginPos]) > 1) // guaranteed to exist, since there has to be at least one match!
             {
                 for (auto const & occ : getOccurrences(itExact[j-beginPos]))
                 {
@@ -404,13 +404,16 @@ inline void computeMappabilitySingleBlock(TIndex & index, TText const & text, TC
 template <unsigned errors, bool csvComputation, typename TIndex, typename TText, typename TContainer, typename TChromosomeLengths, typename TLocations, typename TMapping>
 inline void computeMappability(TIndex & index, TText const & text, TContainer & c, SearchParams const & params,
                                bool const directory, TChromosomeLengths const & chromLengths, TChromosomeLengths const & chromCumLengths, TLocations & locations,
-                               TMapping const & mappingSeqIdFile, std::vector<std::pair<uint64_t, uint64_t>> const & intervals)
+                               TMapping const & mappingSeqIdFile, std::vector<std::pair<uint64_t, uint64_t>> const & intervals,
+                               bool & completeSameKmers)
 {
     auto const & limits = stringSetLimits(indexText(index));
     uint64_t const textLength = length(text);
     uint64_t const numberOfKmers = textLength - params.length + 1;
     uint64_t const overlap = params.overlap;
     uint64_t const stepSize = params.length - overlap + 1; // Number of overlapping k-mers searched at once
+
+    completeSameKmers = false;
 
     if (intervals.empty())
     {
@@ -429,20 +432,27 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
         #pragma omp parallel for schedule(dynamic, chunkSize) num_threads(params.threads)
         for (uint64_t i = 0; i < numberOfKmers; i += stepSize)
         {
-            computeMappabilitySingleBlock<errors, csvComputation>(index, text, c, params, directory, chromLengths, locations, mappingSeqIdFile, i, i + stepSize, textLength, chromCumLengths, limits, intervals, overlap);
+            computeMappabilitySingleBlock<errors, csvComputation>(index, text, c, params, directory, chromLengths, locations, mappingSeqIdFile, i, i + stepSize, textLength, chromCumLengths, limits, intervals, overlap, true);
             printProgress<outputProgress>(progressCount, progressStep, progressMax);
         }
     }
     else
     {
+        uint64_t interval_sum = 0;
         std::vector<std::pair<uint64_t, uint64_t>> intervals_details;
         for (auto interval = intervals.begin(); interval < intervals.end(); ++interval)
         {
+            interval_sum += (*interval).second - (*interval).first;
             for (uint64_t i = (*interval).first; i < (*interval).second; i += stepSize)
             {
                 intervals_details.emplace_back(std::make_pair(i, std::min(i + stepSize, (*interval).second)));
             }
         }
+
+        // when bed with subset for mappability is provided with at least 50% of the genome selected
+        // use optimization in algorithm (copy mappability of same k-mers)
+        float const fraction = static_cast<float>(interval_sum) / textLength;
+        completeSameKmers = fraction > 0.5f;
 
         // This leads to an unused variable warning in Clang
         #pragma clang diagnostic push
@@ -458,7 +468,7 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
         #pragma omp parallel for schedule(dynamic, chunkSize) num_threads(params.threads)
         for (auto interval = intervals_details.begin(); interval < intervals_details.end(); ++interval)
         {
-            computeMappabilitySingleBlock<errors, csvComputation>(index, text, c, params, directory, chromLengths, locations, mappingSeqIdFile, (*interval).first, (*interval).second, textLength, chromCumLengths, limits, intervals, overlap);
+            computeMappabilitySingleBlock<errors, csvComputation>(index, text, c, params, directory, chromLengths, locations, mappingSeqIdFile, (*interval).first, (*interval).second, textLength, chromCumLengths, limits, intervals, overlap, completeSameKmers);
             printProgress<outputProgress>(progressCount, progressStep, progressMax);
         }
     }
