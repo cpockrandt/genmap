@@ -173,10 +173,10 @@ To compute the (30,2)-mappability of the previously indexed genome, simply run:
 
 ::
 
-    $ ./genmap map -K 30 -E 2 -I /path/to/index/folder -O /path/to/output/folder -t -w -b
+    $ ./genmap map -K 30 -E 2 -I /path/to/index/folder -O /path/to/output/folder -t -w -bg
 
-This will create a ``text``, ``wig`` and ``bed`` file in ``/path/to/output/folder`` storing the computed mappability in
-different formats. You can omit formats that are not required by removing the corresponding flags ``-t`` ``-w`` or ``-b``.
+This will create a ``text``, ``wig`` and ``bedGraph`` file in ``/path/to/output/folder`` storing the computed mappability in
+different formats. You can omit formats that are not required by removing the corresponding flags ``-t`` ``-w`` or ``-bg``.
 
 Instead of the mappability, the frequency can be outputted, you only have to add the flag ``-fl`` to the previous
 command.

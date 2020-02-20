@@ -285,7 +285,6 @@ inline void run(Options const & opt, SearchParams const & searchParams)
                 run<TDistance, value_type, csvComputation, TSeqNo, TSeqPos>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths, chromCumLengths, directoryInformation, mappingSeqIdFile, intervalsForSingleFasta, csvIntervalsForSingleFasta);
             }
 
-
             startPos += fastaFileLength;
             fastaFile = std::get<0>(row);
             fastaFileLength = 0;
@@ -400,7 +399,7 @@ int mappabilityMain(int argc, char const ** argv)
     addOption(parser, ArgParseOption("K", "length", "Length of k-mers", ArgParseArgument::INTEGER, "INT"));
     setRequired(parser, "length");
 
-    addOption(parser, ArgParseOption("S", "selection", "Path to a bed file (3 columns) with selected coordinates to compute the mappability (e.g., exon coordinates)", ArgParseArgument::OUTPUT_FILE, "OUT"));
+    addOption(parser, ArgParseOption("S", "selection", "Path to a bed file (3 columns: chromosome, start, end) with selected coordinates to compute the mappability (e.g., exon coordinates)", ArgParseArgument::OUTPUT_FILE, "OUT"));
 
     addOption(parser, ArgParseOption("nc", "no-reverse-complement", "Searches the k-mers *NOT* on the reverse strand."));
 
@@ -509,7 +508,7 @@ int mappabilityMain(int argc, char const ** argv)
         }
         else
         {
-            std::cerr << "ERROR: overlap cannot be larger than min(K - 1, K - E + 2) = " << maxPossibleOverlap << ".\n";
+            std::cerr << "ERROR: overlap cannot be larger than min(K - 1, K - E - 2) = " << maxPossibleOverlap << ".\n";
             return ArgumentParser::PARSE_ERROR;
         }
     }
