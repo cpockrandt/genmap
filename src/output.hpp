@@ -230,7 +230,7 @@ void saveCsv(std::string const & output_path, TLocations const & locations,
 
         while (interval != csvIntervals.end() &&
                ((std::get<0>(*interval) < kmerPos.i1) ||
-               (std::get<0>(*interval) == kmerPos.i1 && std::get<2>(*interval) <= kmerPos.i2)))
+                (std::get<0>(*interval) == kmerPos.i1 && std::get<2>(*interval) <= kmerPos.i2)))
         {
             ++interval;
         }
@@ -285,4 +285,161 @@ void saveCsv(std::string const & output_path, TLocations const & locations,
     }
 
     csvFile.close();
+}
+
+template <bool mappability, typename T, typename TLocations, typename TDirectoryInformation, typename TCSVIntervals, typename TText, typename TChromosomeLengths>
+void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*/, TLocations const & locations,
+                    SearchParams const & searchParams, TDirectoryInformation const & directoryInformation,
+                    TCSVIntervals const & /*svIntervals*/, bool const /*outputSelection*/, DesignFileOutput & designFileOutput,
+                    uint64_t const currentFileNo, Options const & opt, TText const & text, TChromosomeLengths const & chromCumLengths)
+{
+    uint64_t const nbr_of_genomes = designFileOutput.matrix.size();
+
+    // extract fasta file names
+    uint64_t chromosomeCount = 0;
+    std::vector<std::pair<std::string, uint64_t> > fastaFiles; // fasta file, cumulative nbr. of chromosomes
+    std::string lastFastaFile = std::get<0>(retrieveDirectoryInformationLine(directoryInformation[0]));
+    for (auto const & row : directoryInformation)
+    {
+        auto const line = retrieveDirectoryInformationLine(row);
+        if (lastFastaFile != std::get<0>(line))
+        {
+            fastaFiles.push_back({lastFastaFile, chromosomeCount - 1});
+            lastFastaFile = std::get<0>(line);
+        }
+        ++chromosomeCount;
+    }
+
+    for (uint64_t i = 0; i < c.size();)
+    {
+        uint64_t min_pos = i;
+        uint64_t min_value = c[i]; // this could potentially be 0 (which we do not want)
+
+        // c[i] == for the last K-1 k-mers of each sequence as well as k-mers containing more N's than errors allowed
+
+        for (uint64_t j = 1; j <= opt.designWindowSize && i < c.size(); ++i, ++j)
+        {
+            // select minimum, but not c[i] == 0, unless we chose c[i] at the beginning by accident
+            if ((c[i] < min_value && c[i] > 0) || (min_value == 0 && c[i] > 0)) // last K-1 positions in a string are 0
+            {
+                min_pos = i;
+                min_value = c[i];
+            }
+        }
+
+        //++i;
+        //while (i < c.size() && c[i] == 0)
+        //    ++i;
+
+        if (min_value > 0 && min_value <= nbr_of_genomes * opt.designPercentage)
+        {
+            // transform min_pos to tuple
+            Pair<uint64_t, uint64_t> min_pos_tuple;
+            myPosLocalize(min_pos_tuple, min_pos, chromCumLengths);
+
+            // extract element from 'location'
+            auto location_it = std::find_if(locations.begin(), locations.end(), [&min_pos_tuple](auto const & l){
+                return l.first.i1 == min_pos_tuple.i1 && l.first.i2 == min_pos_tuple.i2;
+            });
+
+            if (location_it == locations.end())
+            {
+                std::cout << "NOT FOUND: (" << min_pos_tuple.i1 << ',' << min_pos_tuple.i2 << "): " << min_pos << "(min_value: " << min_value << ")" << std::endl;
+
+                uint64_t prev = 0;
+                for (auto x : chromCumLengths)
+                {
+                    std::cout << x-prev << '\t' << x << std::endl;
+                    prev = x;
+                }
+
+                std::cout << "Locations: \n";
+                for (auto const & kmerLocations : locations)
+                {
+                    auto const &kmerPos = kmerLocations.first;
+                    if (kmerPos.i1 == 0)
+                        std::cout << kmerPos.i1 << ',' << kmerPos.i2 << std::endl;
+                }
+                exit(23);
+            }
+
+            // extract kmer at position and make it canonical
+            Dna5String kmer = infixWithLength(text, min_pos, searchParams.length);
+            Dna5String kmer_rc = kmer;
+            reverseComplement(kmer_rc);
+            if (kmer > kmer_rc)
+                kmer = kmer_rc;
+            //std::cout << min_pos << '\t' << '(' << min_pos_tuple.i1 << ',' << min_pos_tuple.i2 << ")\t" << kmer << '\n';
+
+            // extract kmer_id / store kmer in std::map
+            auto lb = designFileOutput.kmer_id.lower_bound(kmer);
+
+            uint64_t kmer_id = 0;
+            if(lb != designFileOutput.kmer_id.end() && !(designFileOutput.kmer_id.key_comp()(kmer, lb->first)))
+            {
+                // key already exists
+                kmer_id = lb->second;
+            }
+            else
+            {
+                // the key does not exist in the map
+                // add it to the map
+                kmer_id = designFileOutput.kmer_id.size() + 1;
+                designFileOutput.kmer_id.insert(lb, {kmer, kmer_id});
+            }
+
+            std::vector<bool> bitvector(nbr_of_genomes, 0);
+
+            // add probe to matrix (currentFileNo starts with 1)
+            designFileOutput.matrix[currentFileNo - 1].push_back(kmer_id);
+            bitvector[currentFileNo - 1] = 1;
+
+            // add matches to other genomes in matrix
+            auto location = *location_it;
+
+            auto const & plusStrandLoc = location.second.first;
+            uint64_t fastaID = 0;
+            uint64_t m = 0;
+            for (auto const & fastaFile : fastaFiles)
+            {
+                bool kmerInFasta = false;
+                while (m < plusStrandLoc.size() && plusStrandLoc[m].i1 <= fastaFile.second)
+                {
+                    kmerInFasta = true;
+                    ++m;
+                }
+                if (kmerInFasta)
+                {
+                    bitvector[fastaID] = 1;
+                    designFileOutput.matrix[fastaID].push_back(kmer_id);
+                }
+
+                ++fastaID;
+            }
+
+            if (searchParams.revCompl)
+            {
+                auto const & minusStrandLoc = location.second.second;
+                fastaID = 0;
+                for (auto const & fastaFile : fastaFiles)
+                {
+                    bool kmerInFasta = false;
+                    while (m < minusStrandLoc.size() && minusStrandLoc[m].i1 <= fastaFile.second)
+                    {
+                        kmerInFasta = true;
+                        ++m;
+                    }
+                    if (kmerInFasta)
+                    {
+                        bitvector[fastaID] = 1;
+                        designFileOutput.matrix[fastaID].push_back(kmer_id);
+                    }
+
+                    ++fastaID;
+                }
+            }
+
+            designFileOutput.bitvectors.push_back(bitvector);
+        }
+    }
 }

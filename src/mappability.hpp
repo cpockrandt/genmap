@@ -26,6 +26,7 @@ struct Options
     bool rawFile;
     bool txtFile;
     bool csvFile;
+    bool designFile;
     bool outputPathIncludesFilename;
     OutputType outputType;
     bool directory;
@@ -40,6 +41,20 @@ struct Options
     uint32_t totalLengthWidth;
     unsigned errors;
     unsigned sampling;
+    uint64_t designWindowSize;
+    float designPercentage;
+};
+
+struct DesignFileOutput
+{
+    // previously seen kmer -> kmer_id
+    std::map<Dna5String, uint64_t> kmer_id;
+
+    // file_id -> kmer_ids
+    std::vector<std::vector<uint64_t> > matrix;
+
+    // bitvectors (in order of kmers, i.e., kmer_id = 1..n)
+    std::vector<std::vector<bool> > bitvectors;
 };
 
 #include "common.hpp"
@@ -66,12 +81,14 @@ inline std::string retrieve(StringSet<CharString, TSpec> const & info, std::stri
     exit(1);
 }
 
-template <typename TVector, typename TChromosomeNames, typename TChromosomeLengths, typename TLocations, typename TDirectoryInformation, typename TIntervals, typename TCSVIntervals>
+template <typename TVector, typename TChromosomeNames, typename TChromosomeLengths, typename TLocations, typename TDirectoryInformation, typename TIntervals, typename TCSVIntervals, typename TText>
 inline void outputMappability(TVector & c, Options const & opt, SearchParams const & searchParams,
                               std::string const & fastaFile, TChromosomeNames const & chromNames,
                               TChromosomeLengths const & chromLengths, TLocations & locations,
                               TDirectoryInformation const & directoryInformation,
-                              TIntervals const & intervals, TCSVIntervals const & csvIntervals, bool const completeSameKmers)
+                              TIntervals const & intervals, TCSVIntervals const & csvIntervals, bool const completeSameKmers,
+                              DesignFileOutput & designFileOutput, uint64_t const currentFileNo, TText const & text,
+                              TChromosomeLengths const & chromCumLengths)
 {
     std::string output_path = std::string(toCString(opt.outputPath));
     if (!opt.outputPathIncludesFilename)
@@ -152,6 +169,17 @@ inline void outputMappability(TVector & c, Options const & opt, SearchParams con
         if (opt.verbose)
             std::cout << "- CSV file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
+
+    if (opt.designFile)
+    {
+        double start = get_wall_time();
+        if (opt.outputType == OutputType::mappability)
+            saveDesignFile<true>(c, output_path, locations, searchParams, directoryInformation, csvIntervals, outputSelection, designFileOutput, currentFileNo, opt, text, chromCumLengths);
+        else
+            saveDesignFile<false>(c, output_path, locations, searchParams, directoryInformation, csvIntervals, outputSelection, designFileOutput, currentFileNo, opt, text, chromCumLengths);
+        if (opt.verbose)
+            std::cout << "- Design-File. file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
+    }
 }
 
 template <typename TDistance, typename value_type, typename TSeqNo, typename TSeqPos,
@@ -161,7 +189,8 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
                 std::string const & fastaFile, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths, TChromosomeLengths const & chromCumLengths,
                 TDirectoryInformation const & directoryInformation, std::vector<TSeqNo> const & mappingSeqIdFile,
                 TIntervals const & intervals, TCSVIntervals const & csvIntervals,
-                uint64_t const currentFileNo, uint64_t const totalFileNo)
+                uint64_t const currentFileNo, uint64_t const totalFileNo,
+                DesignFileOutput & designFileOutput)
 {
     std::vector<value_type> c(length(text), 0);
 
@@ -205,7 +234,7 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
         }
     }
 
-    outputMappability(c, opt, searchParams, fastaFile, chromNames, chromLengths, locations, directoryInformation, intervals, csvIntervals, completeSameKmers);
+    outputMappability(c, opt, searchParams, fastaFile, chromNames, chromLengths, locations, directoryInformation, intervals, csvIntervals, completeSameKmers, designFileOutput, currentFileNo, text, chromCumLengths);
 }
 
 template <typename TChar, typename TAllocConfig, typename TDistance, typename value_type,
@@ -268,6 +297,9 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         }
     }
 
+    DesignFileOutput designFileOutput;
+    designFileOutput.matrix.resize(totalFileNo);
+
     auto const & text = indexText(index);
     std::map<std::string, uint64_t> chromosomeNamesDict;
     StringSet<CharString, Owner<ConcatDirect<> > > chromosomeNames;
@@ -282,6 +314,8 @@ inline void run(Options const & opt, SearchParams const & searchParams)
     std::vector<std::pair<uint64_t, uint64_t>> intervalsForSingleFasta;
     std::vector<std::tuple<uint32_t, uint64_t, uint64_t>> csvIntervalsForSingleFasta; // non-cumulative for csv-output filter
 
+    std::vector<std::string> filenames;
+
     double start = get_wall_time();
 
     uint64_t currentFileNo = 0;
@@ -291,7 +325,9 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         auto const row = retrieveDirectoryInformationLine(directoryInformation[i]);
         if (std::get<0>(row) != fastaFile)
         {
-            if (opt.csvFile)
+            //std::cout << "Now doing: " << fastaFile << std::endl;
+            filenames.push_back(fastaFile);
+            if (opt.csvFile || opt.designFile)
             {
                 // sort for csv output
                 std::sort(csvIntervalsForSingleFasta.begin(), csvIntervalsForSingleFasta.end(), [](auto const & t1, auto const & t2) {
@@ -310,7 +346,7 @@ inline void run(Options const & opt, SearchParams const & searchParams)
             {
                 // compute mappability for each fasta file
                 auto const & fastaInfix = infixWithLength(text.concat, startPos, fastaFileLength);
-                run<TDistance, value_type, TSeqNo, TSeqPos>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths, chromCumLengths, directoryInformation, mappingSeqIdFile, intervalsForSingleFasta, csvIntervalsForSingleFasta, currentFileNo, totalFileNo);
+                run<TDistance, value_type, TSeqNo, TSeqPos>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths, chromCumLengths, directoryInformation, mappingSeqIdFile, intervalsForSingleFasta, csvIntervalsForSingleFasta, currentFileNo, totalFileNo, designFileOutput);
             }
 
             startPos += fastaFileLength;
@@ -350,7 +386,7 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 
                 intervalsForSingleFasta.emplace_back(std::make_pair(begin, end));
 
-                if (opt.csvFile)
+                if (opt.csvFile || opt.designFile)
                 {
                     csvIntervalsForSingleFasta.emplace_back(std::make_tuple(chromosomeNamesId, interval.first, interval.second));
                 }
@@ -362,6 +398,78 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         appendValue(chromosomeLengths, std::get<1>(row));
         cumLength += std::get<1>(row);
         appendValue(chromCumLengths, cumLength);
+    }
+
+    if (opt.designFile)
+    {
+        std::string output_path = std::string(toCString(opt.outputPath));
+
+        uint64_t const nbr_total_kmers = designFileOutput.kmer_id.size();
+        uint64_t probeCount = 0;
+        uint64_t max_kmers_per_genome = 0;
+        for (uint64_t i = 0; i < designFileOutput.matrix.size(); ++i)
+        {
+            // remove duplicates
+            std::sort(designFileOutput.matrix[i].begin(), designFileOutput.matrix[i].end());
+            designFileOutput.matrix[i].erase( unique( designFileOutput.matrix[i].begin(), designFileOutput.matrix[i].end() ), designFileOutput.matrix[i].end() );
+            max_kmers_per_genome = std::max<uint64_t>(max_kmers_per_genome, designFileOutput.matrix[i].size());
+            probeCount += designFileOutput.matrix[i].size();
+        }
+
+        // output design file
+        std::ofstream design_file(output_path + "genmap.design");
+        design_file << totalFileNo << '\t' << nbr_total_kmers << '\t' << max_kmers_per_genome << '\n';
+        design_file << "#fp#" << '\t' << "#fn#" << '\t' << "#fi_sum#" << '\n';
+        // std::cout << totalFileNo << '\t' << nbr_total_kmers << '\t' << max_kmers_per_genome << '\n';
+        // design_file << 1 << '\t' << 1.0 << '\t' << (2.0 * probeCount / (double) totalFileNo / (double) nbr_total_kmers) << '\n';
+        // design_file << "1.0" << '\t' << "0.99" << '\t' << "0.01" << '\n';
+        // design_file << "1.0" << '\t' << "0.01" << '\t' << "0.99" << '\n';
+        // design_file << "Entire line is TODO" << '\n';
+        for (uint64_t i = 0; i < designFileOutput.matrix.size(); ++i)
+        {
+            design_file << filenames[i] << ":1\t" << "1.0";
+            std::cout << filenames[i] << ":1\t" << "1.0";
+
+            for (uint64_t j = 0; j < designFileOutput.matrix[i].size(); ++j)
+            {
+                design_file << '\t' << designFileOutput.matrix[i][j];
+                std::cout << '\t' << designFileOutput.matrix[i][j];
+            }
+            for (uint64_t j = designFileOutput.matrix[i].size(); j < max_kmers_per_genome; ++j)
+            {
+                design_file << '\t' << 0;
+            }
+            design_file << '\n';
+            std::cout << '\n';
+        }
+        design_file.close();
+
+        // output bitvector file
+        // std::ofstream bitvector_file(output_path + "genmap.bitvector");
+        // for (uint64_t i = 0; i < designFileOutput.bitvectors.size(); ++i)
+        // {
+        //     for (uint64_t j = 0; j < designFileOutput.bitvectors[i].size(); ++j)
+        //     {
+        //         bitvector_file << (unsigned)designFileOutput.bitvectors[i][j];
+        //     }
+        //     bitvector_file << '\n';
+        // }
+        // bitvector_file.close();
+
+        // output kmer file (sorted by id)
+        std::vector<Dna5String> kmer_vector;
+        kmer_vector.resize(designFileOutput.kmer_id.size() + 1);
+        for (auto & k : designFileOutput.kmer_id)
+        {
+            kmer_vector[k.second] = k.first;
+        }
+
+        std::ofstream kmer_file(output_path + "genmap.kmers");
+        for (uint64_t i = 1; i < kmer_vector.size(); ++i) // yes, it is correct that we start with 1 (see code block above)
+        {
+            kmer_file << i << '\t' << kmer_vector[i] << '\n';
+        }
+        kmer_file.close();
     }
 
     if (opt.verbose)
@@ -452,7 +560,17 @@ int mappabilityMain(int argc, char const ** argv)
     addOption(parser, bedFileOption);
 
     addOption(parser, ArgParseOption("d", "csv",
-        "Output a detailed csv file reporting the locations of each k-mer (WARNING: This will produce large files and makes computing the mappability significantly slower)."));
+                                     "Output a detailed csv file reporting the locations of each k-mer (WARNING: This will produce large files and makes computing the mappability significantly slower)."));
+
+    addOption(parser, ArgParseOption("x", "design", "Output a design file for decoding strain abundance in a data set."));
+
+    addOption(parser, ArgParseOption("W", "design-window", "Window size for k-mer extraction for design file", ArgParseArgument::INTEGER, "INT"));
+    setDefaultValue(parser, "design-window", 1000);
+
+    addOption(parser, ArgParseOption("Q", "design-percentage", "Probe occurring in max. X perc of the targets", ArgParseArgument::DOUBLE, "DOUBLE"));
+    setDefaultValue(parser, "design-percentage", 0.99);
+    setMinValue(parser, "design-percentage", "0.001");
+    setMaxValue(parser, "design-percentage", "1.0");
 
     addOption(parser, ArgParseOption("m", "memory-mapping",
         "Turns memory-mapping on, i.e. the index is not loaded into RAM but accessed directly from secondary-memory. This may increase the overall running time, but do NOT use it if the index lies on network storage."));
@@ -485,9 +603,13 @@ int mappabilityMain(int argc, char const ** argv)
     opt.rawFile = isSet(parser, "raw");
     opt.txtFile = isSet(parser, "txt");
     opt.csvFile = isSet(parser, "csv");
+    opt.designFile = isSet(parser, "design");
     opt.verbose = isSet(parser, "verbose");
 
-    if (!opt.wigFile && !opt.bedgraphFile && !opt.bedFile && !opt.rawFile && !opt.txtFile && !opt.csvFile)
+    getOptionValue(opt.designWindowSize, parser, "design-window");
+    getOptionValue(opt.designPercentage, parser, "design-percentage");
+
+    if (!opt.wigFile && !opt.bedgraphFile && !opt.bedFile && !opt.rawFile && !opt.txtFile && !opt.csvFile && !opt.designFile)
     {
         std::cerr << "ERROR: Please choose at least one output format (i.e., --wig, --bedgraph, --bed, --raw, --txt, --csv).\n";
         return ArgumentParser::PARSE_ERROR;
