@@ -13,14 +13,14 @@ void sharedSetup(ArgumentParser & parser)
     std::string versionString = SEQAN_APP_VERSION;
     setVersion(parser, versionString);
     setDate(parser, __DATE__);
-    setShortCopyright(parser, "2019 Christopher Pockrandt, released under the 3-clause-BSD; "
+    setShortCopyright(parser, "2019-2020 Christopher Pockrandt, released under the 3-clause-BSD; "
                               "2016-2019 Knut Reinert and Freie Universität Berlin, released under the 3-clause-BSD");
 
-    setCitation(parser, "Pockrandt et al (2019). GenMap: Fast and Exact Computation of Genome Mappability.\n"
-                        "doi: https://doi.org/10.1101/611160");
+    setCitation(parser, "Pockrandt et al (2020). GenMap: Ultra-fast Computation of Genome Mappability.\n"
+                        "doi: https://doi.org/10.1093/bioinformatics/btaa222");
 
     setLongCopyright(parser,
-        " Copyright (c) 2019, Christopher Pockrandt\n"
+        " Copyright (c) 2019-2020, Christopher Pockrandt\n"
         " All rights reserved.\n"
         "\n"
         " This program is free software: you can redistribute it and/or modify\n"

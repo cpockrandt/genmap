@@ -1,5 +1,5 @@
-GenMap: Fast and Exact Computation of Genome Mappability
-========================================================
+GenMap: Ultra-fast Computation of Genome Mappability
+====================================================
 
 .. image:: https://img.shields.io/conda/dn/bioconda/genmap.svg?style=flag&label=BioConda%20install
     :target: https://anaconda.org/bioconda/genmap
@@ -38,9 +38,9 @@ The mappability can be exported in various formats that allow post-processing or
 A small example on how to run GenMap is listed below, further details are on the `GitHub Wiki pages <https://github.com/cpockrandt/genmap/wiki>`_.
 For questions or feature requests feel free to open an issue on GitHub or send an e-mail to ``christopher.pockrandt [ÄT] fu-berlin.de``.
 
-Christopher Pockrandt, Mai Alzamel, Costas S. Iliopoulos, Knut Reinert. **GenMap: Fast and Exact Computation of Genome Mappability**. `bioRxiv`_, presented on RECOMB-Seq, 2019.
+Christopher Pockrandt, Mai Alzamel, Costas S. Iliopoulos, Knut Reinert. **GenMap: Ultra-fast Computation of Genome Mappability**. `Bioinformatics`_, 2020.
 
-.. _bioRxiv: https://doi.org/10.1101/611160
+.. _Bioinformatics: https://doi.org/10.1093/bioinformatics/btaa222
 
 Installation
 ^^^^^^^^^^^^
