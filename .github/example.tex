@@ -1,4 +1,4 @@
-\documentclass[20pt,border=5pt]{standalone}
+\documentclass[20pt,border=5pt,convert={true}]{standalone}
 
 \usepackage[table]{xcolor}
 \usepackage{tabu}
@@ -7,12 +7,15 @@
 \definecolor{mygrey2}{gray}{0.85}
 \definecolor{mygrey3}{gray}{0.92}
 
+\standaloneconfig{convert={convertexe={convert}}}
+\usepackage{xcolor}
 \newcommand{\redBit}[1]{\begingroup\color{myclr1}\textbf{#1}\endgroup}
 
 \newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
 
 \begin{document}
 
+\pagecolor[RGB]{255,255,255}% white = 255,255,255
 \LARGE
 
 \taburulecolor{mygrey}
@@ -24,7 +27,7 @@ $i\phantom{]}$ & 0 & \redBit{1} & 2 & 3 & 4 & 5 & \redBit{6} & 7 & 8 & 9 & 10 & 
 \hline
 $T[i]$ & A & \cellcolor{mygrey2}\redBit{T} & \cellcolor{mygrey2}\redBit{C} & \cellcolor{mygrey2}\redBit{T} & \cellcolor{mygrey2}\redBit{A} & G & \cellcolor{mygrey3}{G} & \cellcolor{mygrey3}{C} & \cellcolor{mygrey3}{T} & \cellcolor{mygrey3}{A} & A & \cellcolor{mygrey3}{T} & \cellcolor{mygrey3}{C} & \cellcolor{mygrey3}{T} & \cellcolor{mygrey3}{A} \\
 \hline
-$M[i]$ & .33 & \redBit{.33} & .33 & .5 & .25 & .5 & .25 & .5 & 1.0 & 1.0 & .33 & .33 & .0 & .0 & .0 \\
+$M[i]$ & .5 & \redBit{.33} & .5 & 1.0 & 1.0 & 1.0 & .33 & .5 & 1.0 & 1.0 & .5 & .33 & .0 & .0 & .0 \\
 \hline
 $F[i]$ & 2 & \redBit{3} & 2 & 1 & 1 & 1 & 3 & 2 & 1 & 1 & 2 & 3 & 0 & 0 & 0 \\
 \hline
