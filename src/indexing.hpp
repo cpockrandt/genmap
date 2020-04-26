@@ -27,6 +27,33 @@ struct IndexOptions
     bool verbose;
 };
 
+void getFileNamesInDirectory(char * path, std::vector<std::pair<std::string, std::string>> & filenames, std::vector<std::string> const & fastaFileTypes)
+{
+    DIR * d = opendir(path);
+    if (d == NULL)
+        return;
+    struct dirent * dir;
+    while ((dir = readdir(d)) != NULL)
+    {
+        if (dir-> d_type != DT_DIR)
+        {
+            std::string const file(dir->d_name);
+            std::string const fileExtension = file.substr(file.find_last_of('.') + 1);
+            if (std::find(fastaFileTypes.begin(), fastaFileTypes.end(), fileExtension) != fastaFileTypes.end())
+            {
+                filenames.push_back({std::string(path) + "/", file});
+            }
+        }
+        else if (dir -> d_type == DT_DIR && strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0)
+        {
+            char d_path[4096];
+            sprintf(d_path, "%s/%s", path, dir->d_name);
+            getFileNamesInDirectory(d_path, filenames, fastaFileTypes);
+        }
+    }
+    closedir(d);
+}
+
 inline std::string extractFileName(std::string const & path)
 {
     auto const pos = path.find_last_of('/');
@@ -178,16 +205,16 @@ int buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 }
 
 template <typename TDirInfo, typename TChromosomes>
-void readFasta(char const * fastaPath, StringSet<CharString, Owner<ConcatDirect<> > > & ids, TDirInfo & directoryInformation, TChromosomes & chromosomes, std::string const & file)
+void readFasta(std::string const & fullPath, std::string const & file, StringSet<CharString, Owner<ConcatDirect<> > > & ids, TDirInfo & directoryInformation, TChromosomes & chromosomes)
 {
     StringSet<CharString> chromosomes2;
 
-    SeqFileIn seqFileIn(toCString(fastaPath));
+    SeqFileIn seqFileIn(toCString(fullPath));
     readRecords(ids, chromosomes2, seqFileIn);
 
     if (lengthSum(chromosomes2) == 0)
     {
-        std::cerr << "WARNING: The fasta file " << fastaPath << " seems to be empty. Excluded from indexing.\n";
+        std::cerr << "WARNING: The fasta file " << fullPath << " seems to be empty. Excluded from indexing.\n";
         return;
     }
 
@@ -354,28 +381,28 @@ int indexMain(int const argc, char const ** argv)
 
     if (options.directory)
     {
-        std::vector<std::string> filenames;
-        DIR * dirp = opendir(toCString(fastaPath));
-        struct dirent * dp;
-        while ((dp = readdir(dirp)) != NULL)
+        // find all fasta files in directory
+        std::vector<std::pair<std::string, std::string> > filenames; // {path, filename}, e.g., {"/path/to/", "genome.fa"}
+        getFileNamesInDirectory(toCString(fastaPath), filenames, fastaFileTypes);
+        std::sort(filenames.begin(), filenames.end(), [](auto const & a, auto const & b) { return a.second < b.second; });
+
+        // check for duplicate file names
+        for (uint32_t i = 0 ; i < filenames.size() - 1; ++i)
         {
-            std::string const file(dp->d_name);
-            std::string const fileExtension = file.substr(file.find_last_of('.') + 1);
-            if (std::find(fastaFileTypes.begin(), fastaFileTypes.end(), fileExtension) != fastaFileTypes.end())
-                filenames.push_back(file);
+            if (filenames[i].second == filenames[i + 1].second)
+            {
+                rmdir(toCString(indexPathDir));
+                std::cerr << "ERROR: At least two fasta files with the same filename found (this is not supported)! Please rename them and run again.\n";
+                std::cerr << "       " << filenames[i].first << filenames[i].second << "!\n";
+                std::cerr << "       " << filenames[i + 1].first << filenames[i + 1].second << "!\n";
+                return ArgumentParser::PARSE_ERROR;
+            }
         }
-        closedir(dirp);
-        std::sort(filenames.begin(), filenames.end());
 
         for (auto const & file : filenames)
         {
             StringSet<CharString, Owner<ConcatDirect<> > > ids;
-
-            std::string fullPath = toCString(fastaPath);
-            if (fullPath.back() != '/')
-                fullPath += '/';
-            fullPath += file;
-            readFasta(toCString(fullPath), ids, directoryInformation, chromosomes, file);
+            readFasta(file.first + file.second, file.second, ids, directoryInformation, chromosomes);
         }
 
         if (length(chromosomes) == 0)
@@ -385,14 +412,13 @@ int indexMain(int const argc, char const ** argv)
             return ArgumentParser::PARSE_ERROR;
         }
 
+        std::cout << filenames.size() << " fasta files have been loaded (run with --verbose to list the files):\n";
         if (options.verbose)
         {
-            std::cout << filenames.size() << " fasta files have been loaded:\n";
-            std::copy(filenames.begin(), filenames.end(), std::ostream_iterator<std::string>(std::cout, "\n"));
-        }
-        else
-        {
-            std::cout << filenames.size() << " fasta files have been loaded (run with --verbose to list the files)\n";
+            for (auto const & file : filenames)
+            {
+                std::cout << file.first << file.second << '\n';
+            }
         }
     }
     else
@@ -400,7 +426,7 @@ int indexMain(int const argc, char const ** argv)
         StringSet<CharString, Owner<ConcatDirect<> > > ids;
 
         std::string const file = extractFileName(toCString(fastaPath));
-        readFasta(toCString(fastaPath), ids, directoryInformation, chromosomes, file);
+        readFasta(toCString(fastaPath), file, ids, directoryInformation, chromosomes);
     }
 
     if (length(chromosomes) == 0)
