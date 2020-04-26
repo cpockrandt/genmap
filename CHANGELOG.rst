@@ -1,6 +1,15 @@
 Changelog
 ^^^^^^^^^
 
+1.2.1 (2020-0x-xx)
+""""""""""""""""""
+
+Fixes
+-----
+
+* indexing will search for fasta files recursively (subfolders were not considered before)
+* updated paper information (replaced bioRxiv with OUP Bioinformatics)
+
 1.2.0 (2020-02-21)
 """"""""""""""""""
 
