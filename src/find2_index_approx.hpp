@@ -247,6 +247,9 @@ inline void _optimalSearchSchemeChildrenGM(TDelegate & delegate,
         uint32_t charsLeft = s.blocklength[blockIndex] - (needleRightPos - needleLeftPos - 1);
         do
         {
+            if (isDna5 && (needleChar == Dna5('N') || ordEqual(parentEdgeLabel(iter, TDir()), Dna5('N'))))
+              continue;
+
             bool delta = !ordEqual(parentEdgeLabel(iter, TDir()), needleChar) || (isDna5 && needleChar == Dna5('N'));
 
             // NOTE (cpockrandt): this might not be optimal yet! we have more edges than in the theoretical model,
@@ -327,7 +330,7 @@ inline void _optimalSearchSchemeExactGM(TDelegate & delegate,
         // TODO: search first for N and then perform goDown (same for extend and approx in algo.hpp)
         while (infixPosLeft <= infixPosRight)
         {
-            if ((isDna5 && needle[infixPosLeft] == Dna5('N')) || !goDown(iter, needle[infixPosLeft], TDir()))
+            if ((isDna5 && needle[infixPosLeft] == Dna5('N')) || !goDown(iter, needle[infixPosLeft], TDir()) || (isDna5 && ordEqual(parentEdgeLabel(iter, TDir()), Dna5('N'))))
                 return;
             ++infixPosLeft;
         }
