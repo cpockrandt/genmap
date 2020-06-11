@@ -13,6 +13,15 @@
 
 #include "common.hpp"
 
+namespace seqan {
+    template <>
+    struct FastaIgnoreOrAssertFunctor_<Dna5> {
+        typedef typename FastaIgnoreFunctor_<Dna5>::Type               TIgnore;
+        // typedef AssertFunctor<IsInAlphabet<Dna5>, ParseError, Fasta>   TAsserter;
+        typedef TIgnore Type;
+    };
+}
+
 using namespace seqan;
 
 struct IndexOptions
@@ -205,32 +214,53 @@ int buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 }
 
 template <typename TDirInfo, typename TChromosomes>
-void readFasta(std::string const & fullPath, std::string const & file, StringSet<CharString, Owner<ConcatDirect<> > > & ids, TDirInfo & directoryInformation, TChromosomes & chromosomes)
+void readFasta(std::string const & fullPath, std::string const & file, TDirInfo & directoryInformation, TChromosomes & chromosomes)
 {
-    StringSet<CharString> chromosomes2;
-
     SeqFileIn seqFileIn(toCString(fullPath));
-    readRecords(ids, chromosomes2, seqFileIn);
+    StringSet<CharString, Owner<ConcatDirect<> > > ids, ids_short;
+    std::vector<uint64_t> seq_len;
 
-    if (lengthSum(chromosomes2) == 0)
+    typedef typename SeqFileBuffer_<TChromosomes, void>::Type TSeqBuffer;
+    TSeqBuffer seqBuffer;
+
+    // reuse the memory of context(seqFileIn).buffer for seqBuffer (which has a different type but same sizeof(Alphabet))
+    swapPtr(seqBuffer.data_begin, context(seqFileIn).buffer[1].data_begin);
+    swapPtr(seqBuffer.data_end, context(seqFileIn).buffer[1].data_end);
+    seqBuffer.data_capacity = context(seqFileIn).buffer[1].data_capacity;
+
+    uint64_t nbr_sequences = 0;
+    while (!atEnd(seqFileIn))
     {
-        std::cerr << "WARNING: The fasta file " << fullPath << " seems to be empty. Excluded from indexing.\n";
-        return;
-    }
+        readRecord(context(seqFileIn).buffer[0], seqBuffer, seqFileIn);
+        // skip empty sequences
+        if (length(seqBuffer) == 0)
+        {
+            continue;
+        }
+        ++nbr_sequences;
+        appendValue(chromosomes, seqBuffer);
+        seq_len.push_back(length(seqBuffer));
 
-    // truncate ids after first space and check if they are still unique
-    StringSet<CharString, Owner<ConcatDirect<> > > ids_short;
-    for (uint64_t i = 0; i < length(ids); ++i)
-    {
-        CharString const & id = ids[i];
-
+        CharString const & id = context(seqFileIn).buffer[0];
+        appendValue(ids, id);
+        // truncate id after first space
         uint32_t whitespace_pos = 0;
         while (whitespace_pos < length(id) && !std::isspace(static_cast<unsigned char>(id[whitespace_pos])))
         {
             ++whitespace_pos;
         }
-
         appendValue(ids_short, prefix(id, whitespace_pos));
+    }
+
+    swapPtr(seqBuffer.data_begin, context(seqFileIn).buffer[1].data_begin);
+    swapPtr(seqBuffer.data_end, context(seqFileIn).buffer[1].data_end);
+    context(seqFileIn).buffer[1].data_capacity = seqBuffer.data_capacity;
+    seqBuffer.data_capacity = 0;
+
+    if (nbr_sequences == 0)
+    {
+        std::cerr << "WARNING: The fasta file " << fullPath << " seems to be empty. Excluded from indexing.\n";
+        return;
     }
 
     // if shortened ids are still unique, use them instead
@@ -243,17 +273,12 @@ void readFasta(std::string const & fullPath, std::string const & file, StringSet
         }
     }
 
-    for (uint64_t i = 0; i < length(chromosomes2); ++i)
+    for (uint64_t i = 0; i < seq_len.size(); ++i)
     {
-        // skip empty sequences
-        if (length(chromosomes2[i]) == 0)
-            continue;
-
         std::string const id = toCString(static_cast<CharString>(ids[i]));
-        std::string const len = std::to_string(length(chromosomes2[i]));
+        std::string const len = std::to_string(seq_len[i]);
 
         appendValue(directoryInformation, file + ";" + len + ";" + id);
-        appendValue(chromosomes, chromosomes2[i]);
     }
 }
 
@@ -266,7 +291,7 @@ int indexMain(int const argc, char const ** argv)
                            "Other characters will be converted to N.");
 
     // sorted in descending lexicographical order, since setValidValues() prints them in this order
-    std::vector<std::string> const fastaFileTypes {"fsa", "fna", "fastq", "fasta", "fas", "fa"};
+    std::vector<std::string> const fastaFileTypes {"fsa", "fna", "fastq", "fasta", "fas", "fa", "faa"};
     std::string fastaFileTypesHelpString;
     for (uint8_t i = 0; i < fastaFileTypes.size() - 1; ++i)
         fastaFileTypesHelpString += '.' + fastaFileTypes[i] + ' ';
@@ -376,7 +401,7 @@ int indexMain(int const argc, char const ** argv)
     options.indexPath += "index";
 
     // Read fasta input file(s)
-    StringSet<CharString> chromosomes;
+    StringSet<Dna5String> chromosomes;
     StringSet<CharString, Owner<ConcatDirect<> > > directoryInformation;
 
     if (options.directory)
@@ -401,8 +426,7 @@ int indexMain(int const argc, char const ** argv)
 
         for (auto const & file : filenames)
         {
-            StringSet<CharString, Owner<ConcatDirect<> > > ids;
-            readFasta(file.first + file.second, file.second, ids, directoryInformation, chromosomes);
+            readFasta(file.first + file.second, file.second, directoryInformation, chromosomes);
         }
 
         if (length(chromosomes) == 0)
@@ -423,10 +447,8 @@ int indexMain(int const argc, char const ** argv)
     }
     else
     {
-        StringSet<CharString, Owner<ConcatDirect<> > > ids;
-
         std::string const file = extractFileName(toCString(fastaPath));
-        readFasta(toCString(fastaPath), file, ids, directoryInformation, chromosomes);
+        readFasta(toCString(fastaPath), file, directoryInformation, chromosomes);
     }
 
     if (length(chromosomes) == 0)
@@ -438,26 +460,19 @@ int indexMain(int const argc, char const ** argv)
 
     save(directoryInformation, toCString(std::string(toCString(options.indexPath)) + ".ids"));
 
-    // Conversion to Dna5 alphabet (replace anything that is not A,C,G,T, N to N)
-    // TODO: This does not perform an in-place conversion (i.e., unnecessary memory peak)
-    // Use a custom ModfiedFunctor instead and check performance.
-    StringSet<Dna5String> chromosomesDna5;
-    move(chromosomesDna5, chromosomes);
-    clear(chromosomes);
-
     // check whether it can be converted to Dna4 and analyze the data for determining the index dimensions later.
     bool canConvert = true;
-    options.seqNumber = length(chromosomesDna5);
+    options.seqNumber = length(chromosomes);
     options.maxSeqLength = 0;
-    options.totalLength = length(chromosomesDna5); // to account for a sentinel character for each chromosome in the FM index.
-    for (uint64_t i = 0; i < length(chromosomesDna5); ++i)
+    options.totalLength = length(chromosomes); // to account for a sentinel character for each chromosome in the FM index.
+    for (uint64_t i = 0; i < length(chromosomes); ++i)
     {
-        options.totalLength += length(chromosomesDna5[i]);
-        options.maxSeqLength = std::max<uint64_t>(options.maxSeqLength, length(chromosomesDna5[i]));
+        options.totalLength += length(chromosomes[i]);
+        options.maxSeqLength = std::max<uint64_t>(options.maxSeqLength, length(chromosomes[i]));
 
-        for (uint64_t j = 0; canConvert && j < length(chromosomesDna5[i]); ++j)
+        for (uint64_t j = 0; canConvert && j < length(chromosomes[i]); ++j)
         {
-            if (chromosomesDna5[i][j] == 'N')
+            if (chromosomes[i][j] == 'N')
                 canConvert = false;
         }
     }
@@ -482,7 +497,7 @@ int indexMain(int const argc, char const ** argv)
         options.totalLength = (static_cast<uint64_t>(1) << bwtlen) - 2;
     }
 
-    if (options.useRadix && lengthSum(chromosomesDna5) < 1'000'000)
+    if (options.useRadix && lengthSum(chromosomes) < 1'000'000)
     {
         // There might be undefined behavior of radix sort for very small indices with a handful of bases.
         options.useRadix = false;
@@ -498,12 +513,12 @@ int indexMain(int const argc, char const ** argv)
         // TODO: This does not perform an in-place conversion (i.e., unnecessary memory peak)
         // Use a custom ModfiedFunctor instead and check performance.
         StringSet<DnaString> chromosomesDna4;
-        move(chromosomesDna4, chromosomesDna5);
-        clear(chromosomesDna5);
+        move(chromosomesDna4, chromosomes);
+        clear(chromosomes);
         return buildIndex(chromosomesDna4, options);
     }
     else
     {
-        return buildIndex(chromosomesDna5, options);
+        return buildIndex(chromosomes, options);
     }
 }
