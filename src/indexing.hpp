@@ -16,10 +16,10 @@
 #include "seqan_libdivsufsort.h"
 
 namespace seqan {
+    // allow implicit conversion of non Dna5 characters to N instead of throwing an error
     template <>
     struct FastaIgnoreOrAssertFunctor_<Dna5> {
-        typedef typename FastaIgnoreFunctor_<Dna5>::Type               TIgnore;
-        // typedef AssertFunctor<IsInAlphabet<Dna5>, ParseError, Fasta>   TAsserter;
+        typedef typename FastaIgnoreFunctor_<Dna5>::Type TIgnore;
         typedef TIgnore Type;
     };
 }
@@ -79,14 +79,14 @@ void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 {
     using TString = typename Value<TChromosomes>::Type;
     using TAlphabet = typename Value<TString>::Type;
-    using TText = StringSet<TString, Owner<ConcatDirect<SizeSpec_<TSeqNo, TSeqPos> > > > ;
+    using TText = StringSet<String<TAlphabet, Packed<> >, Owner<ConcatDirect<SizeSpec_<TSeqNo, TSeqPos> > > >; // here we tell it to pack it
     using TFMIndexConfig = TGemMapFastFMIndexConfig<TBWTLen>;
     using TUniIndexConfig = FMIndex<TRadixSortTag, TFMIndexConfig>;
     TFMIndexConfig::SAMPLING = options.sampling;
 
     constexpr bool isDna5 = std::is_same<TAlphabet, Dna5>::value;
 
-    TText chromosomesConcat(chromosomes);
+    TText chromosomesConcat(chromosomes); // strings are getting packed
     clear(chromosomes); // reduce memory footprint
 
     std::cout << "The index will now be built. "
@@ -131,7 +131,7 @@ void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
             indexCreate(fwdIndex, FibreSALF());
             std::cout << "done!\n";
         }
-        save(fwdIndex, toCString(options.indexPath));
+        saveFwd(fwdIndex, toCString(options.indexPath));
     }
 
     {
@@ -293,7 +293,7 @@ int indexMain(int const argc, char const ** argv)
                            "Other characters will be converted to N.");
 
     // sorted in descending lexicographical order, since setValidValues() prints them in this order
-    std::vector<std::string> const fastaFileTypes {"fsa", "fna", "fastq", "fasta", "fas", "fa", "faa"};
+    std::vector<std::string> const fastaFileTypes {"fsa", "fna", "fastq", "fasta", "fas", "faa", "fa"};
     std::string fastaFileTypesHelpString;
     for (uint8_t i = 0; i < fastaFileTypes.size() - 1; ++i)
         fastaFileTypesHelpString += '.' + fastaFileTypes[i] + ' ';
@@ -512,15 +512,17 @@ int indexMain(int const argc, char const ** argv)
     if (canConvert)
     {
         // Conversion to Dna4 alphabet since no Ns are in the sequences.
-        // TODO: This does not perform an in-place conversion (i.e., unnecessary memory peak)
-        // Use a custom ModfiedFunctor instead and check performance.
+        // Unnecessary copy, replace with ModifiedString/View.
+        // Not relevant for memory peaks though.
         StringSet<DnaString> chromosomesDna4;
         move(chromosomesDna4, chromosomes);
         clear(chromosomes);
+        saveFwdTxt(chromosomesDna4, toCString(options.indexPath));
         return buildIndex(chromosomesDna4, options);
     }
     else
     {
+        saveFwdTxt(chromosomes, toCString(options.indexPath));
         return buildIndex(chromosomes, options);
     }
 }
