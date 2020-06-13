@@ -13,6 +13,8 @@
 
 #include "common.hpp"
 
+#include "seqan_libdivsufsort.h"
+
 namespace seqan {
     template <>
     struct FastaIgnoreOrAssertFunctor_<Dna5> {
