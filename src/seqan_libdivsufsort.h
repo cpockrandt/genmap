@@ -2,6 +2,8 @@
 
 namespace seqan
 {
+    struct AlgoDivSufSortTag {};
+
     // total in brackets is for genomes <4GB and Dna5 and sampling rate of 10
     // 1. Load text into memory (seqan, unpacked): 1n or less (0.5n resp. 0.25n) (total: 1n)
     // 2. Copy text to c string: 1n (total: 2n)
@@ -17,9 +19,10 @@ namespace seqan
     // but then we will have 1n + 1n + (4n or 8n) peak instead of 1n less!
     // let's free ctext after SA construction and see whether packing text gives us a significant performance drop
 
-    template <typename TText, typename TSpec, typename TLengthSum, unsigned LEVELS, unsigned WORDS_PER_BLOCK>
-    inline bool indexCreate(Index<TText, FMIndex<TSpec, GemMapFastFMIndexConfig<void, TLengthSum, LEVELS, WORDS_PER_BLOCK> > > & index, FibreSALF)
+    template <typename TText, typename TLengthSum, unsigned LEVELS, unsigned WORDS_PER_BLOCK>
+    inline bool indexCreate(Index<TText, FMIndex<AlgoDivSufSortTag, GemMapFastFMIndexConfig<void, TLengthSum, LEVELS, WORDS_PER_BLOCK> > > & index, FibreSALF)
     {
+        typedef Nothing TSpec;
         typedef GemMapFastFMIndexConfig<void, TLengthSum, LEVELS, WORDS_PER_BLOCK> TConfig;
 
         typedef std::conditional_t<std::is_same<TLengthSum, uint32_t>::value, int32_t, int64_t> sa_t;

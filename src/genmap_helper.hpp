@@ -33,7 +33,6 @@ void sharedSetup(ArgumentParser & parser)
         " You should have received a copy of the 3-clause BSD-License along with this\n"
         " program. If not, see <https://opensource.org/licenses/>.\n"
         "\n"
-        " Copyright (c) 2013-2019 Hannes Hauswedell\n"
         " Copyright (c) 2016-2019 Knut Reinert and Freie Universität Berlin\n"
         " All rights reserved.\n"
         "\n"

@@ -7,12 +7,7 @@
 #include <seqan/seq_io.h>
 #include <seqan/index.h>
 
-#include "../include/lambda/src/mkindex_saca.hpp"
-#include "../include/lambda/src/mkindex_misc.hpp"
-#include "../include/lambda/src/mkindex_algo.hpp"
-
 #include "common.hpp"
-
 #include "seqan_libdivsufsort.h"
 
 namespace seqan {
@@ -34,7 +29,7 @@ struct IndexOptions
     uint64_t totalLength;
     unsigned sampling;
     bool directory;
-    bool useRadix;
+    bool useSkew;
     bool verbose;
 };
 
@@ -74,14 +69,14 @@ inline std::string extractFileName(std::string const & path)
         return path.substr(pos + 1);
 }
 
-template <typename TRadixSortTag, typename TSeqNo, typename TSeqPos, typename TBWTLen, typename TChromosomes>
+template <typename TAlgo, typename TSeqNo, typename TSeqPos, typename TBWTLen, typename TChromosomes>
 void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 {
     using TString = typename Value<TChromosomes>::Type;
     using TAlphabet = typename Value<TString>::Type;
     using TText = StringSet<String<TAlphabet, Packed<> >, Owner<ConcatDirect<SizeSpec_<TSeqNo, TSeqPos> > > >; // here we tell it to pack it
     using TFMIndexConfig = TGemMapFastFMIndexConfig<TBWTLen>;
-    using TUniIndexConfig = FMIndex<TRadixSortTag, TFMIndexConfig>;
+    using TUniIndexConfig = FMIndex<TAlgo, TFMIndexConfig>;
     TFMIndexConfig::SAMPLING = options.sampling;
 
     constexpr bool isDna5 = std::is_same<TAlphabet, Dna5>::value;
@@ -121,39 +116,25 @@ void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 
     {
         Index<TText, TUniIndexConfig> fwdIndex(chromosomesConcat);
-        SEQAN_IF_CONSTEXPR (std::is_same<TRadixSortTag, RadixSortSACreateTag>::value)
-        {
-            indexCreateProgress(fwdIndex, FibreSALF());
-        }
-        else
-        {
-            std::cout << "Create fwd Index ... " << std::flush;
-            indexCreate(fwdIndex, FibreSALF());
-            std::cout << "done!\n";
-        }
+        std::cout << "Create fwd Index ... " << std::flush;
+        indexCreate(fwdIndex, FibreSALF());
+        std::cout << "done!\n";
         saveFwd(fwdIndex, toCString(options.indexPath));
     }
 
     {
         reverse(chromosomesConcat);
         Index<TText, TUniIndexConfig> bwdIndex(chromosomesConcat);
-        SEQAN_IF_CONSTEXPR (std::is_same<TRadixSortTag, RadixSortSACreateTag>::value)
-        {
-            indexCreateProgress(bwdIndex, FibreSALF());
-        }
-        else
-        {
-            std::cout << "Create bwd Index ... " << std::flush;
-            indexCreate(bwdIndex, FibreSALF());
-            std::cout << "done!\n";
-        }
+        std::cout << "Create bwd Index ... " << std::flush;
+        indexCreate(bwdIndex, FibreSALF());
+        std::cout << "done!\n";
         clear(getFibre(getFibre(getFibre(bwdIndex, FibreSA()), FibreSparseString()), FibreValues()));
         clear(getFibre(getFibre(getFibre(bwdIndex, FibreSA()), FibreSparseString()), FibreIndicators()));
         saveRev(bwdIndex, toCString(std::string(toCString(options.indexPath)) + ".rev"));
     }
 }
 
-template <typename TRadixSortTag, typename TChromosomes>
+template <typename TAlgo, typename TChromosomes>
 void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 {
     constexpr uint64_t max16bitUnsignedValue = std::numeric_limits<uint16_t>::max();
@@ -164,14 +145,14 @@ void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
     if (options.seqNumber <= max16bitUnsignedValue && options.maxSeqLength <= max32bitUnsignedValue)
     {
         if (options.totalLength <= max32bitUnsignedValue)
-            buildIndex<TRadixSortTag, uint16_t, uint32_t, uint32_t>(chromosomes, options); // e.g. human genome
+            buildIndex<TAlgo, uint16_t, uint32_t, uint32_t>(chromosomes, options); // e.g. human genome
         else
-            buildIndex<TRadixSortTag, uint16_t, uint32_t, uint64_t>(chromosomes, options); // e.g. barley genome
+            buildIndex<TAlgo, uint16_t, uint32_t, uint64_t>(chromosomes, options); // e.g. barley genome
     }
     else if (options.seqNumber <= max32bitUnsignedValue && options.maxSeqLength <= max16bitUnsignedValue)
-        buildIndex<TRadixSortTag, uint32_t, uint16_t, uint64_t>(chromosomes, options); // e.g. read data set
+        buildIndex<TAlgo, uint32_t, uint16_t, uint64_t>(chromosomes, options); // e.g. read data set
     else
-        buildIndex<TRadixSortTag, uint64_t, uint64_t, uint64_t>(chromosomes, options); // anything else
+        buildIndex<TAlgo, uint64_t, uint64_t, uint64_t>(chromosomes, options); // anything else
 }
 
 template <typename TChromosomes>
@@ -181,15 +162,15 @@ int buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 #ifdef NDEBUG
     try
     {
-        if (options.useRadix)
-            buildIndex<RadixSortSACreateTag>(chromosomes, options);
-        else
+        if (options.useSkew)
             buildIndex<Nothing>(chromosomes, options);
+        else
+            buildIndex<AlgoDivSufSortTag>(chromosomes, options); // TODO
     }
     catch (std::bad_alloc const & e)
     {
         std::cerr << "ERROR: GenMap ran out of memory :(\n"
-                     "       You might want to use a different algorithm (--algorithm skew or --algorithm radix).\n";
+                     "       You might want to use a different algorithm (--algorithm skew or --algorithm divsufsort).\n";
         return -1;
     }
     catch (std::exception const & e)
@@ -204,10 +185,10 @@ int buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
     }
 #else
     // In debug mode we don't catch the exceptions so that we get a backtrace from SeqAn's handler
-    if (options.useRadix)
-        buildIndex<RadixSortSACreateTag>(chromosomes, options);
-    else
+    if (options.useSkew)
         buildIndex<Nothing>(chromosomes, options);
+    else
+        buildIndex<TAlgo>(chromosomes, options); // TODO
 #endif
 
     std::cout << "Index created successfully.\n";
@@ -290,7 +271,11 @@ int indexMain(int const argc, char const ** argv)
     ArgumentParser parser("GenMap index");
     sharedSetup(parser);
     addDescription(parser, "Index creation. Only supports DNA and RNA (A, C, G, T/U, N). "
-                           "Other characters will be converted to N.");
+                           "Other characters will be converted to N.\n"
+                           "Choose between the following index construction algorithms (-A / --algorithm):\n"
+                           "* divsufsort (recommended, faster, needs about `6n` space in main memory/RAM)\n"
+                           "* skew (needs more than `25n` space on secondary memory/disk, i.e., TMPDIR)"
+                           "`n` is the total number of bases in your fasta file(s).");
 
     // sorted in descending lexicographical order, since setValidValues() prints them in this order
     std::vector<std::string> const fastaFileTypes {"fsa", "fna", "fastq", "fasta", "fas", "faa", "fa"};
@@ -309,11 +294,10 @@ int indexMain(int const argc, char const ** argv)
     addOption(parser, ArgParseOption("I", "index", "Path to the index.", ArgParseArgument::OUTPUT_FILE, "OUT"));
     setRequired(parser, "index");
 
-    // TODO: describe both algorithms in terms of space consumption (disk and RAM)
     addOption(parser, ArgParseOption("A", "algorithm", "Algorithm for suffix array construction "
         "(needed for the FM index).", ArgParseArgument::STRING, "TEXT"));
-    setDefaultValue(parser, "algorithm", "skew");
-    setValidValues(parser, "algorithm", std::vector<std::string>{"radix", "skew"});
+    setDefaultValue(parser, "algorithm", "divsufsort");
+    setValidValues(parser, "algorithm", std::vector<std::string>{"divsufsort", "skew"});
 
     addOption(parser, ArgParseOption("S", "sampling", "Sampling rate of suffix array",
         ArgParseArgument::INTEGER, "INT"));
@@ -379,7 +363,7 @@ int indexMain(int const argc, char const ** argv)
         }
     }
 
-    options.useRadix = algorithm == "radix";
+    options.useSkew = algorithm == "skew";
     options.verbose = isSet(parser, "verbose");
 
     // Check whether the index path exists and is writeable!
@@ -497,15 +481,6 @@ int indexMain(int const argc, char const ** argv)
         uint64_t bwtlen;
         getOptionValue(bwtlen, parser, "bwtlen");
         options.totalLength = (static_cast<uint64_t>(1) << bwtlen) - 2;
-    }
-
-    if (options.useRadix && lengthSum(chromosomes) < 1'000'000)
-    {
-        // There might be undefined behavior of radix sort for very small indices with a handful of bases.
-        options.useRadix = false;
-        std::cout << "NOTE: Your input is quite small (i.e., less than 1 megabase)."
-                  << "      Hence, Skew7 is used for index construction anyway to avoid parallelization overhead.\n"
-                  << std::flush;
     }
 
     // Construct index using Dna4 or Dna5 alphabet.
