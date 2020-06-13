@@ -22,6 +22,10 @@ namespace seqan
     {
         typedef GemMapFastFMIndexConfig<void, TLengthSum, LEVELS, WORDS_PER_BLOCK> TConfig;
 
+        typedef std::conditional_t<std::is_same<TLengthSum, uint32_t>::value, int32_t, int64_t> sa_t;
+
+	time_t tt;
+
         std::cout << "Using libdivsufsort\n";
 
         typedef Index<TText, FMIndex<TSpec, TConfig> >  TIndex;
@@ -48,7 +52,7 @@ namespace seqan
             }
             ++seq_id;
         }
-        int64_t const sequences_length_with_sentinels = cum_seq_lengths.back();
+        sa_t const sequences_length_with_sentinels = cum_seq_lengths.back();
 //        uint64_t const sequences_length_without_sentinels = cum_seq_lengths.back() - nbr_sequences; // length of all sequences without sentinels
 
 //        std::cout << sequences_length_without_sentinels << ' ' << lengthSum(text) << '\n';
@@ -74,6 +78,7 @@ namespace seqan
 //        exit (17);
 
         // get text in c string (with sentinels)
+        tt = time(NULL); printf("\n%s\tCreate C string text\n", ctime(&tt));
         uint8_t * ctext = static_cast<uint8_t *>(malloc(sizeof(uint8_t) * sequences_length_with_sentinels));
 
         for (uint64_t i = 0, j = 0; j < nbr_sequences; ++j)
@@ -88,7 +93,8 @@ namespace seqan
         }
 
         // compute full suffix array with libdivsufsort
-        int64_t * sa = static_cast<int64_t *>(malloc(sizeof(int64_t) * sequences_length_with_sentinels));
+        tt = time(NULL); printf("\n%s\tBuild full SA\n", ctime(&tt));
+        sa_t * sa = static_cast<sa_t *>(malloc(sizeof(sa_t) * sequences_length_with_sentinels));
         sdsl::divsufsort(ctext, sa, sequences_length_with_sentinels);
         // TODO: clear c string of text
         ::free(ctext);
@@ -127,6 +133,7 @@ namespace seqan
 
         // Create the compressed SA.
         // former: createCompressedSa(indexSA(index), tempSA, nbr_sequences);
+        tt = time(NULL); printf("\n%s\tBuild CSA\n", ctime(&tt));
         {
             typedef CompressedSA<TText, TSpec, TConfig>        TCompressedSA;
             typedef typename Size<TTempSA>::Type                                TSASize;
@@ -169,6 +176,7 @@ namespace seqan
                 }
             }
 
+            tt = time(NULL); printf("\n%s\tUpdate CSA ranks\n", ctime(&tt));
             updateRanks(indicators);
 
             if (getRank(indicators, length(sparseString) - 1) != length(values))
@@ -185,6 +193,7 @@ namespace seqan
 
         // Create the LF table.
         // former: createLF(indexLF(index), text, tempSA);
+        tt = time(NULL); printf("\n%s\tBuild BWT\n", ctime(&tt));
         {
             auto & lf = indexLF(index);
 
@@ -225,7 +234,7 @@ namespace seqan
                 }
 
                 // Compute the rest of the bwt.
-                for (; i < sequences_length_with_sentinels; ++i)
+                for (; i < static_cast<uint64_t>(sequences_length_with_sentinels); ++i)
                 {
                     auto const u = upper_bound(cum_seq_lengths.begin(), cum_seq_lengths.end(), sa[i]);
                     uint64_t const i1 = difference(cum_seq_lengths.begin(), u-1);
@@ -242,7 +251,7 @@ namespace seqan
                         setValue(lf.sentinels, i, true);
                     }
                 }
-
+                tt = time(NULL); printf("\n%s\tUpdate ranks for WT\n", ctime(&tt));
                 // Update all ranks.
                 updateRanks(lf.bwt);
                 // Update the auxiliary RankDictionary of sentinel positions.
