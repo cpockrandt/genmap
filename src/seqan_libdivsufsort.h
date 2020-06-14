@@ -30,6 +30,8 @@ namespace seqan
 
         typedef std::conditional_t<std::is_same<TLengthSum, uint32_t>::value, int32_t, int64_t> sa_t;
 
+        std::cout << "LIBDIVSUFSORT\n";
+
 	      time_t tt;
 
         TText const & text = indexText(index);

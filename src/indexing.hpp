@@ -84,8 +84,12 @@ void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
     TText chromosomesConcat(chromosomes); // strings are getting packed
     clear(chromosomes); // reduce memory footprint
 
-    std::cout << "The index will now be built. "
-              << "This can take some time (e.g., 2-3 hours with Skew7 for the human genome).\n" << std::flush;
+    std::cout << "The index will now be built.";
+    if (options.useSkew)
+        std::cout << "This can take some time (e.g., 2-3 hours with Skew7 for the human genome).\n";
+    else
+        std::cout << '\n';
+    std::cout << std::flush;
 
     {
         uint32_t const bwtDigits = std::numeric_limits<TBWTLen>::digits;
@@ -273,8 +277,8 @@ int indexMain(int const argc, char const ** argv)
     addDescription(parser, "Index creation. Only supports DNA and RNA (A, C, G, T/U, N). "
                            "Other characters will be converted to N.\n"
                            "Choose between the following index construction algorithms (-A / --algorithm):\n"
-                           "* divsufsort (recommended, faster, needs about `6n` space in main memory/RAM)\n"
-                           "* skew (needs more than `25n` space on secondary memory/disk, i.e., TMPDIR)"
+                           "* divsufsort (recommended, faster, needs about `6n` space in main memory/RAM),\n"
+                           "* skew (needs more than `25n` space on secondary memory/disk, i.e., in TMPDIR).\n"
                            "`n` is the total number of bases in your fasta file(s).");
 
     // sorted in descending lexicographical order, since setValidValues() prints them in this order
