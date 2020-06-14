@@ -188,7 +188,7 @@ int buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
     if (options.useSkew)
         buildIndex<Nothing>(chromosomes, options);
     else
-        buildIndex<TAlgo>(chromosomes, options); // TODO
+        buildIndex<AlgoDivSufSortTag>(chromosomes, options); // TODO
 #endif
 
     std::cout << "Index created successfully.\n";
