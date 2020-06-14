@@ -155,12 +155,18 @@ You might want to check out pre-built indices available for `download <#pre-buil
 A new folder ``/path/to/index/folder`` will be created to store the index and all associated files.
 
 There are two algorithms that can be chosen for index construction.
-One uses RAM (radix), one uses secondary memory (skew).
-Depending on the quota and main memory limitations you can choose the appropriate algorithm with ``-A radix`` or
+One uses RAM (divsufsort), one uses secondary memory/disk space (skew).
+Depending on the quota and main memory limitations you can choose the appropriate algorithm with ``-A divsufsort`` or
 ``-A skew``.
-It is recommended to use Skew, since Radix is comparison-based and therefore significantly slower on repetitive data.
-For skew you can change the location of the temp directory via the environment variable (e.g., to choose a directory
-with more quota):
+It is recommended to use divsufsort (default setting).
+It needs about ``6n`` space in main memory (or ``10n`` for fasta files >2GB).
+``n`` is the number of bases in your fasta file(s).
+It might be more or less depending on the number and length of the individual sequences.
+If you are running out of memory, you can try to reduce the memory consumption a bit by inreasing `-S`, e.g., use `-S 20` (up to 64)
+Although this will slow down the algorithm to compute the mappability.
+
+Skew needs more space on disk, at least ``25n``.
+You can change the location of the temp directory via the environment variable (e.g., to choose a directory with more quota):
 
 ::
 
@@ -176,10 +182,10 @@ To compute the (30,2)-mappability of the previously indexed genome, simply run:
     $ ./genmap map -K 30 -E 2 -I /path/to/index/folder -O /path/to/output/folder -t -w -bg
 
 This will create a ``text``, ``wig`` and ``bedGraph`` file in ``/path/to/output/folder`` storing the computed mappability in
-different formats. You can omit formats that are not required by removing the corresponding flags ``-t`` ``-w`` or ``-bg``.
+different formats.
+You can omit formats that are not required by removing the corresponding flags ``-t`` ``-w`` or ``-bg``.
 
-Instead of the mappability, the frequency can be outputted, you only have to add the flag ``-fl`` to the previous
-command.
+Instead of the mappability, the frequency can be outputted, you only have to add the flag ``-fl`` to the previous command.
 
 Help pages and examples
 """""""""""""""""""""""

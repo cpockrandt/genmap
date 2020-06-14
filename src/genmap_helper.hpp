@@ -33,8 +33,8 @@ void sharedSetup(ArgumentParser & parser)
         " You should have received a copy of the 3-clause BSD-License along with this\n"
         " program. If not, see <https://opensource.org/licenses/>.\n"
         "\n"
-        " Copyright (c) 2013-2019 Hannes Hauswedell\n"
-        " Copyright (c) 2016-2019 Knut Reinert and Freie Universität Berlin\n"
+        " libdivsufsort: Copyright (c) 2003 Yuta Mori All rights reserved.\n"
+        " SeqAn: Copyright (c) 2016-2019 Knut Reinert and Freie Universität Berlin\n"
         " All rights reserved.\n"
         "\n"
         " Redistribution and use in source and binary forms, with or without\n"
@@ -93,6 +93,36 @@ inline bool open(Index<TText, BidirectionalIndex<FMIndex<TSpec, TConfig> > > & i
     if (!open(index.rev.sa.sparseString._length, toCString(name), openMode)) return false;
 
     setFibre(getFibre(index.rev, FibreSA()), getFibre(index.rev, FibreLF()), FibreLF());
+
+    return true;
+}
+
+template <typename TString, typename TStringSetSpec>
+inline bool saveFwdTxt(StringSet<TString, TStringSetSpec> const & chromosomes, const char * fileName, int openMode = OPEN_RDWR | OPEN_CREATE | OPEN_APPEND)
+{
+    String<char> name;
+
+    // store text before it gets packed
+    // but we have to transform it to a ConcatDirect stringset beforehand
+    StringSet<TString, Owner<ConcatDirect<> > > chromosomesConcat(chromosomes);
+
+    name = fileName;    append(name, ".txt");
+    if (!save(chromosomesConcat, toCString(name), openMode)) return false;
+
+    return true;
+}
+
+template <typename TText, typename TSpec, typename TConfig>
+inline bool saveFwd(Index<TText, FMIndex<TSpec, TConfig> > const & index, const char * fileName, int openMode = OPEN_RDWR | OPEN_CREATE | OPEN_APPEND)
+{
+    String<char> name;
+
+    // do not store text here (it is called separately before it gets packed)
+    name = fileName;    append(name, ".sa");
+    if (!save(getFibre(index, FibreSA()), toCString(name), openMode)) return false;
+
+    name = fileName;    append(name, ".lf");
+    if (!save(getFibre(index, FibreLF()), toCString(name), openMode)) return false;
 
     return true;
 }

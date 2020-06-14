@@ -48,8 +48,8 @@ function (add_test_suite TEST_NAME_PREFIX TEST_CASE_FOLDER INDEX_FLAGS MAP_FLAGS
               COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -d" "csv")
 
     if (EXISTS "${CMAKE_SOURCE_DIR}/tests/test_cases/case_${TEST_CASE_FOLDER}/txt_freq8")
-    add_test (NAME "${TEST_NAME_PREFIX}_txt_freq8"
-            COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -t -fs" "txt_freq8")
+      add_test (NAME "${TEST_NAME_PREFIX}_txt_freq8"
+              COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/tests.sh "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${TEST_CASE_FOLDER}" "${INDEX_FLAGS}" "${MAP_FLAGS} -t -fs" "txt_freq8")
     endif ()
 endfunction (add_test_suite)
 

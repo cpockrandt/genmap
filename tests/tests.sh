@@ -37,7 +37,7 @@ cd "$MYTMP"
 if [ "$INDEX_FLAGS" = "-FD" ]; then
     ${BINDIR}/bin/genmap index -FD "${SRCDIR}/tests/test_cases/case_${CASE}" -I "${MYTMP}/index" -A skew
 else
-    ${BINDIR}/bin/genmap index -F "${SRCDIR}/tests/test_cases/case_${CASE}/genome.fa" -I "${MYTMP}/index" -A skew
+    ${BINDIR}/bin/genmap index -F "${SRCDIR}/tests/test_cases/case_${CASE}/genome.fa" -I "${MYTMP}/index" -A divsufsort
 fi
 
 ${BINDIR}/bin/genmap map -I "${MYTMP}/index" -O "${MYTMP}/output" ${FLAGS}

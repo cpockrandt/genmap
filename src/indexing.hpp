@@ -7,17 +7,14 @@
 #include <seqan/seq_io.h>
 #include <seqan/index.h>
 
-#include "../include/lambda/src/mkindex_saca.hpp"
-#include "../include/lambda/src/mkindex_misc.hpp"
-#include "../include/lambda/src/mkindex_algo.hpp"
-
 #include "common.hpp"
+#include "seqan_libdivsufsort.h"
 
 namespace seqan {
+    // allow implicit conversion of non Dna5 characters to N instead of throwing an error
     template <>
     struct FastaIgnoreOrAssertFunctor_<Dna5> {
-        typedef typename FastaIgnoreFunctor_<Dna5>::Type               TIgnore;
-        // typedef AssertFunctor<IsInAlphabet<Dna5>, ParseError, Fasta>   TAsserter;
+        typedef typename FastaIgnoreFunctor_<Dna5>::Type TIgnore;
         typedef TIgnore Type;
     };
 }
@@ -32,7 +29,7 @@ struct IndexOptions
     uint64_t totalLength;
     unsigned sampling;
     bool directory;
-    bool useRadix;
+    bool useSkew;
     bool verbose;
 };
 
@@ -72,23 +69,20 @@ inline std::string extractFileName(std::string const & path)
         return path.substr(pos + 1);
 }
 
-template <typename TRadixSortTag, typename TSeqNo, typename TSeqPos, typename TBWTLen, typename TChromosomes>
+template <typename TAlgo, typename TSeqNo, typename TSeqPos, typename TBWTLen, typename TChromosomes>
 void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 {
     using TString = typename Value<TChromosomes>::Type;
     using TAlphabet = typename Value<TString>::Type;
-    using TText = StringSet<TString, Owner<ConcatDirect<SizeSpec_<TSeqNo, TSeqPos> > > > ;
+    using TText = StringSet<String<TAlphabet, Packed<> >, Owner<ConcatDirect<SizeSpec_<TSeqNo, TSeqPos> > > >; // here we tell it to pack it
     using TFMIndexConfig = TGemMapFastFMIndexConfig<TBWTLen>;
-    using TUniIndexConfig = FMIndex<TRadixSortTag, TFMIndexConfig>;
+    using TUniIndexConfig = FMIndex<TAlgo, TFMIndexConfig>;
     TFMIndexConfig::SAMPLING = options.sampling;
 
     constexpr bool isDna5 = std::is_same<TAlphabet, Dna5>::value;
 
-    TText chromosomesConcat(chromosomes);
+    TText chromosomesConcat(chromosomes); // strings are getting packed
     clear(chromosomes); // reduce memory footprint
-
-    std::cout << "The index will now be built. "
-              << "This can take some time (e.g., 2-3 hours with Skew7 for the human genome).\n" << std::flush;
 
     {
         uint32_t const bwtDigits = std::numeric_limits<TBWTLen>::digits;
@@ -119,39 +113,25 @@ void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 
     {
         Index<TText, TUniIndexConfig> fwdIndex(chromosomesConcat);
-        SEQAN_IF_CONSTEXPR (std::is_same<TRadixSortTag, RadixSortSACreateTag>::value)
-        {
-            indexCreateProgress(fwdIndex, FibreSALF());
-        }
-        else
-        {
-            std::cout << "Create fwd Index ... " << std::flush;
-            indexCreate(fwdIndex, FibreSALF());
-            std::cout << "done!\n";
-        }
-        save(fwdIndex, toCString(options.indexPath));
+        std::cout << "Create fwd Index ... " << std::flush;
+        indexCreate(fwdIndex, FibreSALF());
+        std::cout << "done!\n";
+        saveFwd(fwdIndex, toCString(options.indexPath));
     }
 
     {
-        reverse(chromosomesConcat);
+        reverse(chromosomesConcat, Serial());
         Index<TText, TUniIndexConfig> bwdIndex(chromosomesConcat);
-        SEQAN_IF_CONSTEXPR (std::is_same<TRadixSortTag, RadixSortSACreateTag>::value)
-        {
-            indexCreateProgress(bwdIndex, FibreSALF());
-        }
-        else
-        {
-            std::cout << "Create bwd Index ... " << std::flush;
-            indexCreate(bwdIndex, FibreSALF());
-            std::cout << "done!\n";
-        }
+        std::cout << "Create bwd Index ... " << std::flush;
+        indexCreate(bwdIndex, FibreSALF());
+        std::cout << "done!\n";
         clear(getFibre(getFibre(getFibre(bwdIndex, FibreSA()), FibreSparseString()), FibreValues()));
         clear(getFibre(getFibre(getFibre(bwdIndex, FibreSA()), FibreSparseString()), FibreIndicators()));
         saveRev(bwdIndex, toCString(std::string(toCString(options.indexPath)) + ".rev"));
     }
 }
 
-template <typename TRadixSortTag, typename TChromosomes>
+template <typename TAlgo, typename TChromosomes>
 void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 {
     constexpr uint64_t max16bitUnsignedValue = std::numeric_limits<uint16_t>::max();
@@ -162,51 +142,46 @@ void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
     if (options.seqNumber <= max16bitUnsignedValue && options.maxSeqLength <= max32bitUnsignedValue)
     {
         if (options.totalLength <= max32bitUnsignedValue)
-            buildIndex<TRadixSortTag, uint16_t, uint32_t, uint32_t>(chromosomes, options); // e.g. human genome
+            buildIndex<TAlgo, uint16_t, uint32_t, uint32_t>(chromosomes, options); // e.g. human genome
         else
-            buildIndex<TRadixSortTag, uint16_t, uint32_t, uint64_t>(chromosomes, options); // e.g. barley genome
+            buildIndex<TAlgo, uint16_t, uint32_t, uint64_t>(chromosomes, options); // e.g. barley genome
     }
     else if (options.seqNumber <= max32bitUnsignedValue && options.maxSeqLength <= max16bitUnsignedValue)
-        buildIndex<TRadixSortTag, uint32_t, uint16_t, uint64_t>(chromosomes, options); // e.g. read data set
+        buildIndex<TAlgo, uint32_t, uint16_t, uint64_t>(chromosomes, options); // e.g. read data set
     else
-        buildIndex<TRadixSortTag, uint64_t, uint64_t, uint64_t>(chromosomes, options); // anything else
+        buildIndex<TAlgo, uint64_t, uint64_t, uint64_t>(chromosomes, options); // anything else
 }
 
 template <typename TChromosomes>
 int buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 {
-
-#ifdef NDEBUG
-    try
+    if (options.useSkew)
     {
-        if (options.useRadix)
-            buildIndex<RadixSortSACreateTag>(chromosomes, options);
-        else
-            buildIndex<Nothing>(chromosomes, options);
-    }
-    catch (std::bad_alloc const & e)
-    {
-        std::cerr << "ERROR: GenMap ran out of memory :(\n"
-                     "       You might want to use a different algorithm (--algorithm skew or --algorithm radix).\n";
-        return -1;
-    }
-    catch (std::exception const & e)
-    {
-        std::cerr << "\n\n"
-                  << "ERROR: The following unspecified exception was thrown:\n"
-                  << "       \"" << e.what() << "\"\n"
-                  << "       If the problem persists, report an issue at "
-                  << "https://github.com/cpockrandt/genmap/issues "
-                  << "and include this output, as well as the output of `genmap --version`, thanks!\n";
-        return -1;
-    }
-#else
-    // In debug mode we don't catch the exceptions so that we get a backtrace from SeqAn's handler
-    if (options.useRadix)
-        buildIndex<RadixSortSACreateTag>(chromosomes, options);
-    else
+        std::cout << "Skew needs at least `25n` byes on disk. "
+                     "Make sure that your temp directory has enough space/quota, or change it via `export TMPDIR=/somewhere/with/more/space`.\n"
+                  << std::flush;
         buildIndex<Nothing>(chromosomes, options);
-#endif
+    }
+    else
+    {
+        constexpr uint64_t max32bitSignedValue = std::numeric_limits<int32_t>::max();
+
+        bool const divsufsort32bit = options.totalLength + options.seqNumber < max32bitSignedValue;
+
+        if (divsufsort32bit)
+            std::cout << "Input fits into int32_t (<2GB), algorithm will need about `6n` main memory.\n";
+        else
+            std::cout << "Input does not fit into int32_t (>2GB), algorithm will need about `10n` main memory.\n";
+
+        std::cout << "It might be more or less depending on the number and length of the individual sequences.\n"
+                     "If you are running out of memory, you can try to reduce the memory consumption a bit by inreasing `-S`, e.g., use `-S 20` (up to 64).\n"
+                     "Although this will slow down the algorithm to compute the mappability.\n" << std::flush;
+
+        if (divsufsort32bit)
+            buildIndex<AlgoDivSufSortTag<int32_t> >(chromosomes, options);
+        else
+            buildIndex<AlgoDivSufSortTag<int64_t> >(chromosomes, options);
+    }
 
     std::cout << "Index created successfully.\n";
 
@@ -288,10 +263,14 @@ int indexMain(int const argc, char const ** argv)
     ArgumentParser parser("GenMap index");
     sharedSetup(parser);
     addDescription(parser, "Index creation. Only supports DNA and RNA (A, C, G, T/U, N). "
-                           "Other characters will be converted to N.");
+                           "Other characters will be converted to N.\n"
+                           "Choose between the following index construction algorithms (-A / --algorithm):\n"
+                           "* divsufsort (recommended, faster, needs about `6n` space in main memory/RAM, `10n` for sequences >2GB),\n"
+                           "* skew (needs more than `25n` space on secondary memory/disk, i.e., in TMPDIR),\n"
+                           "where `n` is the total number of bases in your fasta file(s).");
 
     // sorted in descending lexicographical order, since setValidValues() prints them in this order
-    std::vector<std::string> const fastaFileTypes {"fsa", "fna", "fastq", "fasta", "fas", "fa", "faa"};
+    std::vector<std::string> const fastaFileTypes {"fsa", "fna", "fastq", "fasta", "fas", "faa", "fa"};
     std::string fastaFileTypesHelpString;
     for (uint8_t i = 0; i < fastaFileTypes.size() - 1; ++i)
         fastaFileTypesHelpString += '.' + fastaFileTypes[i] + ' ';
@@ -307,11 +286,10 @@ int indexMain(int const argc, char const ** argv)
     addOption(parser, ArgParseOption("I", "index", "Path to the index.", ArgParseArgument::OUTPUT_FILE, "OUT"));
     setRequired(parser, "index");
 
-    // TODO: describe both algorithms in terms of space consumption (disk and RAM)
     addOption(parser, ArgParseOption("A", "algorithm", "Algorithm for suffix array construction "
         "(needed for the FM index).", ArgParseArgument::STRING, "TEXT"));
-    setDefaultValue(parser, "algorithm", "skew");
-    setValidValues(parser, "algorithm", std::vector<std::string>{"radix", "skew"});
+    setDefaultValue(parser, "algorithm", "divsufsort");
+    setValidValues(parser, "algorithm", std::vector<std::string>{"divsufsort", "skew"});
 
     addOption(parser, ArgParseOption("S", "sampling", "Sampling rate of suffix array",
         ArgParseArgument::INTEGER, "INT"));
@@ -377,7 +355,7 @@ int indexMain(int const argc, char const ** argv)
         }
     }
 
-    options.useRadix = algorithm == "radix";
+    options.useSkew = algorithm == "skew";
     options.verbose = isSet(parser, "verbose");
 
     // Check whether the index path exists and is writeable!
@@ -497,28 +475,21 @@ int indexMain(int const argc, char const ** argv)
         options.totalLength = (static_cast<uint64_t>(1) << bwtlen) - 2;
     }
 
-    if (options.useRadix && lengthSum(chromosomes) < 1'000'000)
-    {
-        // There might be undefined behavior of radix sort for very small indices with a handful of bases.
-        options.useRadix = false;
-        std::cout << "NOTE: Your input is quite small (i.e., less than 1 megabase)."
-                  << "      Hence, Skew7 is used for index construction anyway to avoid parallelization overhead.\n"
-                  << std::flush;
-    }
-
     // Construct index using Dna4 or Dna5 alphabet.
     if (canConvert)
     {
         // Conversion to Dna4 alphabet since no Ns are in the sequences.
-        // TODO: This does not perform an in-place conversion (i.e., unnecessary memory peak)
-        // Use a custom ModfiedFunctor instead and check performance.
+        // Unnecessary copy, replace with ModifiedString/View.
+        // Not relevant for memory peaks though.
         StringSet<DnaString> chromosomesDna4;
         move(chromosomesDna4, chromosomes);
         clear(chromosomes);
+        saveFwdTxt(chromosomesDna4, toCString(options.indexPath));
         return buildIndex(chromosomesDna4, options);
     }
     else
     {
+        saveFwdTxt(chromosomes, toCString(options.indexPath));
         return buildIndex(chromosomes, options);
     }
 }
