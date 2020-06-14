@@ -25,9 +25,9 @@ namespace seqan
         typedef typename Fibre<TIndex, FibreTempSA>::Type                          TSA;
         typedef typename Size<TSA>::Type                                           TSASize;
 
-        std::cout << "LIBDIVSUFSORT\n";
+//        std::cout << "LIBDIVSUFSORT\n";
 
-	      time_t tt;
+//	      time_t tt;
 
         TText const & text = indexText(index);
 
@@ -52,7 +52,7 @@ namespace seqan
         sa_t const sequences_length_with_sentinels = cum_seq_lengths.back();
 
         // copy text to c string (with sentinels)
-        tt = time(NULL); printf("\n%s\tCreate C string text", ctime(&tt));
+//        tt = time(NULL); printf("\n%s\tCreate C string text", ctime(&tt));
         uint8_t * ctext = static_cast<uint8_t *>(malloc(sizeof(uint8_t) * sequences_length_with_sentinels));
 
         for (uint64_t i = 0, j = 0; j < nbr_sequences; ++j)
@@ -67,7 +67,7 @@ namespace seqan
         }
 
         // compute full suffix array with libdivsufsort
-        tt = time(NULL); printf("\n%s\tBuild full SA", ctime(&tt));
+//        tt = time(NULL); printf("\n%s\tBuild full SA", ctime(&tt));
         sa_t * sa = static_cast<sa_t *>(malloc(sizeof(sa_t) * sequences_length_with_sentinels));
         sdsl::divsufsort(ctext, sa, sequences_length_with_sentinels);
         // clear c string of text
@@ -78,7 +78,7 @@ namespace seqan
 
         // Create the compressed SA.
         // former: createCompressedSa(indexSA(index), tempSA, nbr_sequences);
-        tt = time(NULL); printf("\n%s\tBuild CSA", ctime(&tt));
+//        tt = time(NULL); printf("\n%s\tBuild CSA", ctime(&tt));
         {
             typedef CompressedSA<TText, Nothing, TConfig>                  TCompressedSA;
             typedef typename Fibre<TCompressedSA, FibreSparseString>::Type TSparseSA;
@@ -118,7 +118,7 @@ namespace seqan
                 }
             }
 
-            tt = time(NULL); printf("\n%s\tUpdate CSA ranks", ctime(&tt));
+//            tt = time(NULL); printf("\n%s\tUpdate CSA ranks", ctime(&tt));
             updateRanks(indicators);
 
             // TODO: test this with different sampling rates
@@ -131,7 +131,7 @@ namespace seqan
 
         // Create the LF table.
         // former: createLF(indexLF(index), text, tempSA);
-        tt = time(NULL); printf("\n%s\tBuild BWT", ctime(&tt));
+//        tt = time(NULL); printf("\n%s\tBuild BWT", ctime(&tt));
         {
             auto & lf = indexLF(index);
 
@@ -187,7 +187,7 @@ namespace seqan
                         setValue(lf.sentinels, i, true);
                     }
                 }
-                tt = time(NULL); printf("\n%s\tUpdate ranks for BWT", ctime(&tt));
+//                tt = time(NULL); printf("\n%s\tUpdate ranks for BWT", ctime(&tt));
 
                 // Delete full suffix array
                 ::free(sa);

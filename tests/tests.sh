@@ -3,7 +3,7 @@
 errorout()
 {
     echo $1 #> /dev/stderr
-    [ "$MYTMP" = "" ] || rm -r "${MYTMP}"
+    # [ "$MYTMP" = "" ] || rm -r "${MYTMP}"
     exit 1
 }
 
@@ -35,9 +35,9 @@ cd "$MYTMP"
 [ $? -eq 0 ] || errorout "Could not cd to tmp"
 
 if [ "$INDEX_FLAGS" = "-FD" ]; then
-    ${BINDIR}/bin/genmap index -FD "${SRCDIR}/tests/test_cases/case_${CASE}" -I "${MYTMP}/index" -A skew
+    ${BINDIR}/bin/genmap index -FD "${SRCDIR}/tests/test_cases/case_${CASE}" -I "${MYTMP}/index" -A divsufsort
 else
-    ${BINDIR}/bin/genmap index -F "${SRCDIR}/tests/test_cases/case_${CASE}/genome.fa" -I "${MYTMP}/index" -A skew
+    ${BINDIR}/bin/genmap index -F "${SRCDIR}/tests/test_cases/case_${CASE}/genome.fa" -I "${MYTMP}/index" -A divsufsort
 fi
 
 ${BINDIR}/bin/genmap map -I "${MYTMP}/index" -O "${MYTMP}/output" ${FLAGS}
@@ -89,5 +89,5 @@ fi
 # [ "$(openssl md5 output_${PROG}_${DI}.${EXTENSION})" = \
 # "$(zgrep "(output_${PROG}_${DI}.${EXTENSION})" "${SRCDIR}/tests/search_test_outfile.md5sums.gz")" ] || errorout "MD5 mismatch of output file"
 
-rm -r "${MYTMP}"
+# rm -r "${MYTMP}"
 [ $? -eq 0 ] || errorout "Could not remove tmp"

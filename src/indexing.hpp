@@ -170,6 +170,8 @@ int buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
         {
             constexpr uint64_t max32bitSignedValue = std::numeric_limits<int32_t>::max();
 
+            std::cout << "If you are running out of memory, try to run it with -S 64 to increase the sampling rate and reduce the size of the sampled suffix array\n";
+
             if (options.totalLength + options.seqNumber < max32bitSignedValue)
             {
                 std::cout << "Input fits into int32_t (<2GB), algorithm will need about `6n` main memory.\n" << std::flush;

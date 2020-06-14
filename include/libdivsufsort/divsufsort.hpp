@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <inttypes.h>
 
-#ifdef _OPENMP
+#if 0 //def _OPENMP
 # include <omp.h>
 #endif
 
@@ -218,21 +218,9 @@ inline int32_t ss_compare(const text_t *T, const saidx_t *p1, const saidx_t *p2,
       U2 = T + depth + *p2,
       U1n = T + *(p1 + 1) + 2,
       U2n = T + *(p2 + 1) + 2;
-      (U1 < U1n) && (U2 < U2n) && (*U1 == *U2)/* && (*U1 != 0)*/;
+      (U1 < U1n) && (U2 < U2n) && (*U1 == *U2);
       ++U1, ++U2) {
   }
-
-        // *p1 < *p2 => return neg.
-        // *p1 > *p2 => return pos.
-
-//        if (*U1 == 0 && *U2 == 0)
-//            // U1 < U2 means that *p1 is longer than *p2
-//            return (U1 < U2) ? 1 : ((U2 < U1) ? -1 : 0); // the shorter suffix is smaller, i.e., AA$AA$CA$ =>     A$CA$ < A$AA$CA$
-//
-//        if (*U1 == 0)
-//            return -1;
-//        if (*U2 == 0)
-//            return 1;
 
   return U1 < U1n ?
         (U2 < U2n ? *U1 - *U2 : 1) :
@@ -1354,13 +1342,13 @@ inline void trsort(saidx_t *ISA, saidx_t *SA, saidx_t n, saidx_t depth) {
 template <typename text_t, typename saidx_t>
 inline saidx_t sort_typeBstar(const text_t *T, saidx_t *SA, saidx_t *bucket_A, saidx_t *bucket_B, saidx_t n) {
   saidx_t *PAb, *ISAb, *buf;
-#ifdef _OPENMP
+#if 0 //def _OPENMP
   saidx_t *curbuf;
   saidx_t l;
 #endif
   saidx_t i, j, k, t, m, bufsize;
   int32_t c0, c1;
-#ifdef _OPENMP
+#if 0 // def _OPENMP
   int32_t d0, d1;
   int tmp;
 #endif
@@ -1415,7 +1403,7 @@ note:
     SA[--BUCKET_BSTAR(c0, c1)] = m - 1;
 
     /* Sort the type B* substrings using sssort. */
-#ifdef _OPENMP
+#if 0 //ifdef _OPENMP
     tmp = omp_get_max_threads();
     buf = SA + m, bufsize = (n - (2 * m)) / tmp;
     c0 = ALPHABET_SIZE - 2, c1 = ALPHABET_SIZE - 1, j = m;
