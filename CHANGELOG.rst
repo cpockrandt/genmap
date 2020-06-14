@@ -1,8 +1,13 @@
 Changelog
 ^^^^^^^^^
 
-1.2.1 (2020-0x-xx)
+1.3.0 (2020-06-xx)
 """"""""""""""""""
+
+Features
+--------
+
+* **Faster and more efficient index creation (libdivsufsort)**, requires about 6n main memory (n is the size of the input fasta files) and no additional secondary memory (libdivsufsort is the default algorithm. Skew7 is still supported, radixsort was removed)
 
 Fixes
 -----
