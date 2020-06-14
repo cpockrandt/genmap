@@ -2,6 +2,7 @@
 
 namespace seqan
 {
+    template <typename sa_t>
     struct AlgoDivSufSortTag {};
 
     // total in brackets is for genomes <4GB and Dna5
@@ -14,21 +15,15 @@ namespace seqan
     // 7. Delete SA (total: 1.5n)
     // 8. Build auxiliary data structures for BWT / bit vector
 
-    // template <typename TText, typename TLengthSum, unsigned LEVELS, unsigned WORDS_PER_BLOCK>
-    // inline bool indexCreate(Index<TText, FMIndex<AlgoDivSufSortTag, GemMapFastFMIndexConfig<void, TLengthSum, LEVELS, WORDS_PER_BLOCK> > > & index, FibreSALF)
-
-  template <typename TAlphabet, typename TSeqNo, typename TSeqPos, typename TLengthSum, unsigned LEVELS, unsigned WORDS_PER_BLOCK>
+  template <typename TAlphabet, typename TSeqNo, typename TSeqPos, typename sa_t, typename TConfig>
   inline bool indexCreate(Index<StringSet<String<TAlphabet, Packed<> >, Owner<ConcatDirect<SizeSpec_<TSeqNo, TSeqPos> > > >,
-                                FMIndex<AlgoDivSufSortTag, GemMapFastFMIndexConfig<void, TLengthSum, LEVELS, WORDS_PER_BLOCK> > > & index,
+                                FMIndex<AlgoDivSufSortTag<sa_t>, TConfig> > & index,
                           FibreSALF)
     {
-        typedef GemMapFastFMIndexConfig<void, TLengthSum, LEVELS, WORDS_PER_BLOCK> TConfig;
         typedef StringSet<String<TAlphabet, Packed<> >, Owner<ConcatDirect<SizeSpec_<TSeqNo, TSeqPos> > > > TText;
         typedef Index<TText, FMIndex<Nothing, TConfig> >                           TIndex;
         typedef typename Fibre<TIndex, FibreTempSA>::Type                          TSA;
         typedef typename Size<TSA>::Type                                           TSASize;
-
-        typedef std::conditional_t<std::is_same<TLengthSum, uint32_t>::value, int32_t, int64_t> sa_t;
 
         std::cout << "LIBDIVSUFSORT\n";
 

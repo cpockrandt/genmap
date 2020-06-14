@@ -162,14 +162,19 @@ void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 template <typename TChromosomes>
 int buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 {
-
-#ifdef NDEBUG
     try
     {
         if (options.useSkew)
             buildIndex<Nothing>(chromosomes, options);
         else
-            buildIndex<AlgoDivSufSortTag>(chromosomes, options); // TODO
+        {
+            constexpr uint64_t max32bitSignedValue = std::numeric_limits<int32_t>::max();
+
+            if (options.totalLength + options.seqNumber < max32bitSignedValue)
+                buildIndex<AlgoDivSufSortTag<int32_t>>(chromosomes, options);
+            else
+                buildIndex<AlgoDivSufSortTag<int64_t>>(chromosomes, options);
+        }
     }
     catch (std::bad_alloc const & e)
     {
@@ -187,13 +192,6 @@ int buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
                   << "and include this output, as well as the output of `genmap --version`, thanks!\n";
         return -1;
     }
-#else
-    // In debug mode we don't catch the exceptions so that we get a backtrace from SeqAn's handler
-    if (options.useSkew)
-        buildIndex<Nothing>(chromosomes, options);
-    else
-        buildIndex<AlgoDivSufSortTag>(chromosomes, options); // TODO
-#endif
 
     std::cout << "Index created successfully.\n";
 
