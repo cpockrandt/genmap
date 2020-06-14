@@ -171,9 +171,15 @@ int buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
             constexpr uint64_t max32bitSignedValue = std::numeric_limits<int32_t>::max();
 
             if (options.totalLength + options.seqNumber < max32bitSignedValue)
+            {
+                std::cout << "Input fits into int32_t (<2GB), algorithm will need about `6n` main memory.\n" << std::flush;
                 buildIndex<AlgoDivSufSortTag<int32_t>>(chromosomes, options);
+            }
             else
+            {
+                std::cout << "Input does not fit into int32_t (>2GB), algorithm will need about `10n` main memory.\n" << std::flush;
                 buildIndex<AlgoDivSufSortTag<int64_t>>(chromosomes, options);
+            }
         }
     }
     catch (std::bad_alloc const & e)
@@ -275,7 +281,7 @@ int indexMain(int const argc, char const ** argv)
     addDescription(parser, "Index creation. Only supports DNA and RNA (A, C, G, T/U, N). "
                            "Other characters will be converted to N.\n"
                            "Choose between the following index construction algorithms (-A / --algorithm):\n"
-                           "* divsufsort (recommended, faster, needs about `6n` space in main memory/RAM),\n"
+                           "* divsufsort (recommended, faster, needs about `6n` (`10n` for sequences >2GB) space in main memory/RAM),\n"
                            "* skew (needs more than `25n` space on secondary memory/disk, i.e., in TMPDIR).\n"
                            "`n` is the total number of bases in your fasta file(s).");
 
