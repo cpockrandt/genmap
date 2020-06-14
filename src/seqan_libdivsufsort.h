@@ -1,4 +1,4 @@
-#include "../include/divsufsort.hpp"
+#include "../include/libdivsufsort/divsufsort.hpp"
 
 namespace seqan
 {

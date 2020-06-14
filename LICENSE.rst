@@ -2,7 +2,7 @@ GenMap copyright
 ================
 ::
 
-  Copyright (c) 2019, Christopher Pockrandt
+  Copyright (c) 2019-2020, Christopher Pockrandt
   All rights reserved.
 
 GenMap is *free software*: you can redistribute it and/or modify
@@ -15,26 +15,49 @@ but **without any warranty**; without even the implied warranty of
 Some of the code are alternatively or additionally
 ::
 
-  Copyright (c) 2013-2017, Hannes Hauswedell
 
-These are covered under the terms of the GNU Affero General Public
-License as published by the Free Software Foundation, either version 3
-of the License, or (at your option) any later version.
-See the file
-`include/lambda/LICENSE-AGPL3.rst <./include/lambda/LICENSE-AGPL3.rst>`__
-or http://www.gnu.org/licenses/ for a full text of the license and the
-rights and obligations implied. In cases of doubt the terms of both
-licenses apply.
+These are covered under the terms of the MIT License. See the file
+`include/libdivsufsort/LICENSE <./include/libdivsufsort/LICENSE>`__
+for a full text of the license and the rights and obligations implied.
+In cases of doubt the terms of both licenses apply.
 
 submodules
-==========
+----------
 
 When GenMap is distributed in binary form or when GenMap is distributed
 in source form including its submodules the following additional
 license terms apply:
 
+libdivsufsort copyright
+^^^^^^^^^^^^^^^^^^^^^^^
+::
+
+  Copyright (c) 2003 Yuta Mori All rights reserved.
+
+The MIT License (MIT)
+"""""""""""""""""""""
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
 SeqAn copyright
----------------
+^^^^^^^^^^^^^^^
 ::
 
   Copyright (c) 2006-2019, Knut Reinert and Freie Universität Berlin
@@ -44,7 +67,7 @@ be found in the file `include/seqan/LICENSE <./include/seqan/LICENSE>`__
 or printed by the parameter ``--copyright``.
 
 BSD-License (3-clause)
-======================
+""""""""""""""""""""""
 
  | Copyright (c) 2016-2019, Knut Reinert, Freie Universität Berlin
  | All rights reserved.
