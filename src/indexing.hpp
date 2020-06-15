@@ -115,20 +115,36 @@ void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
     {
         Index<TText, TUniIndexConfig> fwdIndex(chromosomesConcat);
         std::cout << "Create fwd Index ... " << std::flush;
-        indexCreate(fwdIndex, FibreSALF());
+        if (std::is_same<TAlgo, AlgoDivSufSortTag<int32_t> >::value || std::is_same<TAlgo, AlgoDivSufSortTag<int64_t> >::value)
+        {
+            indexCreate(fwdIndex, FibreSALF(), Fwd(), toCString(options.indexPath));
+        }
+        else
+        {
+            indexCreate(fwdIndex, FibreSALF());
+            saveFwd(fwdIndex, toCString(options.indexPath));
+        }
         std::cout << "done!\n";
-        saveFwd(fwdIndex, toCString(options.indexPath));
     }
 
+    reverse(chromosomesConcat, Serial());
+
     {
-        reverse(chromosomesConcat, Serial());
         Index<TText, TUniIndexConfig> bwdIndex(chromosomesConcat);
         std::cout << "Create bwd Index ... " << std::flush;
-        indexCreate(bwdIndex, FibreSALF());
+        if (std::is_same<TAlgo, AlgoDivSufSortTag<int32_t> >::value || std::is_same<TAlgo, AlgoDivSufSortTag<int64_t> >::value)
+        {
+            indexCreate(bwdIndex, FibreSALF(), Rev(), toCString(std::string(toCString(options.indexPath)) + ".rev"));
+        }
+        else
+        {
+            indexCreate(bwdIndex, FibreSALF());
+            // TODO: clear not necessary?
+            // clear(getFibre(getFibre(getFibre(bwdIndex, FibreSA()), FibreSparseString()), FibreValues()));
+            // clear(getFibre(getFibre(getFibre(bwdIndex, FibreSA()), FibreSparseString()), FibreIndicators()));
+            saveRev(bwdIndex, toCString(std::string(toCString(options.indexPath)) + ".rev"));
+        }
         std::cout << "done!\n";
-        clear(getFibre(getFibre(getFibre(bwdIndex, FibreSA()), FibreSparseString()), FibreValues()));
-        clear(getFibre(getFibre(getFibre(bwdIndex, FibreSA()), FibreSparseString()), FibreIndicators()));
-        saveRev(bwdIndex, toCString(std::string(toCString(options.indexPath)) + ".rev"));
     }
 }
 

@@ -5,20 +5,37 @@ namespace seqan
     template <typename sa_t>
     struct AlgoDivSufSortTag {};
 
+    template <typename T>
+    struct isTagAlgoDivSufSort {
+        static constexpr bool VALUE = false;
+    };
+
+    template <typename sa_t>
+    struct isTagAlgoDivSufSort<AlgoDivSufSortTag<sa_t> > {
+        static constexpr bool VALUE = true;
+    };
+
     // total in brackets is for genomes < 2GB and Dna5 alphabet
     // 1. Packed text is in memory (seqan): (total: 0.375n)
     // 2. Copy text to c string: 1n (total: 1.375n)
     // 3. Compute SA with libdivsufsort: 4n resp. 8n (total: 5.375n)
     // 4. Delete c string: -1n (total: 4.375n)
     // 5. Compute CSA from SA: Xn + Yn bytes (total: 4.375n + CSA), we should do this with External<> (TODO)
-    // 6. Create BWT and bit vector indicating sentinels: 1.125n (total: 5.5n + CSA, since it has not been saved yet and is not External<> yet)
-    // 7. Delete SA: -4n resp. -8n (total: 1.5n)
-    // 8. Build auxiliary data structures for BWT / bit vector
+    // 6. Store CSA to disk and clear: -CSA (total: 4.375n)
+    // 7. Create BWT and bit vector indicating sentinels: 1.125n (total: 5.5n)
+    // 8. Delete SA: -4n resp. -8n (total: 1.5n)
+    // 9. Build auxiliary data structures for BWT / bit vector
 
-  template <typename TAlphabet, typename TSeqNo, typename TSeqPos, typename sa_t, typename TConfig>
+  // since we use c++14 and we cannot use if constexpr, we need to offer a definition for 4 parameters for Skew
+  template <typename TIndex, typename TIndexTag>
+  inline bool indexCreate(TIndex &, FibreSALF, TIndexTag const, const char *) {
+      return false;
+  }
+
+  template <typename TAlphabet, typename TSeqNo, typename TSeqPos, typename sa_t, typename TConfig, typename TIndexTag>
   inline bool indexCreate(Index<StringSet<String<TAlphabet, Packed<> >, Owner<ConcatDirect<SizeSpec_<TSeqNo, TSeqPos> > > >,
                                 FMIndex<AlgoDivSufSortTag<sa_t>, TConfig> > & index,
-                          FibreSALF)
+                          FibreSALF, TIndexTag const, const char * fileName)
     {
         typedef StringSet<String<TAlphabet, Packed<> >, Owner<ConcatDirect<SizeSpec_<TSeqNo, TSeqPos> > > > TText;
         typedef Index<TText, FMIndex<Nothing, TConfig> >                                                    TIndex;
@@ -26,6 +43,15 @@ namespace seqan
         typedef typename Size<TSA>::Type                                                                    TSASize;
 
 	      // time_t tt;
+
+        String<char> name;
+        int openMode = OPEN_RDWR | OPEN_CREATE | OPEN_APPEND;
+
+        if (std::is_same<TIndexTag, Fwd>::value)
+        {
+            name = fileName;    append(name, ".txt");
+            if (!save(getFibre(index, FibreText()), toCString(name), openMode)) return false;
+        }
 
         TText const & text = indexText(index);
 
@@ -77,6 +103,7 @@ namespace seqan
         // Create the compressed SA.
         // former: createCompressedSa(indexSA(index), tempSA, nbr_sequences);
         // tt = time(NULL); printf("\n%s\tBuild CSA", ctime(&tt));
+        if (std::is_same<TIndexTag, Fwd>::value)
         {
             typedef CompressedSA<TText, Nothing, TConfig>                  TCompressedSA;
             typedef typename Fibre<TCompressedSA, FibreSparseString>::Type TSparseSA;
@@ -125,6 +152,11 @@ namespace seqan
                 std::cerr << "ERROR: It seems that the size of `values` has been precomputed incorrectly!\n";
                 exit(12);
             }
+
+            name = fileName;    append(name, ".sa");
+            if (!save(getFibre(index, FibreSA()), toCString(name), openMode)) return false;
+
+            clear(compressedSA);
         }
 
         // Create the LF table.
@@ -199,6 +231,9 @@ namespace seqan
             // Add sentinels to prefix sum.
             for (TSize i = 0; i < length(lf.sums); ++i)
                 lf.sums[i] += nbr_sequences;
+
+            name = fileName;    append(name, ".lf");
+            if (!save(getFibre(index, FibreLF()), toCString(name), openMode)) return false;
         }
 
         return true;
