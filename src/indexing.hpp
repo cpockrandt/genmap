@@ -81,7 +81,7 @@ void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
 
     constexpr bool isDna5 = std::is_same<TAlphabet, Dna5>::value;
 
-    TText chromosomesConcat(chromosomes); // strings are getting packed
+    TText chromosomesConcat(std::move(chromosomes)); // strings are getting packed
     clear(chromosomes); // reduce memory footprint
 
     {
@@ -108,6 +108,7 @@ void buildIndex(TChromosomes & chromosomes, IndexOptions const & options)
         appendValue(info, "bwt_dimensions:" + std::to_string(bwtDigits));
         appendValue(info, "sampling_rate:" + std::to_string(options.sampling));
         appendValue(info, "fasta_directory:" + directoryFlag);
+        appendValue(info, "packed_text:true");
         save(info, toCString(std::string(toCString(options.indexPath)) + ".info"));
     }
 
@@ -379,7 +380,7 @@ int indexMain(int const argc, char const ** argv)
     options.indexPath += "index";
 
     // Read fasta input file(s)
-    StringSet<Dna5String> chromosomes;
+    StringSet<String<Dna5, Packed<> >, Owner<ConcatDirect<> > > chromosomes;
     StringSet<CharString, Owner<ConcatDirect<> > > directoryInformation;
 
     if (options.directory)
@@ -481,15 +482,13 @@ int indexMain(int const argc, char const ** argv)
         // Conversion to Dna4 alphabet since no Ns are in the sequences.
         // Unnecessary copy, replace with ModifiedString/View.
         // Not relevant for memory peaks though.
-        StringSet<DnaString> chromosomesDna4;
+        StringSet<String<Dna, Packed<> >, Owner<ConcatDirect<> > > chromosomesDna4;
         move(chromosomesDna4, chromosomes);
         clear(chromosomes);
-        saveFwdTxt(chromosomesDna4, toCString(options.indexPath));
         return buildIndex(chromosomesDna4, options);
     }
     else
     {
-        saveFwdTxt(chromosomes, toCString(options.indexPath));
         return buildIndex(chromosomes, options);
     }
 }

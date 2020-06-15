@@ -30,6 +30,7 @@ struct Options
     OutputType outputType;
     bool directory;
     bool verbose;
+    bool packed_text;
     CharString indexPath;
     CharString outputPath;
     CharString selectionPath;
@@ -56,6 +57,10 @@ inline std::string retrieve(StringSet<CharString, TSpec> const & info, std::stri
         if (row.substr(0, length(key)) == key)
             return row.substr(length(key) + 1);
     }
+
+    if (key == "packed_text") // this key was introduced later and might be missing in older indices
+        return "false"; // older indices have unpacked/uncompressed texts
+
     // This should never happen unless the index file is corrupted or manipulated.
     std::cout << "ERROR: Malformed index.info file! Could not find key '" << key << "'.\n";
     exit(1);
@@ -412,9 +417,13 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 template <typename TChar>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
-    if (opt.mmap)
+    if (opt.mmap && opt.packed_text)
+        run<TChar, Packed<MMap<> >, HammingDistance>(opt, searchParams);
+    else if (!opt.mmap && opt.packed_text)
+        run<TChar, Packed<Alloc<> >, HammingDistance>(opt, searchParams);
+    else if (opt.mmap && !opt.packed_text)
         run<TChar, MMap<>, HammingDistance>(opt, searchParams);
-    else
+    else // if (!opt.mmap && !opt.packed_text)
         run<TChar, Alloc<>, HammingDistance>(opt, searchParams);
 }
 
@@ -569,6 +578,7 @@ int mappabilityMain(int argc, char const ** argv)
     opt.totalLengthWidth = std::stoi(retrieve(info, "bwt_dimensions"));
     opt.sampling = std::stoi(retrieve(info, "sampling_rate"));
     opt.directory = retrieve(info, "fasta_directory") == "true";
+    opt.packed_text = retrieve(info, "packed_text") == "true";
 
     // Check whether the output path exists
     {
