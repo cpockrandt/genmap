@@ -238,7 +238,7 @@ inline void _optimalSearchSchemeChildrenGM(TDelegate & delegate,
                                            TDir const & /**/,
                                            TDistanceTag const & /**/)
 {
-    bool goToRight = std::is_same<TDir, Rev>::value;
+    constexpr bool goToRight = std::is_same<TDir, Rev>::value;
     if (goDown(iter, TDir()))
     {
         constexpr bool isDna5 = std::is_same<typename Value<TNeedle>::Type, Dna5>::value;
@@ -263,7 +263,7 @@ inline void _optimalSearchSchemeChildrenGM(TDelegate & delegate,
             if (needleRightPos - needleLeftPos == s.blocklength[blockIndex])
             {
                 // leave the possibility for one or multiple deletions! therefore, don't change direction, etc!
-                if (std::is_same<TDistanceTag, EditDistance>::value)
+                SEQAN_IF_CONSTEXPR (std::is_same<TDistanceTag, EditDistance>::value)
                 {
                     _optimalSearchSchemeDeletionGM(delegate, iter, needle, needleLeftPos2, needleRightPos2,
                                                    errors + delta, s, blockIndex, TDir());
@@ -291,7 +291,7 @@ inline void _optimalSearchSchemeChildrenGM(TDelegate & delegate,
             }
 
             // Deletion
-            if (std::is_same<TDistanceTag, EditDistance>::value)
+            SEQAN_IF_CONSTEXPR (std::is_same<TDistanceTag, EditDistance>::value)
             {
                 _optimalSearchSchemeGM(delegate, iter, needle, needleLeftPos, needleRightPos, errors + 1, s, blockIndex,
                                        TDir(), TDistanceTag());
@@ -319,7 +319,7 @@ inline void _optimalSearchSchemeExactGM(TDelegate & delegate,
 {
     constexpr bool isDna5 = std::is_same<typename Value<TNeedle>::Type, Dna5>::value;
     bool goToRight2 = (blockIndex < s.pi.size() - 1) && s.pi[blockIndex + 1] > s.pi[blockIndex];
-    if (std::is_same<TDir, Rev>::value)
+    SEQAN_IF_CONSTEXPR (std::is_same<TDir, Rev>::value)
     {
         uint32_t infixPosLeft = needleRightPos - 1;
         uint32_t infixPosRight = needleLeftPos + s.blocklength[blockIndex] - 1;
@@ -404,9 +404,9 @@ inline void _optimalSearchSchemeGM(TDelegate & delegate,
     else
     {
         // Insertion
-        if (std::is_same<TDistanceTag, EditDistance>::value)
+        SEQAN_IF_CONSTEXPR (std::is_same<TDistanceTag, EditDistance>::value)
         {
-            bool const goToRight = std::is_same<TDir, Rev>::value;
+            constexpr bool goToRight = std::is_same<TDir, Rev>::value;
             int32_t const needleLeftPos2 = needleLeftPos - !goToRight;
             uint32_t const needleRightPos2 = needleRightPos + goToRight;
 
