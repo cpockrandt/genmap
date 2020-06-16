@@ -7,14 +7,14 @@
 
 using namespace seqan;
 
-template <bool mappability, typename T>
-void saveRaw(std::vector<T> const & c, std::string const & output_path)
+template <typename T>
+void saveRaw(std::vector<T> const & c, std::string const & output_path, bool const mappability)
 {
     char buffer[BUFFER_SIZE];
     std::ofstream outfile(output_path, std::ios::out | std::ios::binary);
     outfile.rdbuf()->pubsetbuf(buffer, BUFFER_SIZE);
 
-    SEQAN_IF_CONSTEXPR (mappability)
+    if (mappability)
     {
         for (T const v : c)
         {
@@ -30,8 +30,8 @@ void saveRaw(std::vector<T> const & c, std::string const & output_path)
     outfile.close();
 }
 
-template <bool mappability, typename T, typename TChromosomeNames, typename TChromosomeLengths>
-void saveTxt(std::vector<T> const & c, std::string const & output_path, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths)
+template <typename T, typename TChromosomeNames, typename TChromosomeLengths>
+void saveTxt(std::vector<T> const & c, std::string const & output_path, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths, bool const mappability)
 {
     char buffer[BUFFER_SIZE];
     std::ofstream outfile(output_path + ".txt", std::ios::out | std::ofstream::binary);
@@ -43,7 +43,7 @@ void saveTxt(std::vector<T> const & c, std::string const & output_path, TChromos
     {
         outfile << '>' << chromNames[i] << '\n';
 
-        SEQAN_IF_CONSTEXPR (mappability)
+        if (mappability)
         {
             for (auto it = seqBegin; it < seqEnd - 1; ++it)
             {
@@ -70,8 +70,8 @@ void saveTxt(std::vector<T> const & c, std::string const & output_path, TChromos
 }
 
 // TODO: do not output sequences in .chrom.sizes if no entries are written to .wig
-template <bool mappability, typename T, typename TChromosomeNames, typename TChromosomeLengths>
-void saveWig(std::vector<T> const & c, std::string const & output_path, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths)
+template <typename T, typename TChromosomeNames, typename TChromosomeLengths>
+void saveWig(std::vector<T> const & c, std::string const & output_path, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths, bool const mappability)
 {
     uint64_t pos = 0;
     uint64_t begin_pos_string = 0;
@@ -98,7 +98,7 @@ void saveWig(std::vector<T> const & c, std::string const & output_path, TChromos
                     if (last_occ != occ)
                         wigFile << "variableStep chrom=" << chromNames[i] << " span=" << occ << '\n';
 
-                    SEQAN_IF_CONSTEXPR (mappability)
+                    if (mappability)
                     {
                         float const value = (current_val != 0) ? 1.0f / static_cast<float>(current_val) : 0;
                         wigFile << (pos - occ + 1 - begin_pos_string) << ' ' << value << '\n'; // pos in wig start at 1
@@ -133,8 +133,8 @@ void saveWig(std::vector<T> const & c, std::string const & output_path, TChromos
     chromSizesFile.close();
 }
 
-template <bool mappability, typename T, typename TChromosomeNames, typename TChromosomeLengths>
-void saveBedGraph(std::vector<T> const & c, std::string const & output_path, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths, bool const bedGraphFormat)
+template <typename T, typename TChromosomeNames, typename TChromosomeLengths>
+void saveBedGraph(std::vector<T> const & c, std::string const & output_path, TChromosomeNames const & chromNames, TChromosomeLengths const & chromLengths, bool const bedGraphFormat, bool const mappability)
 {
     uint64_t pos = 0;
     uint64_t begin_pos_string = 0;
@@ -163,7 +163,7 @@ void saveBedGraph(std::vector<T> const & c, std::string const & output_path, TCh
                     if (!bedGraphFormat)
                         bedgraphFile << '-' << '\t';
 
-                    SEQAN_IF_CONSTEXPR (mappability)
+                    if (mappability)
                         bedgraphFile << ((current_val != 0) ? 1.0f / static_cast<float>(current_val) : 0) << '\n';
                     else
                         bedgraphFile << current_val << '\n';
@@ -186,7 +186,7 @@ void saveBedGraph(std::vector<T> const & c, std::string const & output_path, TCh
     bedgraphFile.close();
 }
 
-template <bool mappability, typename TLocations, typename TDirectoryInformation, typename TCSVIntervals>
+template <typename TLocations, typename TDirectoryInformation, typename TCSVIntervals>
 void saveCsv(std::string const & output_path, TLocations const & locations,
              SearchParams const & searchParams, TDirectoryInformation const & directoryInformation,
              TCSVIntervals const & csvIntervals, bool const outputSelection)

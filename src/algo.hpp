@@ -7,7 +7,7 @@ using ModComplement = ModView<FunctorComplement<TChar> >;
 template <typename TText>
 using ModRevCompl = ModifiedString<ModifiedString<TText, ModComplement<typename Value<TText>::Type>>, ModReverse>;
 
-template <bool csvComputation, typename TMappVector, typename TCumChromLengths>
+template <typename TMappVector, typename TCumChromLengths>
 void resetLimits(TMappVector & c, unsigned const kmerLength, TCumChromLengths const & cumChromLengths)
 {
     // skip first, since the first cumulative length is 0
@@ -23,12 +23,13 @@ void resetLimits(TMappVector & c, unsigned const kmerLength, TCumChromLengths co
 
 // TODO: avoid signed integers
 
-template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
+template <bool reportExactMatch, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
 inline void extendExact(TBiIter it, std::vector<TValue> & hits, std::vector<typename TBiIter::TFwdIndexIter> & itExact,
                         std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                         TText const & text, unsigned const length,
                         uint64_t a, uint64_t b, // searched interval
-                        uint64_t ab, uint64_t bb) // entire interval
+                        uint64_t ab, uint64_t bb, // entire interval
+                        bool const csvComputation)
 {
     constexpr bool isDna5 = std::is_same<typename Value<TText>::Type, Dna5>::value;
 
@@ -40,7 +41,7 @@ inline void extendExact(TBiIter it, std::vector<TValue> & hits, std::vector<type
         {
             itExact[a-ab] = it.fwdIter;
         }
-        SEQAN_IF_CONSTEXPR (csvComputation)
+        if (csvComputation)
         {
             itAll[a-ab].push_back(it.fwdIter);
         }
@@ -60,7 +61,7 @@ inline void extendExact(TBiIter it, std::vector<TValue> & hits, std::vector<type
                 success = (!isDna5 || text[i] != Dna5('N')) && goDown(it2, text[i], Rev());
             }
             if (success)
-                extendExact<reportExactMatch, csvComputation, maxErrors>(it2, hits, itExact, itAll, text, length, a, b_new, ab, bb);
+                extendExact<reportExactMatch, maxErrors>(it2, hits, itExact, itAll, text, length, a, b_new, ab, bb, csvComputation);
         }
     //}
 
@@ -73,32 +74,33 @@ inline void extendExact(TBiIter it, std::vector<TValue> & hits, std::vector<type
             if((isDna5 && text[i] == Dna5('N')) || !goDown(it, text[i], Fwd()))
                 return;
         }
-        extendExact<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, text, length, a_new, b, ab, bb);
+        extendExact<reportExactMatch, maxErrors>(it, hits, itExact, itAll, text, length, a_new, b, ab, bb, csvComputation);
     }
 }
 
 // forward
-template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
+template <bool reportExactMatch, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
 inline void extend(TBiIter it, std::vector<TValue> & hits, std::vector<typename TBiIter::TFwdIndexIter> & itExact,
                    std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                    unsigned errorsLeft, TText const & text, unsigned const length,
                    uint64_t a, uint64_t b, // searched interval
-                   uint64_t ab, uint64_t bb); // entire interval
+                   uint64_t ab, uint64_t bb, // entire interval
+                   bool const csvComputation);
 
-template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
+template <bool reportExactMatch, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
 inline void approxSearch(TBiIter it, std::vector<TValue> & hits, std::vector<typename TBiIter::TFwdIndexIter> & itExact,
                          std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                          unsigned errorsLeft, TText const & text, unsigned const length,
                          uint64_t a, uint64_t b, // searched interval
                          uint64_t ab, uint64_t bb, // entire interval
                          uint64_t b_new,
-                         Rev const &)
+                         Rev const &, bool const csvComputation)
 {
     constexpr bool isDna5 = std::is_same<typename Value<TText>::Type, Dna5>::value;
 
     if (b == b_new)
     {
-        extend<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft, text, length, a, b, ab, bb);
+        extend<reportExactMatch, maxErrors>(it, hits, itExact, itAll, errorsLeft, text, length, a, b, ab, bb, csvComputation);
         return;
     }
     if (errorsLeft > 0)
@@ -108,7 +110,7 @@ inline void approxSearch(TBiIter it, std::vector<TValue> & hits, std::vector<typ
             do {
                 bool delta = !ordEqual(parentEdgeLabel(it, Rev()), text[b + 1])
                              || (isDna5 && text[b + 1] == Dna5('N'));
-                approxSearch<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft - delta, text, length, a, b + 1, ab, bb, b_new, Rev());
+                approxSearch<reportExactMatch, maxErrors>(it, hits, itExact, itAll, errorsLeft - delta, text, length, a, b + 1, ab, bb, b_new, Rev(), csvComputation);
             } while (goRight(it, Rev()));
         }
     }
@@ -119,23 +121,23 @@ inline void approxSearch(TBiIter it, std::vector<TValue> & hits, std::vector<typ
             if ((isDna5 && text[i] == Dna5('N')) || !goDown(it, text[i], Rev()))
                 return;
         }
-        extendExact<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, text, length, a, b_new, ab, bb);
+        extendExact<reportExactMatch, maxErrors>(it, hits, itExact, itAll, text, length, a, b_new, ab, bb, csvComputation);
     }
 }
-template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
+template <bool reportExactMatch, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
 inline void approxSearch(TBiIter it, std::vector<TValue> & hits, std::vector<typename TBiIter::TFwdIndexIter> & itExact,
                          std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                          unsigned errorsLeft, TText const & text, unsigned const length,
                          uint64_t a, uint64_t b, // searched interval
                          uint64_t ab, uint64_t bb, // entire interval
                          uint64_t a_new,
-                         Fwd const & /*tag*/)
+                         Fwd const & /*tag*/, bool const csvComputation)
 {
     constexpr bool isDna5 = std::is_same<typename Value<TText>::Type, Dna5>::value;
 
     if (a == a_new)
     {
-        extend<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft, text, length, a, b, ab, bb);
+        extend<reportExactMatch, maxErrors>(it, hits, itExact, itAll, errorsLeft, text, length, a, b, ab, bb, csvComputation);
         return;
     }
     if (errorsLeft > 0)
@@ -145,7 +147,7 @@ inline void approxSearch(TBiIter it, std::vector<TValue> & hits, std::vector<typ
             do {
                 bool delta = !ordEqual(parentEdgeLabel(it, Fwd()), text[a - 1])
                              || (isDna5 && text[a - 1] == Dna5('N'));
-                approxSearch<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft - delta, text, length, a - 1, b, ab, bb, a_new, Fwd());
+                approxSearch<reportExactMatch, maxErrors>(it, hits, itExact, itAll, errorsLeft - delta, text, length, a - 1, b, ab, bb, a_new, Fwd(), csvComputation);
             } while (goRight(it, Fwd()));
         }
     }
@@ -156,22 +158,23 @@ inline void approxSearch(TBiIter it, std::vector<TValue> & hits, std::vector<typ
             if ((isDna5 && text[i] == Dna5('N')) || !goDown(it, text[i], Fwd()))
                 return;
         }
-        extendExact<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, text, length, a_new, b, ab, bb);
+        extendExact<reportExactMatch, maxErrors>(it, hits, itExact, itAll, text, length, a_new, b, ab, bb, csvComputation);
     }
 }
 
-template <bool reportExactMatch, bool csvComputation, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
+template <bool reportExactMatch, unsigned maxErrors, typename TBiIter, typename TValue, typename TText>
 inline void extend(TBiIter it, std::vector<TValue> & hits, std::vector<typename TBiIter::TFwdIndexIter> & itExact,
                    std::vector<std::vector<typename TBiIter::TFwdIndexIter> > & itAll,
                    unsigned errorsLeft, TText const & text, unsigned const length,
                    uint64_t a, uint64_t b, // searched interval
-                   uint64_t ab, uint64_t bb) // entire interval
+                   uint64_t ab, uint64_t bb, // entire interval
+                   bool const csvComputation)
 {
     constexpr uint64_t max_val = std::numeric_limits<TValue>::max();
 
     if (errorsLeft == 0)
     {
-        extendExact<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, text, length, a, b, ab, bb);
+        extendExact<reportExactMatch, maxErrors>(it, hits, itExact, itAll, text, length, a, b, ab, bb, csvComputation);
         return;
     }
     if (b - a + 1 == length)
@@ -181,7 +184,7 @@ inline void extend(TBiIter it, std::vector<TValue> & hits, std::vector<typename 
             if (maxErrors == errorsLeft)
                 itExact[a-ab] = it.fwdIter;
         }
-        SEQAN_IF_CONSTEXPR (csvComputation)
+        if (csvComputation)
         {
             itAll[a-ab].push_back(it.fwdIter);
         }
@@ -194,12 +197,11 @@ inline void extend(TBiIter it, std::vector<TValue> & hits, std::vector<typename 
         uint64_t b_new = b + (((brm - b) + 2 - 1) >> 1); // ceil((bb - b)/2)
         if (b_new <= bb)
         {
-            approxSearch<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft, text, length,
+            approxSearch<reportExactMatch, maxErrors>(it, hits, itExact, itAll, errorsLeft, text, length,
                          a, b, // searched interval
                          ab, bb, // entire interval
                          b_new,
-                         Rev()
-            );
+                         Rev(), csvComputation);
         }
     //}
 
@@ -207,21 +209,20 @@ inline void extend(TBiIter it, std::vector<TValue> & hits, std::vector<typename 
     {
         int64_t alm = b + 1 - length;
         uint64_t a_new = alm + std::max<int64_t>(((a - alm) - 1) >> 1, 0);
-        approxSearch<reportExactMatch, csvComputation, maxErrors>(it, hits, itExact, itAll, errorsLeft, text, length,
+        approxSearch<reportExactMatch, maxErrors>(it, hits, itExact, itAll, errorsLeft, text, length,
                      a, b, // searched interval
                      ab, bb, // entire interval
                      a_new,
-                     Fwd()
-        );
+                     Fwd(), csvComputation);
     }
 }
 
 // computes a block of adjacent k-mers at once
-template <unsigned errors, bool csvComputation, typename TIndex, typename TText, typename TContainer, typename TChromosomeLengths, typename TLocations, typename TMapping, typename TLimits>
+template <unsigned errors, typename TIndex, typename TText, typename TContainer, typename TChromosomeLengths, typename TLocations, typename TMapping, typename TLimits>
 inline void computeMappabilitySingleBlock(TIndex & index, TText const & text, TContainer & c, SearchParams const & params,
                                           bool const directory, TChromosomeLengths const & chromLengths, TLocations & locations, TMapping const & mappingSeqIdFile,
                                           uint64_t const i, uint64_t const j, uint64_t const textLength, TChromosomeLengths const & chromCumLengths, TLimits const & limits,
-                                          std::vector<std::pair<uint64_t, uint64_t>> const & intervals, unsigned const overlap, bool const completeSameKmers)
+                                          std::vector<std::pair<uint64_t, uint64_t>> const & intervals, unsigned const overlap, bool const completeSameKmers, bool const csvComputation)
 {
     typedef typename TContainer::value_type TValue;
     typedef Iter<TIndex, VSTree<TopDown<> > > TBiIter;
@@ -258,7 +259,7 @@ inline void computeMappabilitySingleBlock(TIndex & index, TText const & text, TC
 
         uint64_t const bb = std::min(textLength - 1, params.length - 1 + params.length - overlap);
 
-        auto delegate = [&hits, &itExact, &itAll, bb, overlap, &params, &needles](
+        auto delegate = [&hits, &itExact, &itAll, bb, overlap, &params, &needles, csvComputation](
             TBiIter it, TNeedlesOverlap const & /*read*/, unsigned const errors_spent)
         {
             // TODO: we could turn reporting of exact iterators off at compile time by setting reportExactMatch = false if opt.directory is true. Evaluate binary size vs. performance.
@@ -266,17 +267,17 @@ inline void computeMappabilitySingleBlock(TIndex & index, TText const & text, TC
 
             if (errors_spent == 0)
             {
-                extend<true, csvComputation, errors>(it, hits, itExact, itAll, errors - errors_spent, needles, params.length,
+                extend<true, errors>(it, hits, itExact, itAll, errors - errors_spent, needles, params.length,
                     params.length - overlap, params.length - 1, // searched interval
-                    0, bb // entire interval
-                );
+                    0, bb, // entire interval
+                    csvComputation);
             }
             else
             {
-                extend<false, csvComputation, errors>(it, hits, itExact, itAll, errors - errors_spent, needles, params.length,
+                extend<false, errors>(it, hits, itExact, itAll, errors - errors_spent, needles, params.length,
                     params.length - overlap, params.length - 1, // searched interval
-                    0, bb // entire interval
-                );
+                    0, bb, // entire interval
+                    csvComputation);
             }
         };
 
@@ -287,13 +288,13 @@ inline void computeMappabilitySingleBlock(TIndex & index, TText const & text, TC
             using TNeedlesRevComplOverlap = decltype(needlesRevComplOverlap);
 
             // TODO: could store the exact hits as well and use these values!
-            auto delegateRevCompl = [&hits, &itExact, &itAllrevCompl, bb, overlap, &params, &needlesRevCompl](
+            auto delegateRevCompl = [&hits, &itExact, &itAllrevCompl, bb, overlap, &params, &needlesRevCompl, csvComputation](
                 TBiIter it, TNeedlesRevComplOverlap const & /*read*/, unsigned const errors_spent)
             {
-                extend<false, csvComputation, errors>(it, hits, itExact, itAllrevCompl, errors - errors_spent, needlesRevCompl, params.length,
+                extend<false, errors>(it, hits, itExact, itAllrevCompl, errors - errors_spent, needlesRevCompl, params.length,
                     params.length - overlap, params.length - 1, // searched interval
-                    0, bb // entire interval
-                );
+                    0, bb, // entire interval
+                    csvComputation);
             };
 
             TBiIter it(index);
@@ -307,7 +308,7 @@ inline void computeMappabilitySingleBlock(TIndex & index, TText const & text, TC
         _optimalSearchSchemeGM(delegate, it, needlesOverlap, scheme, HammingDistance());
         for (uint64_t j = beginPos; j < endPos; ++j)
         {
-            SEQAN_IF_CONSTEXPR (csvComputation)
+            if (csvComputation)
             {
                 using TLocation = typename TLocations::key_type;
                 using TEntry = std::pair<TLocation, std::pair<std::vector<TLocation>, std::vector<TLocation> > >;
@@ -401,12 +402,12 @@ inline void computeMappabilitySingleBlock(TIndex & index, TText const & text, TC
     }
 }
 
-template <unsigned errors, bool csvComputation, typename TIndex, typename TText, typename TContainer, typename TChromosomeLengths, typename TLocations, typename TMapping>
+template <unsigned errors, typename TIndex, typename TText, typename TContainer, typename TChromosomeLengths, typename TLocations, typename TMapping>
 inline void computeMappability(TIndex & index, TText const & text, TContainer & c, SearchParams const & params,
                                bool const directory, TChromosomeLengths const & chromLengths, TChromosomeLengths const & chromCumLengths, TLocations & locations,
                                TMapping const & mappingSeqIdFile, std::vector<std::pair<uint64_t, uint64_t>> const & intervals,
                                bool & completeSameKmers,
-                               uint64_t const currentFileNo, uint64_t const totalFileNo)
+                               uint64_t const currentFileNo, uint64_t const totalFileNo, bool const csvComputation)
 {
     auto const & limits = stringSetLimits(indexText(index));
     uint64_t const textLength = length(text);
@@ -433,7 +434,7 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
         #pragma omp parallel for schedule(dynamic, chunkSize) num_threads(params.threads)
         for (uint64_t i = 0; i < numberOfKmers; i += stepSize)
         {
-            computeMappabilitySingleBlock<errors, csvComputation>(index, text, c, params, directory, chromLengths, locations, mappingSeqIdFile, i, i + stepSize, textLength, chromCumLengths, limits, intervals, overlap, true);
+            computeMappabilitySingleBlock<errors>(index, text, c, params, directory, chromLengths, locations, mappingSeqIdFile, i, i + stepSize, textLength, chromCumLengths, limits, intervals, overlap, true, csvComputation);
             printProgress<outputProgress>(progressCount, progressStep, progressMax, currentFileNo, totalFileNo);
         }
     }
@@ -469,7 +470,7 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
         #pragma omp parallel for schedule(dynamic, chunkSize) num_threads(params.threads)
         for (auto interval = intervals_details.begin(); interval < intervals_details.end(); ++interval)
         {
-            computeMappabilitySingleBlock<errors, csvComputation>(index, text, c, params, directory, chromLengths, locations, mappingSeqIdFile, (*interval).first, (*interval).second, textLength, chromCumLengths, limits, intervals, overlap, completeSameKmers);
+            computeMappabilitySingleBlock<errors>(index, text, c, params, directory, chromLengths, locations, mappingSeqIdFile, (*interval).first, (*interval).second, textLength, chromCumLengths, limits, intervals, overlap, completeSameKmers, csvComputation);
             printProgress<outputProgress>(progressCount, progressStep, progressMax, currentFileNo, totalFileNo);
         }
     }
@@ -478,5 +479,5 @@ inline void computeMappability(TIndex & index, TText const & text, TContainer & 
     // Hence, it also searches k-mers that overlap two strings that actually do not exist.
     // At the end we overwrite the frequency of those k-mers with 0.
     // TODO: k-mers spanning two strings should not be searched if there are many short strings (i.e., fasta of reads).
-    resetLimits<csvComputation>(c, params.length, chromCumLengths);
+    resetLimits(c, params.length, chromCumLengths);
 }

@@ -101,12 +101,14 @@ inline void outputMappability(TVector & c, Options const & opt, SearchParams con
     if (opt.rawFile)
     {
         double start = get_wall_time();
+        std::string output_path2 = output_path;
         if (opt.outputType == OutputType::mappability)
-            saveRaw<true>(c, output_path + ".map");
+            output_path2 += ".map";
         else if (opt.outputType == OutputType::frequency_small)
-            saveRaw<false>(c, output_path + ".freq8");
+            output_path2 += ".freq8";
         else // if (opt.outputType == OutputType::frequency_large)
-            saveRaw<false>(c, output_path + ".freq16");
+            output_path2 += ".freq16";
+        saveRaw(c, output_path2, (opt.outputType == OutputType::mappability));
         if (opt.verbose)
             std::cout << "- RAW file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
@@ -114,10 +116,7 @@ inline void outputMappability(TVector & c, Options const & opt, SearchParams con
     if (opt.txtFile)
     {
         double start = get_wall_time();
-        if (opt.outputType == OutputType::mappability)
-            saveTxt<true>(c, output_path, chromNames, chromLengths);
-        if (opt.outputType == OutputType::frequency_small || opt.outputType == OutputType::frequency_large)
-            saveTxt<false>(c, output_path, chromNames, chromLengths);
+        saveTxt(c, output_path, chromNames, chromLengths, (opt.outputType == OutputType::mappability));
         if (opt.verbose)
             std::cout << "- TXT file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
@@ -125,10 +124,7 @@ inline void outputMappability(TVector & c, Options const & opt, SearchParams con
     if (opt.wigFile)
     {
         double start = get_wall_time();
-        if (opt.outputType == OutputType::mappability)
-            saveWig<true>(c, output_path, chromNames, chromLengths);
-        else
-            saveWig<false>(c, output_path, chromNames, chromLengths);
+        saveWig(c, output_path, chromNames, chromLengths, (opt.outputType == OutputType::mappability));
         if (opt.verbose)
             std::cout << "- WIG file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
@@ -136,10 +132,7 @@ inline void outputMappability(TVector & c, Options const & opt, SearchParams con
     if (opt.bedgraphFile)
     {
         double start = get_wall_time();
-        if (opt.outputType == OutputType::mappability)
-            saveBedGraph<true>(c, output_path, chromNames, chromLengths, true /* bedgraph-file */);
-        else
-            saveBedGraph<false>(c, output_path, chromNames, chromLengths, true /* bedgraph-file */);
+        saveBedGraph(c, output_path, chromNames, chromLengths, true /* bedgraph-file */, (opt.outputType == OutputType::mappability));
         if (opt.verbose)
             std::cout << "- bedgraph file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
@@ -147,10 +140,7 @@ inline void outputMappability(TVector & c, Options const & opt, SearchParams con
     if (opt.bedFile)
     {
         double start = get_wall_time();
-        if (opt.outputType == OutputType::mappability)
-            saveBedGraph<true>(c, output_path, chromNames, chromLengths, false /* bed-file */);
-        else
-            saveBedGraph<false>(c, output_path, chromNames, chromLengths, false /* bed-file */);
+        saveBedGraph(c, output_path, chromNames, chromLengths, false /* bed-file */, (opt.outputType == OutputType::mappability));
         if (opt.verbose)
             std::cout << "- BED file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
@@ -158,16 +148,13 @@ inline void outputMappability(TVector & c, Options const & opt, SearchParams con
     if (opt.csvFile)
     {
         double start = get_wall_time();
-        if (opt.outputType == OutputType::mappability)
-            saveCsv<true>(output_path, locations, searchParams, directoryInformation, csvIntervals, outputSelection);
-        else
-            saveCsv<false>(output_path, locations, searchParams, directoryInformation, csvIntervals, outputSelection);
+        saveCsv(output_path, locations, searchParams, directoryInformation, csvIntervals, outputSelection);
         if (opt.verbose)
             std::cout << "- CSV file written in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
     }
 }
 
-template <typename TDistance, typename value_type, bool csvComputation, typename TSeqNo, typename TSeqPos,
+template <typename TDistance, typename value_type, typename TSeqNo, typename TSeqPos,
           typename TIndex, typename TText, typename TChromosomeNames, typename TChromosomeLengths, typename TDirectoryInformation,
           typename TIntervals, typename TCSVIntervals>
 inline void run(TIndex & index, TText const & text, Options const & opt, SearchParams const & searchParams,
@@ -182,19 +169,20 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
              std::pair<std::vector<Pair<TSeqNo, TSeqPos> >,
                        std::vector<Pair<TSeqNo, TSeqPos> > > > locations;
 
+    bool const csvComputation = opt.csvFile || searchParams.excludePseudo;
     bool completeSameKmers = true;
 
     switch (opt.errors)
     {
-        case 0:  computeMappability<0, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo);
+        case 0:  computeMappability<0>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo, csvComputation);
                  break;
-        case 1:  computeMappability<1, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo);
+        case 1:  computeMappability<1>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo, csvComputation);
                  break;
-        case 2:  computeMappability<2, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo);
+        case 2:  computeMappability<2>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo, csvComputation);
                  break;
-        case 3:  computeMappability<3, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo);
+        case 3:  computeMappability<3>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo, csvComputation);
                  break;
-        case 4:  computeMappability<4, csvComputation>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo);
+        case 4:  computeMappability<4>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo, csvComputation);
                  break;
         default: std::cerr << "E > 4 not yet supported.\n";
                  exit(1);
@@ -220,7 +208,7 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
     outputMappability(c, opt, searchParams, fastaFile, chromNames, chromLengths, locations, directoryInformation, intervals, csvIntervals, completeSameKmers);
 }
 
-template <typename TChar, typename TAllocConfig, typename TDistance, typename value_type, bool csvComputation,
+template <typename TChar, typename TAllocConfig, typename TDistance, typename value_type,
           typename TSeqNo, typename TSeqPos, typename TBWTLen>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
@@ -322,7 +310,7 @@ inline void run(Options const & opt, SearchParams const & searchParams)
             {
                 // compute mappability for each fasta file
                 auto const & fastaInfix = infixWithLength(text.concat, startPos, fastaFileLength);
-                run<TDistance, value_type, csvComputation, TSeqNo, TSeqPos>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths, chromCumLengths, directoryInformation, mappingSeqIdFile, intervalsForSingleFasta, csvIntervalsForSingleFasta, currentFileNo, totalFileNo);
+                run<TDistance, value_type, TSeqNo, TSeqPos>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths, chromCumLengths, directoryInformation, mappingSeqIdFile, intervalsForSingleFasta, csvIntervalsForSingleFasta, currentFileNo, totalFileNo);
             }
 
             startPos += fastaFileLength;
@@ -380,29 +368,20 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         std::cout << "Mappability computed in " << (round((get_wall_time() - start) * 100.0) / 100.0) << " seconds\n";
 }
 
-template <typename TChar, typename TAllocConfig, typename TDistance, typename TValue, bool csvComputation>
+template <typename TChar, typename TAllocConfig, typename TDistance, typename TValue>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
     if (opt.seqNoWidth == 16 && opt.maxSeqLengthWidth == 32)
     {
         if (opt.totalLengthWidth == 32)
-            run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint16_t, uint32_t, uint32_t>(opt, searchParams);
+            run<TChar, TAllocConfig, TDistance, TValue, uint16_t, uint32_t, uint32_t>(opt, searchParams);
         else if (opt.totalLengthWidth == 64)
-            run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint16_t, uint32_t, uint64_t>(opt, searchParams);
+            run<TChar, TAllocConfig, TDistance, TValue, uint16_t, uint32_t, uint64_t>(opt, searchParams);
     }
     else if (opt.seqNoWidth == 32 && opt.maxSeqLengthWidth == 16 && opt.totalLengthWidth == 64)
-        run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint32_t, uint16_t, uint64_t>(opt, searchParams);
+        run<TChar, TAllocConfig, TDistance, TValue, uint32_t, uint16_t, uint64_t>(opt, searchParams);
     else if (opt.seqNoWidth == 64 && opt.maxSeqLengthWidth == 64 && opt.totalLengthWidth == 64)
-        run<TChar, TAllocConfig, TDistance, TValue, csvComputation, uint64_t, uint64_t, uint64_t>(opt, searchParams);
-}
-
-template <typename TChar, typename TAllocConfig, typename TDistance, typename TValue>
-inline void run(Options const & opt, SearchParams const & searchParams)
-{
-    if (opt.csvFile || searchParams.excludePseudo) // compute csv output when --exclude-pseudo, but don't output!
-        run<TChar, TAllocConfig, TDistance, TValue, true>(opt, searchParams);
-    else
-        run<TChar, TAllocConfig, TDistance, TValue, false>(opt, searchParams);
+        run<TChar, TAllocConfig, TDistance, TValue, uint64_t, uint64_t, uint64_t>(opt, searchParams);
 }
 
 template <typename TChar, typename TAllocConfig, typename TDistance>
