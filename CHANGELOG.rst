@@ -1,6 +1,21 @@
 Changelog
 ^^^^^^^^^
 
+1.3.0 (2020-06-17)
+""""""""""""""""""
+
+Features
+--------
+
+* **Faster and more efficient index creation (libdivsufsort)**, requires about 6n main memory (for fasta files >2GB about 10n main memory). n is the size of the input fasta files. No additional secondary memory is needed (unlike for Skew)
+* slightly smaller indices (about 0.625n - 0.75n less space). Old indices are still compatible with GenMap 1.3.0, but indices built with 1.3.0 are not compatible with older versions of GenMap.
+
+Fixes
+-----
+
+* indexing will search for fasta files recursively (subfolders were not considered before)
+* updated paper information (replaced bioRxiv with OUP Bioinformatics)
+
 1.2.0 (2020-02-21)
 """"""""""""""""""
 
