@@ -42,7 +42,7 @@ namespace sdsl {
 # define UINT8_MAX (255)
 #endif
 
-#define ALPHABET_SIZE (256)
+#define ALPHABET_SIZE (6)
 #define BUCKET_A_SIZE (ALPHABET_SIZE)
 #define BUCKET_B_SIZE (ALPHABET_SIZE * ALPHABET_SIZE)
 #define SS_INSERTIONSORT_THRESHOLD (8)
