@@ -96,6 +96,7 @@ struct libdivsufsort_config<int64_t>
    (_c) = stack[ssize].c, (_d) = stack[ssize].d, (_e) = stack[ssize].e;\
  } while(0)
 
+// log table
 static const int32_t lg_table[256]= {
  -1,0,1,1,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,
   5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
@@ -233,10 +234,10 @@ inline void ss_insertionsort(const text_t *T, const saidx_t *PA, saidx_t *first,
 
   for(i = last - 2; first <= i; --i) {
     for(t = *i, j = i + 1; 0 < (r = ss_compare(T, PA + t, PA + *j, depth));) {
-      do { *(j - 1) = *j; } while((++j < last) && (*j < 0));
+      do { *(j - 1) = *j; } while((++j < last) && (*j < 0)); // TODO: *j could be negative!
       if(last <= j) { break; }
     }
-    if(r == 0) { *j = ~*j; }
+    if(r == 0) { *j = ~*j; } // TODO: bit magic on *j
     *(j - 1) = t;
   }
 }
