@@ -68,13 +68,8 @@ struct libdivsufsort_config<int64_t>
 };
 
 #define BUCKET_A(_c0) bucket_A[(_c0)]
-#if ALPHABET_SIZE == 256
-#define BUCKET_B(_c0, _c1) (bucket_B[((_c1) << 8) | (_c0)])
-#define BUCKET_BSTAR(_c0, _c1) (bucket_B[((_c0) << 8) | (_c1)])
-#else
 #define BUCKET_B(_c0, _c1) (bucket_B[(_c1) * ALPHABET_SIZE + (_c0)])
 #define BUCKET_BSTAR(_c0, _c1) (bucket_B[(_c0) * ALPHABET_SIZE + (_c1)])
-#endif
 
 #define STACK_PUSH(_a, _b, _c, _d)\
  do {\
