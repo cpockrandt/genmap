@@ -148,13 +148,4 @@ add_subdirectory (tests EXCLUDE_FROM_ALL)
 
 message (STATUS "Tests added.")
 
-# ----------------------------------------------------------------------------
-# Add benchmarks
-# ----------------------------------------------------------------------------
-
-message ("\n${ColourBold}Setting up benchmarks${ColourReset}")
-add_subdirectory (benchmarks EXCLUDE_FROM_ALL)
-
-message (STATUS "Benchmarks added.")
-
 message ("\n${ColourBold}Finishing up${ColourReset}")
