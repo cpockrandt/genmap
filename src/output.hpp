@@ -388,11 +388,8 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
                 designFileOutput.kmer_id.insert(lb, {kmer, kmer_id});
             }
 
-            std::vector<bool> bitvector(nbr_of_genomes, 0);
-
             // add probe to matrix (currentFileNo starts with 1)
             designFileOutput.matrix[currentFileNo - 1].push_back(kmer_id);
-            bitvector[currentFileNo - 1] = 1;
 
             // add matches to other genomes in matrix
             auto location = *location_it;
@@ -410,7 +407,6 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
                 }
                 if (kmerInFasta)
                 {
-                    bitvector[fastaID] = 1;
                     designFileOutput.matrix[fastaID].push_back(kmer_id);
                 }
 
@@ -431,15 +427,12 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
                     }
                     if (kmerInFasta)
                     {
-                        bitvector[fastaID] = 1;
                         designFileOutput.matrix[fastaID].push_back(kmer_id);
                     }
 
                     ++fastaID;
                 }
             }
-
-            designFileOutput.bitvectors.push_back(bitvector);
         }
     }
 }

@@ -52,9 +52,6 @@ struct DesignFileOutput
 
     // file_id -> kmer_ids
     std::vector<std::vector<uint64_t> > matrix;
-
-    // bitvectors (in order of kmers, i.e., kmer_id = 1..n)
-    std::vector<std::vector<bool> > bitvectors;
 };
 
 #include "common.hpp"
@@ -418,13 +415,11 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 
         // output design file
         std::ofstream design_file(output_path + "genmap.design");
+        design_file << "# windowsize: " << opt.designWindowSize << "\n";
+        design_file << "# thresold: " << opt.designPercentage << "\n";
         design_file << totalFileNo << '\t' << nbr_total_kmers << '\t' << max_kmers_per_genome << '\n';
         design_file << "#fp#" << '\t' << "#fn#" << '\t' << "#fi_sum#" << '\n';
-        // std::cout << totalFileNo << '\t' << nbr_total_kmers << '\t' << max_kmers_per_genome << '\n';
-        // design_file << 1 << '\t' << 1.0 << '\t' << (2.0 * probeCount / (double) totalFileNo / (double) nbr_total_kmers) << '\n';
-        // design_file << "1.0" << '\t' << "0.99" << '\t' << "0.01" << '\n';
-        // design_file << "1.0" << '\t' << "0.01" << '\t' << "0.99" << '\n';
-        // design_file << "Entire line is TODO" << '\n';
+
         for (uint64_t i = 0; i < designFileOutput.matrix.size(); ++i)
         {
             design_file << filenames[i] << ":1\t" << "1.0";
@@ -442,19 +437,6 @@ inline void run(Options const & opt, SearchParams const & searchParams)
             design_file << '\n';
             std::cout << '\n';
         }
-        design_file.close();
-
-        // output bitvector file
-        // std::ofstream bitvector_file(output_path + "genmap.bitvector");
-        // for (uint64_t i = 0; i < designFileOutput.bitvectors.size(); ++i)
-        // {
-        //     for (uint64_t j = 0; j < designFileOutput.bitvectors[i].size(); ++j)
-        //     {
-        //         bitvector_file << (unsigned)designFileOutput.bitvectors[i][j];
-        //     }
-        //     bitvector_file << '\n';
-        // }
-        // bitvector_file.close();
 
         // output kmer file (sorted by id)
         std::vector<Dna5String> kmer_vector;
@@ -464,12 +446,17 @@ inline void run(Options const & opt, SearchParams const & searchParams)
             kmer_vector[k.second] = k.first;
         }
 
-        std::ofstream kmer_file(output_path + "genmap.kmers");
+        design_file << "# kmers\n";
+
+        // std::ofstream kmer_file(output_path + "genmap.kmers");
         for (uint64_t i = 1; i < kmer_vector.size(); ++i) // yes, it is correct that we start with 1 (see code block above)
         {
-            kmer_file << i << '\t' << kmer_vector[i] << '\n';
+            design_file << i << '\t' << kmer_vector[i] << '\n';
+            // kmer_file << i << '\t' << kmer_vector[i] << '\n';
         }
-        kmer_file.close();
+        // kmer_file.close();
+
+        design_file.close();
     }
 
     if (opt.verbose)
