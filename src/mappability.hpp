@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <limits>
 #include <sys/stat.h>
+#include <set>
 
 #include <seqan/arg_parse.h>
 #include <seqan/seq_io.h>
@@ -48,10 +49,10 @@ struct Options
 struct DesignFileOutput
 {
     // previously seen kmer -> kmer_id
-    std::map<Dna5String, uint64_t> kmer_id;
+    std::map<Dna5String, uint32_t> kmer_id;
 
     // file_id -> kmer_ids
-    std::vector<std::vector<uint64_t> > matrix;
+    std::vector<std::set<uint32_t> > matrix;
 };
 
 #include "common.hpp"
@@ -401,41 +402,37 @@ inline void run(Options const & opt, SearchParams const & searchParams)
     {
         std::string output_path = std::string(toCString(opt.outputPath));
 
-        uint64_t const nbr_total_kmers = designFileOutput.kmer_id.size();
-        uint64_t probeCount = 0;
-        uint64_t max_kmers_per_genome = 0;
-        for (uint64_t i = 0; i < designFileOutput.matrix.size(); ++i)
+        uint32_t const nbr_total_kmers = designFileOutput.kmer_id.size();
+        uint32_t probeCount = 0;
+        uint32_t max_kmers_per_genome = 0;
+        for (uint32_t i = 0; i < designFileOutput.matrix.size(); ++i)
         {
             // remove duplicates
-            std::sort(designFileOutput.matrix[i].begin(), designFileOutput.matrix[i].end());
-            designFileOutput.matrix[i].erase( unique( designFileOutput.matrix[i].begin(), designFileOutput.matrix[i].end() ), designFileOutput.matrix[i].end() );
             max_kmers_per_genome = std::max<uint64_t>(max_kmers_per_genome, designFileOutput.matrix[i].size());
             probeCount += designFileOutput.matrix[i].size();
         }
 
         // output design file
-        std::ofstream design_file(output_path + "genmap.design");
-        design_file << "# windowsize: " << opt.designWindowSize << "\n";
-        design_file << "# thresold: " << opt.designPercentage << "\n";
+        std::ofstream design_file(output_path + ".nessie");
+        design_file << "# Nessie database (strain-level classifier)\n";
+        design_file << "# windowsize: " << opt.designWindowSize << '\n';
+        design_file << "# thresold: " << opt.designPercentage << '\n';
         design_file << totalFileNo << '\t' << nbr_total_kmers << '\t' << max_kmers_per_genome << '\n';
         design_file << "#fp#" << '\t' << "#fn#" << '\t' << "#fi_sum#" << '\n';
 
-        for (uint64_t i = 0; i < designFileOutput.matrix.size(); ++i)
+        for (uint32_t i = 0; i < designFileOutput.matrix.size(); ++i)
         {
             design_file << filenames[i] << ":1\t" << "1.0";
-            std::cout << filenames[i] << ":1\t" << "1.0";
 
-            for (uint64_t j = 0; j < designFileOutput.matrix[i].size(); ++j)
+            for (const uint32_t k : designFileOutput.matrix[i])
             {
-                design_file << '\t' << designFileOutput.matrix[i][j];
-                std::cout << '\t' << designFileOutput.matrix[i][j];
+                design_file << '\t' << k;
             }
-            for (uint64_t j = designFileOutput.matrix[i].size(); j < max_kmers_per_genome; ++j)
+            for (uint32_t j = designFileOutput.matrix[i].size(); j < max_kmers_per_genome; ++j)
             {
                 design_file << '\t' << 0;
             }
             design_file << '\n';
-            std::cout << '\n';
         }
 
         // output kmer file (sorted by id)
@@ -448,13 +445,10 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 
         design_file << "# kmers\n";
 
-        // std::ofstream kmer_file(output_path + "genmap.kmers");
-        for (uint64_t i = 1; i < kmer_vector.size(); ++i) // yes, it is correct that we start with 1 (see code block above)
+        for (uint32_t i = 1; i < kmer_vector.size(); ++i) // yes, it is correct that we start with 1 (see code block above)
         {
             design_file << i << '\t' << kmer_vector[i] << '\n';
-            // kmer_file << i << '\t' << kmer_vector[i] << '\n';
         }
-        // kmer_file.close();
 
         design_file.close();
     }

@@ -389,7 +389,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
             }
 
             // add probe to matrix (currentFileNo starts with 1)
-            designFileOutput.matrix[currentFileNo - 1].push_back(kmer_id);
+            designFileOutput.matrix[currentFileNo - 1].insert(kmer_id);
 
             // add matches to other genomes in matrix
             auto location = *location_it;
@@ -407,7 +407,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
                 }
                 if (kmerInFasta)
                 {
-                    designFileOutput.matrix[fastaID].push_back(kmer_id);
+                    designFileOutput.matrix[fastaID].insert(kmer_id);
                 }
 
                 ++fastaID;
@@ -427,7 +427,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
                     }
                     if (kmerInFasta)
                     {
-                        designFileOutput.matrix[fastaID].push_back(kmer_id);
+                        designFileOutput.matrix[fastaID].insert(kmer_id);
                     }
 
                     ++fastaID;
