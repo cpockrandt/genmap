@@ -413,7 +413,7 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         }
 
         // output design file
-        std::ofstream design_file(output_path + ".nessie");
+        std::ofstream design_file(output_path + "genmap.nessie");
         design_file << "# Nessie database (strain-level classifier)\n";
         design_file << "# windowsize: " << opt.designWindowSize << '\n';
         design_file << "# thresold: " << opt.designPercentage << '\n';
@@ -422,7 +422,7 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 
         for (uint32_t i = 0; i < designFileOutput.matrix.size(); ++i)
         {
-            design_file << filenames[i] << ":1\t" << "1.0";
+            design_file << filenames[i].substr(0, filenames[i].find_last_of(".")) << ":1\t" << "1.0";
 
             for (const uint32_t k : designFileOutput.matrix[i])
             {

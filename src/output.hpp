@@ -310,6 +310,8 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
         ++chromosomeCount;
     }
 
+    auto location_it = locations.begin();
+
     for (uint64_t i = 0; i < c.size();)
     {
         uint64_t min_pos = i;
@@ -338,7 +340,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
             myPosLocalize(min_pos_tuple, min_pos, chromCumLengths);
 
             // extract element from 'location'
-            auto location_it = std::find_if(locations.begin(), locations.end(), [&min_pos_tuple](auto const & l){
+            location_it = std::find_if(location_it, locations.end(), [&min_pos_tuple](auto const & l){
                 return l.first.i1 == min_pos_tuple.i1 && l.first.i2 == min_pos_tuple.i2;
             });
 
