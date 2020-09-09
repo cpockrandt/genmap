@@ -422,7 +422,7 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 
         for (uint32_t i = 0; i < designFileOutput.matrix.size(); ++i)
         {
-            design_file << filenames[i].substr(0, filenames[i].find_last_of(".")) << ":1\t" << "1.0";
+            design_file << filenames[i].substr(0, filenames[i].find_last_of(".")) << "\t1.0";
 
             for (const uint32_t k : designFileOutput.matrix[i])
             {
@@ -430,7 +430,7 @@ inline void run(Options const & opt, SearchParams const & searchParams)
             }
             for (uint32_t j = designFileOutput.matrix[i].size(); j < max_kmers_per_genome; ++j)
             {
-                design_file << '\t' << 0;
+                design_file << "\t0";
             }
             design_file << '\n';
         }
