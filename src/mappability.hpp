@@ -297,6 +297,12 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 
     DesignFileOutput designFileOutput;
     designFileOutput.matrix.resize(totalFileNo);
+    if (opt.designFile && opt.designPercentage < 1.0f / totalFileNo)
+    {
+        std::cerr << "There are only " << totalFileNo << " genomes, "
+                  << "so the threshold Q=" << opt.designPercentage << " cannot be smaller than 1/" << totalFileNo << ".\n";
+        exit(1);
+    }
 
     auto const & text = indexText(index);
     std::map<std::string, uint64_t> chromosomeNamesDict;
