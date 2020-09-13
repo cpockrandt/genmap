@@ -37,7 +37,7 @@ inline std::string getDateTime()
     std::string result;
     result.reserve(10);
 
-    result = std::to_string(tm->tm_year) + "-"
+    result = std::to_string(tm->tm_year + 1900) + "-"
            + std::to_string(tm->tm_mon + 1) + "-"
            + std::to_string(tm->tm_mday);
 
