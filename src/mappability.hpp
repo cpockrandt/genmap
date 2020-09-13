@@ -433,7 +433,6 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         design_file << "# thresold: " << opt.designPercentage << '\n';
         design_file << fasta_lengths[fasta_lengths.size()/2] << '\n';
         design_file << totalFileNo << '\t' << nbr_total_kmers << '\t' << max_kmers_per_genome << '\n';
-        design_file << "#fp#" << '\t' << "#fn#" << '\t' << "#fi_sum#" << '\n';
 
         for (uint32_t i = 0; i < designFileOutput.matrix.size(); ++i)
         {
