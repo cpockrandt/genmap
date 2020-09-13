@@ -324,6 +324,8 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 
     uint64_t currentFileNo = 0;
 
+    std::vector<uint64_t> fasta_lengths;
+
     for (uint64_t i = 0; i < length(directoryInformation); ++i)
     {
         auto const row = retrieveDirectoryInformationLine(directoryInformation[i]);
@@ -353,6 +355,7 @@ inline void run(Options const & opt, SearchParams const & searchParams)
                 run<TDistance, value_type, TSeqNo, TSeqPos>(index, fastaInfix, opt, searchParams, fastaFile, chromosomeNames, chromosomeLengths, chromCumLengths, directoryInformation, mappingSeqIdFile, intervalsForSingleFasta, csvIntervalsForSingleFasta, currentFileNo, totalFileNo, designFileOutput);
             }
 
+            fasta_lengths.push_back(fastaFileLength);
             startPos += fastaFileLength;
             fastaFile = std::get<0>(row);
             fastaFileLength = 0;
@@ -418,11 +421,17 @@ inline void run(Options const & opt, SearchParams const & searchParams)
             probeCount += designFileOutput.matrix[i].size();
         }
 
+        // get median genome size
+        std::sort(fasta_lengths.begin(), fasta_lengths.end());
+
         // output design file
         std::ofstream design_file(output_path + "genmap.nessie");
         design_file << "# Nessie database (strain-level classifier)\n";
-        design_file << "# windowsize: " << opt.designWindowSize << '\n';
+        // TODO: add time and time zone
+        design_file << "# build date: " << getDateTime() << '\n';
+        design_file << "# window size: " << opt.designWindowSize << '\n';
         design_file << "# thresold: " << opt.designPercentage << '\n';
+        design_file << fasta_lengths[fasta_lengths.size()/2] << '\n';
         design_file << totalFileNo << '\t' << nbr_total_kmers << '\t' << max_kmers_per_genome << '\n';
         design_file << "#fp#" << '\t' << "#fn#" << '\t' << "#fi_sum#" << '\n';
 

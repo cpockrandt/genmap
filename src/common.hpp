@@ -27,6 +27,23 @@ inline void myPosLocalize(TResult & result, TPosition const & pos, TLimits const
     result.i2 = pos - *_upper;
 }
 
+inline std::string getDateTime()
+{
+    struct timeval tv;
+    struct tm *tm;
+    gettimeofday(&tv, NULL);
+    tm = localtime(&tv.tv_sec);
+
+    std::string result;
+    result.reserve(10);
+
+    result = std::to_string(tm->tm_year) + "-"
+           + std::to_string(tm->tm_mon + 1) + "-"
+           + std::to_string(tm->tm_mday);
+
+    return result;
+}
+
 inline double get_wall_time()
 {
     struct timeval time;
