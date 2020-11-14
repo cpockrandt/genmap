@@ -425,7 +425,7 @@ int mappabilityMain(int argc, char const ** argv)
     addOption(parser, ArgParseOption("K", "length", "Length of k-mers", ArgParseArgument::INTEGER, "INT"));
     setRequired(parser, "length");
 
-    addOption(parser, ArgParseOption("S", "selection", "Path to a bed file (3 columns: chromosome, start, end) with selected coordinates to compute the mappability (e.g., exon coordinates)", ArgParseArgument::OUTPUT_FILE, "OUT"));
+    addOption(parser, ArgParseOption("S", "selection", "Path to a bed file (3 columns: chromosome, start, end) with selected coordinates to compute the mappability (e.g., exon coordinates)", ArgParseArgument::OUTPUT_FILE, "IN"));
 
     addOption(parser, ArgParseOption("nc", "no-reverse-complement", "Searches the k-mers *NOT* on the reverse strand."));
 
