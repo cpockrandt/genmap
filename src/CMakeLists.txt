@@ -90,6 +90,8 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 # Add CXX flags found by find_package (SeqAn).
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${SEQAN_CXX_FLAGS} -Wall -pedantic -Wno-deprecated-copy") # TODO: --coverage nur für debug auf travis!
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSEQAN_DISABLE_VERSION_CHECK") # turn off version check (crashes on Apple Silicon)
+
 # Update the list of file names below if you add source files to your application.
 set (GENMAP_SOURCE_FILES genmap.cpp
                          common.hpp
