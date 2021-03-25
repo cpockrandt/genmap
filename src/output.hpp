@@ -419,6 +419,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
             {
                 auto const & minusStrandLoc = location.second.second;
                 fastaID = 0;
+                m = 0;
                 for (auto const & fastaFile : fastaFiles)
                 {
                     bool kmerInFasta = false;
