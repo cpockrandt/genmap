@@ -319,6 +319,8 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
 
         // c[i] == for the last K-1 k-mers of each sequence as well as k-mers containing more N's than errors allowed
 
+        uint64_t i_cpy = i;
+
         for (uint64_t j = 1; j <= opt.designWindowSize && i < c.size(); ++i, ++j)
         {
             // select minimum, but not c[i] == 0, unless we chose c[i] at the beginning by accident
@@ -329,15 +331,31 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
             }
         }
 
-        //++i;
-        //while (i < c.size() && c[i] == 0)
-        //    ++i;
+        std::vector<uint64_t> all_min_pos;
+        if (min_value > 0)
+        {
+            if (min_value <= nbr_of_genomes * opt.designPercentageSuperRare)
+            {
+                // pick all with min_value
+                for (uint64_t j = 1; j <= opt.designWindowSize && i_cpy < c.size(); ++i_cpy, ++j)
+                {
+                    if (c[i_cpy] == min_value)
+                    {
+                        all_min_pos.push_back(i_cpy);
+                    }
+                }
+            }
+            else if (min_value <= nbr_of_genomes * opt.designPercentageRare)
+            {
+                all_min_pos.push_back(min_pos);
+            }
+        }
 
-        if (min_value > 0 && min_value <= nbr_of_genomes * opt.designPercentage)
+        for (const uint64_t current_min_pos : all_min_pos)
         {
             // transform min_pos to tuple
             Pair<uint64_t, uint64_t> min_pos_tuple;
-            myPosLocalize(min_pos_tuple, min_pos, chromCumLengths);
+            myPosLocalize(min_pos_tuple, current_min_pos, chromCumLengths);
 
             // extract element from 'location'
             location_it = std::find_if(location_it, locations.end(), [&min_pos_tuple](auto const & l){
@@ -346,7 +364,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
 
             if (location_it == locations.end())
             {
-                std::cout << "NOT FOUND: (" << min_pos_tuple.i1 << ',' << min_pos_tuple.i2 << "): " << min_pos << "(min_value: " << min_value << ")" << std::endl;
+                std::cout << "NOT FOUND: (" << min_pos_tuple.i1 << ',' << min_pos_tuple.i2 << "): " << current_min_pos << "(min_value: " << min_value << ")" << std::endl;
 
                 uint64_t prev = 0;
                 for (auto x : chromCumLengths)
@@ -366,7 +384,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
             }
 
             // extract kmer at position and make it canonical
-            Dna5String kmer = infixWithLength(text, min_pos, searchParams.length);
+            Dna5String kmer = infixWithLength(text, current_min_pos, searchParams.length);
             Dna5String kmer_rc = kmer;
             reverseComplement(kmer_rc);
             if (kmer > kmer_rc)

@@ -43,7 +43,10 @@ struct Options
     unsigned errors;
     unsigned sampling;
     uint64_t designWindowSize;
-    float designPercentage;
+    // if rarest k-mer in window occurs < designPercentageSuperRare, pick all k-mers with this nbr. of hits
+    // if rarest k-mer in window occurs < designPercentageRare (but not < SuperRare), pick only one k-mer
+    float designPercentageSuperRare;
+    float designPercentageRare;
 };
 
 struct DesignFileOutput
@@ -297,10 +300,23 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 
     DesignFileOutput designFileOutput;
     designFileOutput.matrix.resize(totalFileNo);
-    if (opt.designFile && opt.designPercentage < 1.0f / totalFileNo)
+    if (opt.designFile && opt.designPercentageRare < 1.0f / totalFileNo)
     {
         std::cerr << "There are only " << totalFileNo << " genomes, "
-                  << "so the threshold Q=" << opt.designPercentage << " cannot be smaller than 1/" << totalFileNo << ".\n";
+                  << "so the threshold Q=" << opt.designPercentageRare << " cannot be smaller than 1/" << totalFileNo << ".\n";
+        exit(1);
+    }
+
+    if (opt.designFile && opt.designPercentageSuperRare < 1.0f / totalFileNo)
+    {
+        std::cerr << "WARNING: There are only " << totalFileNo << " genomes, "
+                  << "so the threshold R=" << opt.designPercentageSuperRare << " cannot be smaller than 1/" << totalFileNo << " (unless you want to deactivate that feature).\n";
+        // exit(1);
+    }
+
+    if (opt.designFile && opt.designPercentageRare < opt.designPercentageSuperRare)
+    {
+        std::cerr << "Threshold Q=" << opt.designPercentageRare << " should be greater or equal than R=" << opt.designPercentageSuperRare << "\n";
         exit(1);
     }
 
@@ -430,7 +446,8 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         // TODO: add time and time zone
         design_file << "# build date: " << getDateTime() << '\n';
         design_file << "# window size: " << opt.designWindowSize << '\n';
-        design_file << "# thresold: " << opt.designPercentage << '\n';
+        design_file << "# rare thresold: " << opt.designPercentageRare << '\n';
+        design_file << "# super rare thresold: " << opt.designPercentageSuperRare << '\n';
         design_file << fasta_lengths[fasta_lengths.size()/2] << '\n';
         design_file << totalFileNo << '\t' << nbr_total_kmers << '\t' << max_kmers_per_genome << '\n';
 
@@ -562,10 +579,15 @@ int mappabilityMain(int argc, char const ** argv)
     addOption(parser, ArgParseOption("W", "design-window", "Window size for k-mer extraction for design file", ArgParseArgument::INTEGER, "INT"));
     setDefaultValue(parser, "design-window", 1000);
 
-    addOption(parser, ArgParseOption("Q", "design-percentage", "Probe occurring in max. X perc of the targets", ArgParseArgument::DOUBLE, "DOUBLE"));
-    setDefaultValue(parser, "design-percentage", 0.99);
-    setMinValue(parser, "design-percentage", "0.001");
-    setMaxValue(parser, "design-percentage", "1.0");
+    addOption(parser, ArgParseOption("Q", "design-rare-percentage", "Pick only one rare k-mer in window", ArgParseArgument::DOUBLE, "DOUBLE"));
+    setDefaultValue(parser, "design-rare-percentage", 0.3);
+    setMinValue(parser, "design-rare-percentage", "0.001");
+    setMaxValue(parser, "design-rare-percentage", "1.0");
+
+    addOption(parser, ArgParseOption("R", "design-super-rare-percentage", "Pick all super-rare k-mers in window", ArgParseArgument::DOUBLE, "DOUBLE"));
+    setDefaultValue(parser, "design-super-rare-percentage", 0.1);
+    setMinValue(parser, "design-super-rare-percentage", "0.001");
+    setMaxValue(parser, "design-super-rare-percentage", "1.0");
 
     addOption(parser, ArgParseOption("m", "memory-mapping",
         "Turns memory-mapping on, i.e. the index is not loaded into RAM but accessed directly from secondary-memory. This may increase the overall running time, but do NOT use it if the index lies on network storage."));
@@ -602,7 +624,8 @@ int mappabilityMain(int argc, char const ** argv)
     opt.verbose = isSet(parser, "verbose");
 
     getOptionValue(opt.designWindowSize, parser, "design-window");
-    getOptionValue(opt.designPercentage, parser, "design-percentage");
+    getOptionValue(opt.designPercentageRare, parser, "design-rare-percentage");
+    getOptionValue(opt.designPercentageSuperRare, parser, "design-super-rare-percentage");
 
     if (!opt.wigFile && !opt.bedgraphFile && !opt.bedFile && !opt.rawFile && !opt.txtFile && !opt.csvFile && !opt.designFile)
     {
