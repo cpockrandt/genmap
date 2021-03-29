@@ -339,7 +339,8 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
                 // pick all with min_value
                 for (uint64_t j = 1; j <= opt.designWindowSize && i_cpy < c.size(); ++i_cpy, ++j)
                 {
-                    if (c[i_cpy] == min_value)
+                    // take only non-overlapping k-mers
+                    if (c[i_cpy] == min_value && (all_min_pos.empty() || all_min_pos.back() + searchParams.length <= i_cpy))
                     {
                         all_min_pos.push_back(i_cpy);
                     }
