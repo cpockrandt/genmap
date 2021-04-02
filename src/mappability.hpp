@@ -206,14 +206,14 @@ inline void run(TIndex & index, TText const & text, Options const & opt, SearchP
     {
         case 0:  computeMappability<0>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo, csvComputation);
                  break;
-        case 1:  computeMappability<1>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo, csvComputation);
-                 break;
-        case 2:  computeMappability<2>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo, csvComputation);
-                 break;
-        case 3:  computeMappability<3>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo, csvComputation);
-                 break;
-        case 4:  computeMappability<4>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo, csvComputation);
-                 break;
+//        case 1:  computeMappability<1>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo, csvComputation);
+//                 break;
+//        case 2:  computeMappability<2>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo, csvComputation);
+//                 break;
+//        case 3:  computeMappability<3>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo, csvComputation);
+//                 break;
+//        case 4:  computeMappability<4>(index, text, c, searchParams, opt.directory, chromLengths, chromCumLengths, locations, mappingSeqIdFile, intervals, completeSameKmers, currentFileNo, totalFileNo, csvComputation);
+//                 break;
         default: std::cerr << "E > 4 not yet supported.\n";
                  exit(1);
     }
@@ -495,20 +495,22 @@ inline void run(Options const & opt, SearchParams const & searchParams)
     {
         if (opt.totalLengthWidth == 32)
             run<TChar, TAllocConfig, TDistance, TValue, uint16_t, uint32_t, uint32_t>(opt, searchParams);
-        else if (opt.totalLengthWidth == 64)
-            run<TChar, TAllocConfig, TDistance, TValue, uint16_t, uint32_t, uint64_t>(opt, searchParams);
+//        else if (opt.totalLengthWidth == 64)
+//            run<TChar, TAllocConfig, TDistance, TValue, uint16_t, uint32_t, uint64_t>(opt, searchParams);
     }
-    else if (opt.seqNoWidth == 32 && opt.maxSeqLengthWidth == 16 && opt.totalLengthWidth == 64)
-        run<TChar, TAllocConfig, TDistance, TValue, uint32_t, uint16_t, uint64_t>(opt, searchParams);
-    else if (opt.seqNoWidth == 64 && opt.maxSeqLengthWidth == 64 && opt.totalLengthWidth == 64)
-        run<TChar, TAllocConfig, TDistance, TValue, uint64_t, uint64_t, uint64_t>(opt, searchParams);
+//    else if (opt.seqNoWidth == 32 && opt.maxSeqLengthWidth == 16 && opt.totalLengthWidth == 64)
+//        run<TChar, TAllocConfig, TDistance, TValue, uint32_t, uint16_t, uint64_t>(opt, searchParams);
+//    else if (opt.seqNoWidth == 64 && opt.maxSeqLengthWidth == 64 && opt.totalLengthWidth == 64)
+//        run<TChar, TAllocConfig, TDistance, TValue, uint64_t, uint64_t, uint64_t>(opt, searchParams);
 }
 
 template <typename TChar, typename TAllocConfig, typename TDistance>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
     if (opt.outputType == OutputType::frequency_large || opt.outputType == OutputType::mappability) // TODO: document precision for mappability
-        run<TChar, TAllocConfig, TDistance, uint16_t>(opt, searchParams);
+    {
+//        run<TChar, TAllocConfig, TDistance, uint16_t>(opt, searchParams);
+    }
     else // if (opt.outputType == OutputType::frequency_small)
         run<TChar, TAllocConfig, TDistance, uint8_t>(opt, searchParams);
 }
@@ -516,14 +518,14 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 template <typename TChar>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
-    if (opt.mmap && opt.packed_text)
-        run<TChar, Packed<MMap<> >, HammingDistance>(opt, searchParams);
-    else if (!opt.mmap && opt.packed_text)
+//    if (opt.mmap && opt.packed_text)
+//        run<TChar, Packed<MMap<> >, HammingDistance>(opt, searchParams);
+    if (!opt.mmap && opt.packed_text)
         run<TChar, Packed<Alloc<> >, HammingDistance>(opt, searchParams);
-    else if (opt.mmap && !opt.packed_text)
-        run<TChar, MMap<>, HammingDistance>(opt, searchParams);
-    else // if (!opt.mmap && !opt.packed_text)
-        run<TChar, Alloc<>, HammingDistance>(opt, searchParams);
+//    else if (opt.mmap && !opt.packed_text)
+//        run<TChar, MMap<>, HammingDistance>(opt, searchParams);
+//    else // if (!opt.mmap && !opt.packed_text)
+//        run<TCharChar, Alloc<>, HammingDistance>(opt, searchParams);
 }
 
 int mappabilityMain(int argc, char const ** argv)
@@ -773,9 +775,9 @@ int mappabilityMain(int argc, char const ** argv)
     }
 
     // TODO: remove opt.alphabet and replace by bool
-    if (opt.alphabet == "dna4")
-        run<Dna>(opt, searchParams);
-    else
+//    if (opt.alphabet == "dna4")
+//        run<Dna>(opt, searchParams);
+//    else
         run<Dna5>(opt, searchParams);
 
     return 0;
