@@ -293,7 +293,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
                     TCSVIntervals const & /*svIntervals*/, bool const /*outputSelection*/, DesignFileOutput & designFileOutput,
                     uint64_t const currentFileNo, Options const & opt, TText const & text, TChromosomeLengths const & chromCumLengths)
 {
-    uint64_t const nbr_of_genomes = designFileOutput.matrix.size();
+    //uint64_t const nbr_of_genomes = designFileOutput.matrix.size();
 
     // extract fasta file names
     uint64_t chromosomeCount = 0;
@@ -310,47 +310,43 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
         ++chromosomeCount;
     }
 
+//    std::map<Pair<TSeqNo, TSeqPos>,
+//    std::pair<std::vector<Pair<TSeqNo, TSeqPos> >,
+//    std::vector<Pair<TSeqNo, TSeqPos> > > > locations;
     auto location_it = locations.begin();
 
-    for (uint64_t i = 0; i < c.size();)
+    uint64_t window_size = 1 * searchParams.length / opt.design_sample_rate; // and then pick the 10 rarest k-mers, non-overlapping
+
+    std::vector<uint64_t> pos_in_window;
+    std::vector<uint64_t> all_min_pos;
+
+    for (uint64_t i = 0; i < c.size(); i += pos_in_window.size())
     {
-        uint64_t min_pos = i;
-        uint64_t min_value = c[i]; // this could potentially be 0 (which we do not want)
+        all_min_pos.clear();
 
-        // c[i] == for the last K-1 k-mers of each sequence as well as k-mers containing more N's than errors allowed
+        pos_in_window.clear();
+        pos_in_window.resize(std::min(window_size, c.size() - i));
+        std::iota(pos_in_window.begin(), pos_in_window.end(), i); // TODO: maybe shuffle afterwards for some randomization?
+        // sort positions by the number of times their k-mer occurs
+        std::sort(pos_in_window.begin(), pos_in_window.end(), [&c](uint64_t p1, uint64_t p2){ return c[p1] < c[p2]; });
 
-        uint64_t i_cpy = i;
-
-        for (uint64_t j = 1; j <= opt.designWindowSize && i < c.size(); ++i, ++j)
+        // extract 10-rarest k-mers that do not overlap with each other
+        for (uint64_t idx = 0; idx < pos_in_window.size() && all_min_pos.size() < 1; ++idx)
         {
-            // select minimum, but not c[i] == 0, unless we chose c[i] at the beginning by accident
-            if ((c[i] < min_value && c[i] > 0) || (min_value == 0 && c[i] > 0)) // last K-1 positions in a string are 0
-            {
-                min_pos = i;
-                min_value = c[i];
-            }
+            const uint64_t rare_kmer_location = pos_in_window[idx];
+
+            if (c[rare_kmer_location] == 0)
+                continue; // last K-1 positions in a sequence (is not in 'locations')
+
+            // check that there is no overlap
+            if (std::find_if(all_min_pos.begin(), all_min_pos.end(), [rare_kmer_location](uint64_t loc){
+                    return rare_kmer_location - (30 - 1) <= loc && loc <= rare_kmer_location + 30 - 1; // this is an overlap
+                }) == all_min_pos.end())
+                all_min_pos.push_back(rare_kmer_location);
         }
 
-        std::vector<uint64_t> all_min_pos;
-        if (min_value > 0)
-        {
-            if (min_value <= nbr_of_genomes * opt.designPercentageSuperRare)
-            {
-                // pick all with min_value
-                for (uint64_t j = 1; j <= opt.designWindowSize && i_cpy < c.size(); ++i_cpy, ++j)
-                {
-                    // take only non-overlapping k-mers
-                    if (c[i_cpy] == min_value && (all_min_pos.empty() || all_min_pos.back() + searchParams.length <= i_cpy))
-                    {
-                        all_min_pos.push_back(i_cpy);
-                    }
-                }
-            }
-            else if (min_value <= nbr_of_genomes * opt.designPercentageRare)
-            {
-                all_min_pos.push_back(min_pos);
-            }
-        }
+        std::sort(all_min_pos.begin(), all_min_pos.end()); // we need to sort this so we don't access an earlier position
+        // this allows us to speed up the search in 'locations'
 
         for (const uint64_t current_min_pos : all_min_pos)
         {
@@ -359,13 +355,16 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
             myPosLocalize(min_pos_tuple, current_min_pos, chromCumLengths);
 
             // extract element from 'location'
+            auto prev_location_it = location_it;
             location_it = std::find_if(location_it, locations.end(), [&min_pos_tuple](auto const & l){
                 return l.first.i1 == min_pos_tuple.i1 && l.first.i2 == min_pos_tuple.i2;
             });
 
             if (location_it == locations.end())
             {
-                std::cout << "NOT FOUND: (" << min_pos_tuple.i1 << ',' << min_pos_tuple.i2 << "): " << current_min_pos << "(min_value: " << min_value << ")" << std::endl;
+                std::cout << "prev_location_it: " << (*prev_location_it).first << '\n';
+
+                std::cout << "NOT FOUND: (" << min_pos_tuple.i1 << ',' << min_pos_tuple.i2 << "): " << current_min_pos << "(min_value: " << (unsigned) c[current_min_pos] << ")\n";
 
                 uint64_t prev = 0;
                 for (auto x : chromCumLengths)
