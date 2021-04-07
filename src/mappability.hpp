@@ -47,6 +47,7 @@ struct Options
     // if rarest k-mer in window occurs < designPercentageRare (but not < SuperRare), pick only one k-mer
     float designPercentageSuperRare;
     float designPercentageRare;
+    float designMaxPercPerWindow;
 };
 
 struct DesignFileOutput
@@ -589,6 +590,11 @@ int mappabilityMain(int argc, char const ** argv)
     setMinValue(parser, "design-super-rare-percentage", "0.001");
     setMaxValue(parser, "design-super-rare-percentage", "1.0");
 
+    addOption(parser, ArgParseOption("Z", "design-max-perc-per-window", "Pick at most z% of k-mers in each window", ArgParseArgument::DOUBLE, "DOUBLE"));
+    setDefaultValue(parser, "design-max-perc-per-window", 0.1);
+    setMinValue(parser, "design-max-perc-per-window", "0.001");
+    setMaxValue(parser, "design-max-perc-per-window", "1.0");
+
     addOption(parser, ArgParseOption("m", "memory-mapping",
         "Turns memory-mapping on, i.e. the index is not loaded into RAM but accessed directly from secondary-memory. This may increase the overall running time, but do NOT use it if the index lies on network storage."));
 
@@ -626,6 +632,7 @@ int mappabilityMain(int argc, char const ** argv)
     getOptionValue(opt.designWindowSize, parser, "design-window");
     getOptionValue(opt.designPercentageRare, parser, "design-rare-percentage");
     getOptionValue(opt.designPercentageSuperRare, parser, "design-super-rare-percentage");
+    getOptionValue(opt.designMaxPercPerWindow, parser, "design-max-perc-per-window");
 
     if (!opt.wigFile && !opt.bedgraphFile && !opt.bedFile && !opt.rawFile && !opt.txtFile && !opt.csvFile && !opt.designFile)
     {

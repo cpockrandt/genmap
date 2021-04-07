@@ -321,6 +321,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
 
         uint64_t i_cpy = i;
 
+        uint64_t length_of_current_window = 0;
         for (uint64_t j = 1; j <= opt.designWindowSize && i < c.size(); ++i, ++j)
         {
             // select minimum, but not c[i] == 0, unless we chose c[i] at the beginning by accident
@@ -329,6 +330,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
                 min_pos = i;
                 min_value = c[i];
             }
+            ++length_of_current_window;
         }
 
         std::vector<uint64_t> all_min_pos;
@@ -351,6 +353,11 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
                 all_min_pos.push_back(min_pos);
             }
         }
+
+        //std::random_shuffle(all_min_pos.begin(), all_min_pos.end()); // randomize, cannot because of location_it
+        uint64_t max_elems = length_of_current_window * opt.designMaxPercPerWindow;
+        if (max_elems < all_min_pos.size())
+            all_min_pos.resize(max_elems); // only allow z% percent of k-mers in each window
 
         for (const uint64_t current_min_pos : all_min_pos)
         {
