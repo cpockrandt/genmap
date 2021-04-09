@@ -43,9 +43,6 @@ struct Options
     unsigned errors;
     unsigned sampling;
     uint64_t designWindowSize;
-    // if rarest k-mer in window occurs < designPercentageSuperRare, pick all k-mers with this nbr. of hits
-    // if rarest k-mer in window occurs < designPercentageRare (but not < SuperRare), pick only one k-mer
-    float designPercentageSuperRare;
     float designPercentageRare;
     float designMaxPercPerWindow;
 };
@@ -308,19 +305,6 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         exit(1);
     }
 
-    if (opt.designFile && opt.designPercentageSuperRare < 1.0f / totalFileNo)
-    {
-        std::cerr << "WARNING: There are only " << totalFileNo << " genomes, "
-                  << "so the threshold R=" << opt.designPercentageSuperRare << " cannot be smaller than 1/" << totalFileNo << " (unless you want to deactivate that feature).\n";
-        // exit(1);
-    }
-
-    if (opt.designFile && opt.designPercentageRare < opt.designPercentageSuperRare)
-    {
-        std::cerr << "Threshold Q=" << opt.designPercentageRare << " should be greater or equal than R=" << opt.designPercentageSuperRare << "\n";
-        exit(1);
-    }
-
     auto const & text = indexText(index);
     std::map<std::string, uint64_t> chromosomeNamesDict;
     StringSet<CharString, Owner<ConcatDirect<> > > chromosomeNames;
@@ -447,8 +431,8 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         // TODO: add time and time zone
         design_file << "# build date: " << getDateTime() << '\n';
         design_file << "# window size: " << opt.designWindowSize << '\n';
-        design_file << "# rare thresold: " << opt.designPercentageRare << '\n';
-        design_file << "# super rare thresold: " << opt.designPercentageSuperRare << '\n';
+        design_file << "# thresold: " << opt.designPercentageRare << '\n';
+        design_file << "# max %x kmers in window: " << opt.designMaxPercPerWindow << '\n';
         design_file << fasta_lengths[fasta_lengths.size()/2] << '\n';
         design_file << totalFileNo << '\t' << nbr_total_kmers << '\t' << max_kmers_per_genome << '\n';
 
@@ -585,11 +569,6 @@ int mappabilityMain(int argc, char const ** argv)
     setMinValue(parser, "design-rare-percentage", "0.001");
     setMaxValue(parser, "design-rare-percentage", "1.0");
 
-    addOption(parser, ArgParseOption("R", "design-super-rare-percentage", "Pick all super-rare k-mers in window", ArgParseArgument::DOUBLE, "DOUBLE"));
-    setDefaultValue(parser, "design-super-rare-percentage", 0.1);
-    setMinValue(parser, "design-super-rare-percentage", "0.001");
-    setMaxValue(parser, "design-super-rare-percentage", "1.0");
-
     addOption(parser, ArgParseOption("Z", "design-max-perc-per-window", "Pick at most z% of k-mers in each window", ArgParseArgument::DOUBLE, "DOUBLE"));
     setDefaultValue(parser, "design-max-perc-per-window", 0.1);
     setMinValue(parser, "design-max-perc-per-window", "0.001");
@@ -631,7 +610,6 @@ int mappabilityMain(int argc, char const ** argv)
 
     getOptionValue(opt.designWindowSize, parser, "design-window");
     getOptionValue(opt.designPercentageRare, parser, "design-rare-percentage");
-    getOptionValue(opt.designPercentageSuperRare, parser, "design-super-rare-percentage");
     getOptionValue(opt.designMaxPercPerWindow, parser, "design-max-perc-per-window");
 
     if (!opt.wigFile && !opt.bedgraphFile && !opt.bedFile && !opt.rawFile && !opt.txtFile && !opt.csvFile && !opt.designFile)
