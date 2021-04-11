@@ -571,7 +571,7 @@ int mappabilityMain(int argc, char const ** argv)
 
     addOption(parser, ArgParseOption("Z", "design-max-perc-per-window", "Pick at most z% of k-mers in each window", ArgParseArgument::DOUBLE, "DOUBLE"));
     setDefaultValue(parser, "design-max-perc-per-window", 0.1);
-    setMinValue(parser, "design-max-perc-per-window", "0.001");
+    setMinValue(parser, "design-max-perc-per-window", "0.000001");
     setMaxValue(parser, "design-max-perc-per-window", "1.0");
 
     addOption(parser, ArgParseOption("m", "memory-mapping",
