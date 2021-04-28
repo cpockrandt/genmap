@@ -45,12 +45,16 @@ struct Options
     uint64_t designWindowSize;
     float designPercentageRare;
     float designMaxPercPerWindow;
+    uint32_t designAllKmersNbr;
+    float designAllKmersThreshold;
 };
 
 struct DesignFileOutput
 {
     // previously seen kmer -> kmer_id
     std::map<Dna5String, uint32_t> kmer_id;
+
+    std::vector<Dna5String> all_kmers;
 
     // file_id -> kmer_ids
     std::vector<std::set<uint32_t> > matrix;
@@ -466,6 +470,22 @@ inline void run(Options const & opt, SearchParams const & searchParams)
             design_file << i << '\t' << kmer_vector[i] << '\n';
         }
 
+        design_file << "# all kmers\n";
+
+        // shuffle to randomize the selection of the all-kmers (only take the first X ones)
+        std::random_shuffle(designFileOutput.all_kmers.begin(), designFileOutput.all_kmers.end());
+        std::set<Dna5String> chosen_all_kmers;
+
+        uint32_t i = 0;
+        while (chosen_all_kmers.size() < opt.designAllKmersNbr && i < designFileOutput.all_kmers.size()) // yes, it is correct that we start with 1 (see code block above)
+        {
+            auto & k = designFileOutput.all_kmers[i];
+            if (chosen_all_kmers.insert(k).second) // did the insertion took place?
+                design_file << k << '\n'; // then it was a k-mer that has not been selected before
+
+            ++i;
+        }
+
         design_file.close();
     }
 
@@ -574,6 +594,14 @@ int mappabilityMain(int argc, char const ** argv)
     setMinValue(parser, "design-max-perc-per-window", "0.000001");
     setMaxValue(parser, "design-max-perc-per-window", "1.0");
 
+    addOption(parser, ArgParseOption("Y", "design-nbr-all-kmers", "Nbr. of randomly picked very frequent k-mers", ArgParseArgument::INTEGER, "INT"));
+    setDefaultValue(parser, "design-nbr-all-kmers", 10000);
+
+    addOption(parser, ArgParseOption("X", "design-nbr-all-kmers-threshold", "Threshold for very frequent k-mers", ArgParseArgument::DOUBLE, "DOUBLE"));
+    setDefaultValue(parser, "design-nbr-all-kmers-threshold", 0.95);
+    setMinValue(parser, "design-nbr-all-kmers-threshold", "0.000001");
+    setMaxValue(parser, "design-nbr-all-kmers-threshold", "1.00");
+
     addOption(parser, ArgParseOption("m", "memory-mapping",
         "Turns memory-mapping on, i.e. the index is not loaded into RAM but accessed directly from secondary-memory. This may increase the overall running time, but do NOT use it if the index lies on network storage."));
 
@@ -611,6 +639,8 @@ int mappabilityMain(int argc, char const ** argv)
     getOptionValue(opt.designWindowSize, parser, "design-window");
     getOptionValue(opt.designPercentageRare, parser, "design-rare-percentage");
     getOptionValue(opt.designMaxPercPerWindow, parser, "design-max-perc-per-window");
+    getOptionValue(opt.designAllKmersNbr, parser, "design-nbr-all-kmers");
+    getOptionValue(opt.designAllKmersThreshold, parser, "design-nbr-all-kmers-threshold");
 
     if (!opt.wigFile && !opt.bedgraphFile && !opt.bedFile && !opt.rawFile && !opt.txtFile && !opt.csvFile && !opt.designFile)
     {

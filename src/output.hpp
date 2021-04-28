@@ -313,6 +313,21 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
     std::vector<uint64_t> all_min_pos_prefilter, all_min_pos;
     auto location_it = locations.begin();
 
+    // get all k-mers
+    for (uint64_t i = 0; i < c.size(); ++i)
+    {
+        if (c[i] >= opt.designAllKmersThreshold)
+        {
+            Dna5String kmer = infixWithLength(text, i, searchParams.length);
+            Dna5String kmer_rc = kmer;
+            reverseComplement(kmer_rc);
+            if (kmer > kmer_rc)
+                kmer = kmer_rc;
+
+            designFileOutput.all_kmers.push_back(kmer);
+        }
+    }
+
     for (uint64_t i = 0; i < c.size();)
     {
         all_min_pos.clear();
