@@ -512,23 +512,23 @@ inline void run(Options const & opt, SearchParams const & searchParams)
 template <typename TChar, typename TAllocConfig, typename TDistance>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
-    if (opt.outputType == OutputType::frequency_large || opt.outputType == OutputType::mappability) // TODO: document precision for mappability
-        run<TChar, TAllocConfig, TDistance, uint16_t>(opt, searchParams);
-    else // if (opt.outputType == OutputType::frequency_small)
+//    if (opt.outputType == OutputType::frequency_large || opt.outputType == OutputType::mappability) // TODO: document precision for mappability
+//        run<TChar, TAllocConfig, TDistance, uint16_t>(opt, searchParams);
+//    else // if (opt.outputType == OutputType::frequency_small)
         run<TChar, TAllocConfig, TDistance, uint8_t>(opt, searchParams);
 }
 
 template <typename TChar>
 inline void run(Options const & opt, SearchParams const & searchParams)
 {
-    if (opt.mmap && opt.packed_text)
-        run<TChar, Packed<MMap<> >, HammingDistance>(opt, searchParams);
-    else if (!opt.mmap && opt.packed_text)
+//    if (opt.mmap && opt.packed_text)
+//        run<TChar, Packed<MMap<> >, HammingDistance>(opt, searchParams);
+//    else if (!opt.mmap && opt.packed_text)
         run<TChar, Packed<Alloc<> >, HammingDistance>(opt, searchParams);
-    else if (opt.mmap && !opt.packed_text)
-        run<TChar, MMap<>, HammingDistance>(opt, searchParams);
-    else // if (!opt.mmap && !opt.packed_text)
-        run<TChar, Alloc<>, HammingDistance>(opt, searchParams);
+//    else if (opt.mmap && !opt.packed_text)
+//        run<TChar, MMap<>, HammingDistance>(opt, searchParams);
+//    else // if (!opt.mmap && !opt.packed_text)
+//        run<TChar, Alloc<>, HammingDistance>(opt, searchParams);
 }
 
 int mappabilityMain(int argc, char const ** argv)
@@ -788,9 +788,9 @@ int mappabilityMain(int argc, char const ** argv)
     }
 
     // TODO: remove opt.alphabet and replace by bool
-    if (opt.alphabet == "dna4")
-        run<Dna>(opt, searchParams);
-    else
+//    if (opt.alphabet == "dna4")
+//        run<Dna>(opt, searchParams);
+//    else
         run<Dna5>(opt, searchParams);
 
     return 0;
