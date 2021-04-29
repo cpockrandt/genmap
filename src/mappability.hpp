@@ -473,17 +473,18 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         design_file << "# all kmers\n";
 
         // shuffle to randomize the selection of the all-kmers (only take the first X ones)
-        std::random_shuffle(designFileOutput.all_kmers.begin(), designFileOutput.all_kmers.end());
         std::set<Dna5String> chosen_all_kmers;
+        int64_t MAX_TRIES = opt.designAllKmersNbr * 25;
 
-        uint32_t i = 0;
-        while (chosen_all_kmers.size() < opt.designAllKmersNbr && i < designFileOutput.all_kmers.size()) // yes, it is correct that we start with 1 (see code block above)
+        while (chosen_all_kmers.size() < opt.designAllKmersNbr && MAX_TRIES >= 0) // yes, it is correct that we start with 1 (see code block above)
         {
+            uint32_t i = rand() % designFileOutput.all_kmers.size();
             auto & k = designFileOutput.all_kmers[i];
             if (chosen_all_kmers.insert(k).second) // did the insertion took place?
                 design_file << k << '\n'; // then it was a k-mer that has not been selected before
 
             ++i;
+            --MAX_TRIES;
         }
 
         design_file.close();
