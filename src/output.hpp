@@ -291,7 +291,7 @@ template <bool mappability, typename T, typename TLocations, typename TDirectory
 void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*/, TLocations const & locations,
                     SearchParams const & searchParams, TDirectoryInformation const & directoryInformation,
                     TCSVIntervals const & /*svIntervals*/, bool const /*outputSelection*/, DesignFileOutput & designFileOutput,
-                    uint64_t const currentFileNo, Options const & opt, TText const & text, TChromosomeLengths const & chromCumLengths)
+                    uint64_t const /*currentFileNo*/, Options const & opt, TText const & text, TChromosomeLengths const & chromCumLengths)
 {
     uint64_t const nbr_of_genomes = designFileOutput.matrix.size();
 
@@ -428,52 +428,41 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
                 designFileOutput.kmer_id.insert(lb, {kmer, kmer_id});
             }
 
-            // add probe to matrix (currentFileNo starts with 1)
-            designFileOutput.matrix[currentFileNo - 1].insert(kmer_id);
-
-            // add matches to other genomes in matrix
+            // add matches to genomes in matrix
             auto location = *location_it;
 
             auto const & plusStrandLoc = location.second.first;
+            auto const & minusStrandLoc = location.second.second;
+
             uint64_t fastaID = 0;
-            uint64_t m = 0;
+            uint64_t m_pos = 0, m_neg = 0;
             for (auto const & fastaFile : fastaFiles)
             {
-                bool kmerInFasta = false;
-                while (m < plusStrandLoc.size() && plusStrandLoc[m].i1 <= fastaFile.second)
+                uint32_t multiplicity = 0;
+
+                while (m_pos < plusStrandLoc.size() && plusStrandLoc[m_pos].i1 <= fastaFile.second)
                 {
-                    kmerInFasta = true;
-                    ++m;
+                    ++multiplicity;
+                    ++m_pos;
                 }
-                if (kmerInFasta)
+
+                if (searchParams.revCompl)
                 {
-                    designFileOutput.matrix[fastaID].insert(kmer_id);
+                    while (m_neg < minusStrandLoc.size() && minusStrandLoc[m_neg].i1 <= fastaFile.second)
+                    {
+                        ++multiplicity;
+                        ++m_neg;
+                    }
                 }
+
+                if (multiplicity > 0)
+                    designFileOutput.matrix[fastaID].emplace(kmer_id/*, multiplicity*/);
 
                 ++fastaID;
             }
 
-            if (searchParams.revCompl)
-            {
-                auto const & minusStrandLoc = location.second.second;
-                fastaID = 0;
-                m = 0;
-                for (auto const & fastaFile : fastaFiles)
-                {
-                    bool kmerInFasta = false;
-                    while (m < minusStrandLoc.size() && minusStrandLoc[m].i1 <= fastaFile.second)
-                    {
-                        kmerInFasta = true;
-                        ++m;
-                    }
-                    if (kmerInFasta)
-                    {
-                        designFileOutput.matrix[fastaID].insert(kmer_id);
-                    }
-
-                    ++fastaID;
-                }
-            }
+//            if (designFileOutput.matrix[currentFileNo - 1].find(kmer_id) == designFileOutput.matrix[currentFileNo - 1].end())
+//                exit(44);
         }
     }
 }
