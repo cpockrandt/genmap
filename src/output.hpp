@@ -316,7 +316,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
     // get all k-mers
     for (uint64_t i = 0; i < c.size(); ++i)
     {
-        if (c[i] >= opt.designAllKmersThreshold)
+        if (c[i] >= opt.designAllKmersThreshold * nbr_of_genomes)
         {
             Dna5String kmer = infixWithLength(text, i, searchParams.length);
             Dna5String kmer_rc = kmer;
