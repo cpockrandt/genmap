@@ -314,6 +314,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
     auto location_it = locations.begin();
 
     // get all k-mers
+    Pair<uint64_t, uint64_t> i_tuple;
     for (uint64_t i = 0; i < c.size(); ++i)
     {
         if (c[i] >= opt.designAllKmersThreshold * nbr_of_genomes)
@@ -324,9 +325,21 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
             if (kmer > kmer_rc)
                 kmer = kmer_rc;
 
-            designFileOutput.all_kmers.push_back(kmer);
+            myPosLocalize(i_tuple, i, chromCumLengths);
+            location_it = std::find_if(location_it, locations.end(), [&i_tuple](auto const & l){
+                return l.first.i1 == i_tuple.i1 && l.first.i2 == i_tuple.i2;
+            });
+            if (location_it == locations.end()) {
+                std::cout << "NOT FOUND: (" << i_tuple.i1 << ',' << i_tuple.i2 << "): " << i << '\n';
+                exit(37);
+            }
+            const uint32_t multiplicity = (*location_it).second.first.size() + (*location_it).second.second.size();
+            if (multiplicity <= 2 * nbr_of_genomes)
+                designFileOutput.all_kmers.push_back(std::pair<Dna5String, uint32_t>(kmer, multiplicity));
         }
     }
+
+    location_it = locations.begin();
 
     for (uint64_t i = 0; i < c.size();)
     {
@@ -456,7 +469,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
                 }
 
                 if (multiplicity > 0)
-                    designFileOutput.matrix[fastaID].emplace(kmer_id/*, multiplicity*/);
+                    designFileOutput.matrix[fastaID].emplace(kmer_id, multiplicity);
 
                 ++fastaID;
             }

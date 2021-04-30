@@ -54,10 +54,10 @@ struct DesignFileOutput
     // previously seen kmer -> kmer_id
     std::map<Dna5String, uint32_t> kmer_id;
 
-    std::vector<Dna5String> all_kmers;
+    std::vector<std::pair<Dna5String, uint32_t> > all_kmers; // kmer, multiplicity
 
-    // file_id -> kmer_ids
-    std::vector<std::set<uint32_t> > matrix;
+    // file_id -> set of (kmer_id, multiplicity)
+    std::vector<std::set<std::pair<uint32_t, uint32_t> > > matrix;
 };
 
 #include "common.hpp"
@@ -438,21 +438,17 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         design_file << "# thresold: " << opt.designPercentageRare << '\n';
         design_file << "# max %x kmers in window: " << opt.designMaxPercPerWindow << '\n';
         design_file << fasta_lengths[fasta_lengths.size()/2] << '\n';
-        design_file << totalFileNo << '\t' << nbr_total_kmers << '\t' << max_kmers_per_genome << '\n';
+
+         design_file << totalFileNo << '\t' << nbr_total_kmers << '\t' << max_kmers_per_genome << '\n'; // TODO: is this still all needed?
 
         for (uint32_t i = 0; i < designFileOutput.matrix.size(); ++i)
         {
-            design_file << filenames[i].substr(0, filenames[i].find_last_of(".")) << "\t1.0";
+            design_file << "Genome: " << filenames[i].substr(0, filenames[i].find_last_of(".")) << '\n';
 
-            for (const uint32_t k : designFileOutput.matrix[i])
+            for (const std::pair<uint32_t, uint32_t> & k : designFileOutput.matrix[i])
             {
-                design_file << '\t' << k;
+                design_file << k.first << '\t' << k.second << '\n'; // kmer-id, multiplicity
             }
-            for (uint32_t j = designFileOutput.matrix[i].size(); j < max_kmers_per_genome; ++j)
-            {
-                design_file << "\t0";
-            }
-            design_file << '\n';
         }
 
         // output kmer file (sorted by id)
@@ -480,8 +476,8 @@ inline void run(Options const & opt, SearchParams const & searchParams)
         {
             uint32_t i = rand() % designFileOutput.all_kmers.size();
             auto & k = designFileOutput.all_kmers[i];
-            if (chosen_all_kmers.insert(k).second) // did the insertion took place?
-                design_file << k << '\n'; // then it was a k-mer that has not been selected before
+            if (chosen_all_kmers.insert(k.first).second) // did the insertion took place?
+                design_file << k.first << '\t' << k.second << '\n'; // then it was a k-mer that has not been selected before
 
             ++i;
             --MAX_TRIES;
