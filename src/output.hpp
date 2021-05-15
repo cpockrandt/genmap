@@ -287,6 +287,75 @@ void saveCsv(std::string const & output_path, TLocations const & locations,
     csvFile.close();
 }
 
+template <typename TLocation, typename TDesignFileOutput, typename TDiscriminatingKmers, typename TFastaFiles>
+bool add_kmer_to_design(const TLocation & location, const uint64_t kmer_id, TDesignFileOutput & designFileOutput,
+                        TDiscriminatingKmers & discriminating_kmers, const bool always_add_kmer,
+                        SearchParams const & searchParams, const TFastaFiles & fastaFiles)
+{
+    auto const & plusStrandLoc = location.second.first;
+    auto const & minusStrandLoc = location.second.second;
+
+    uint64_t fastaID = 0;
+    uint64_t m_pos = 0, m_neg = 0;
+    std::vector<std::pair<uint64_t, uint64_t> > fasta_ids_matching_kmer_with_multiplicity;
+    std::vector<uint64_t> fasta_ids_not_matching_kmer;
+    for (auto const & fastaFile : fastaFiles)
+    {
+        uint32_t multiplicity = 0;
+
+        while (m_pos < plusStrandLoc.size() && plusStrandLoc[m_pos].i1 <= fastaFile.second)
+        {
+            ++multiplicity;
+            ++m_pos;
+        }
+
+        if (searchParams.revCompl)
+        {
+            while (m_neg < minusStrandLoc.size() && minusStrandLoc[m_neg].i1 <= fastaFile.second)
+            {
+                ++multiplicity;
+                ++m_neg;
+            }
+        }
+
+        if (multiplicity > 0)
+            fasta_ids_matching_kmer_with_multiplicity.emplace_back(fastaID, multiplicity);
+        else
+            fasta_ids_not_matching_kmer.push_back(fastaID);
+
+        ++fastaID;
+    }
+
+    bool new_discriminating_kmer_found = false;
+    for (const auto & f1_pair : fasta_ids_matching_kmer_with_multiplicity)
+    {
+        const uint64_t f1 = f1_pair.first;
+
+        for (const uint64_t f2 : fasta_ids_not_matching_kmer)
+        {
+            if (!discriminating_kmers[f1][f2])
+            {
+                new_discriminating_kmer_found = true;
+                discriminating_kmers[f1][f2] = 1;
+                discriminating_kmers[f2][f1] = 1;
+            }
+        }
+    }
+
+    if (new_discriminating_kmer_found || always_add_kmer)
+    {
+        for (const auto & f1_pair : fasta_ids_matching_kmer_with_multiplicity)
+        {
+            const uint64_t f1 = f1_pair.first;
+            const uint64_t multiplicity = f1_pair.second;
+            designFileOutput.matrix[f1].emplace(kmer_id, multiplicity);
+        }
+        return true;
+    }
+
+    return false;
+}
+
 template <bool mappability, typename T, typename TLocations, typename TDirectoryInformation, typename TCSVIntervals, typename TText, typename TChromosomeLengths>
 void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*/, TLocations const & locations,
                     SearchParams const & searchParams, TDirectoryInformation const & directoryInformation,
@@ -340,11 +409,16 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
     }
 
     location_it = locations.begin();
+    auto location_it2 = locations.begin();
 
     for (uint64_t i = 0; i < c.size();)
     {
         all_min_pos.clear();
         all_min_pos_prefilter.clear();
+
+        std::vector<std::vector<bool> > discriminating_kmers(nbr_of_genomes, std::vector<bool>(nbr_of_genomes, 0));
+
+        uint64_t old_i = i;
 
         // get all rare k-mers
         uint64_t length_of_current_window = 0;
@@ -384,6 +458,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
         // sort positions (ascending). this is just to simplify 'location_it'
         std::sort(all_min_pos.begin(), all_min_pos.end());
 
+        // store selected rare k-mers in design-struct.
         for (const uint64_t current_min_pos : all_min_pos)
         {
             // transform min_pos to tuple
@@ -398,21 +473,20 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
             if (location_it == locations.end())
             {
                 std::cout << "NOT FOUND: (" << min_pos_tuple.i1 << ',' << min_pos_tuple.i2 << "): " << current_min_pos << std::endl;
-
-                uint64_t prev = 0;
-                for (auto x : chromCumLengths)
-                {
-                    std::cout << x-prev << '\t' << x << std::endl;
-                    prev = x;
-                }
-
-                std::cout << "Locations: \n";
-                for (auto const & kmerLocations : locations)
-                {
-                    auto const &kmerPos = kmerLocations.first;
-                    if (kmerPos.i1 == 0)
-                        std::cout << kmerPos.i1 << ',' << kmerPos.i2 << std::endl;
-                }
+//                uint64_t prev = 0;
+//                for (auto x : chromCumLengths)
+//                {
+//                    std::cout << x-prev << '\t' << x << std::endl;
+//                    prev = x;
+//                }
+//
+//                std::cout << "Locations: \n";
+//                for (auto const & kmerLocations : locations)
+//                {
+//                    auto const &kmerPos = kmerLocations.first;
+//                    if (kmerPos.i1 == 0)
+//                        std::cout << kmerPos.i1 << ',' << kmerPos.i2 << std::endl;
+//                }
                 exit(23);
             }
 
@@ -443,39 +517,33 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
 
             // add matches to genomes in matrix
             auto location = *location_it;
+            add_kmer_to_design(location, kmer_id, designFileOutput, discriminating_kmers, true /* add k-mer always */, searchParams, fastaFiles);
+        }
 
-            auto const & plusStrandLoc = location.second.first;
-            auto const & minusStrandLoc = location.second.second;
+        for (uint64_t j = 1; j <= opt.designWindowSize && old_i < c.size(); old_i += 1, j += 1)
+        {
+            const uint64_t kmer_id = designFileOutput.kmer_id.size() + 1;
 
-            uint64_t fastaID = 0;
-            uint64_t m_pos = 0, m_neg = 0;
-            for (auto const & fastaFile : fastaFiles)
+            // extract element from 'location'
+            // transform min_pos to tuple
+            Pair<uint64_t, uint64_t> min_pos_tuple;
+            myPosLocalize(min_pos_tuple, old_i, chromCumLengths);
+            location_it2 = std::find_if(location_it2, locations.end(), [&min_pos_tuple](auto const & l){
+                return l.first.i1 == min_pos_tuple.i1 && l.first.i2 == min_pos_tuple.i2;
+            });
+
+            auto location = *location_it2;
+            if (add_kmer_to_design(location, kmer_id, designFileOutput, discriminating_kmers, false /* only add k-mer if it is a k-mer discriminating a new pair of genomes */, searchParams, fastaFiles))
             {
-                uint32_t multiplicity = 0;
+                // extract kmer at position and make it canonical
+                Dna5String kmer = infixWithLength(text, old_i, searchParams.length);
+                Dna5String kmer_rc = kmer;
+                reverseComplement(kmer_rc);
+                if (kmer > kmer_rc)
+                    kmer = kmer_rc;
 
-                while (m_pos < plusStrandLoc.size() && plusStrandLoc[m_pos].i1 <= fastaFile.second)
-                {
-                    ++multiplicity;
-                    ++m_pos;
-                }
-
-                if (searchParams.revCompl)
-                {
-                    while (m_neg < minusStrandLoc.size() && minusStrandLoc[m_neg].i1 <= fastaFile.second)
-                    {
-                        ++multiplicity;
-                        ++m_neg;
-                    }
-                }
-
-                if (multiplicity > 0)
-                    designFileOutput.matrix[fastaID].emplace(kmer_id, multiplicity);
-
-                ++fastaID;
+                designFileOutput.kmer_id.insert({kmer, kmer_id});
             }
-
-//            if (designFileOutput.matrix[currentFileNo - 1].find(kmer_id) == designFileOutput.matrix[currentFileNo - 1].end())
-//                exit(44);
         }
     }
 }
