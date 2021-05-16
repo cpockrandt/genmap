@@ -520,7 +520,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
             add_kmer_to_design(location, kmer_id, designFileOutput, discriminating_kmers, true /* add k-mer always */, searchParams, fastaFiles);
         }
 
-        for (uint64_t j = 1; j <= opt.designWindowSize && old_i < c.size(); old_i += 1, j += 1)
+        for (uint64_t j = 1; j <= opt.designWindowSize && old_i < c.size(); old_i += opt.designStepSizeDiscriminatingKmers, j += opt.designStepSizeDiscriminatingKmers)
         {
             const uint64_t kmer_id = designFileOutput.kmer_id.size() + 1;
 
