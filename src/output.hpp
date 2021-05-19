@@ -290,7 +290,8 @@ void saveCsv(std::string const & output_path, TLocations const & locations,
 template <typename TLocation, typename TDesignFileOutput, typename TDiscriminatingKmers, typename TFastaFiles>
 bool add_kmer_to_design(const TLocation & location, const uint64_t kmer_id, TDesignFileOutput & designFileOutput,
                         TDiscriminatingKmers & discriminating_kmers, const bool always_add_kmer,
-                        SearchParams const & searchParams, const TFastaFiles & fastaFiles)
+                        SearchParams const & searchParams, const TFastaFiles & fastaFiles,
+                        Options const & opt)
 {
     auto const & plusStrandLoc = location.second.first;
     auto const & minusStrandLoc = location.second.second;
@@ -327,30 +328,28 @@ bool add_kmer_to_design(const TLocation & location, const uint64_t kmer_id, TDes
     }
 
     bool new_discriminating_kmer_found = false;
-    for (const auto & f1_pair : fasta_ids_matching_kmer_with_multiplicity)
+    for (const uint64_t f : fasta_ids_not_matching_kmer)
     {
-        const uint64_t f1 = f1_pair.first;
-
-        for (const uint64_t f2 : fasta_ids_not_matching_kmer)
+        if (!discriminating_kmers[f])
         {
-            if (!discriminating_kmers[f1][f2])
-            {
-                new_discriminating_kmer_found = true;
-                discriminating_kmers[f1][f2] = 1;
-                discriminating_kmers[f2][f1] = 1;
-            }
+            new_discriminating_kmer_found = true;
+            discriminating_kmers[f] = 1;
         }
     }
 
     if (new_discriminating_kmer_found || always_add_kmer)
     {
-        for (const auto & f1_pair : fasta_ids_matching_kmer_with_multiplicity)
+        uint64_t const nbr_of_genomes = designFileOutput.matrix.size();
+        if (fasta_ids_matching_kmer_with_multiplicity.size() <=  opt.designPercentageDisk * nbr_of_genomes)
         {
-            const uint64_t f1 = f1_pair.first;
-            const uint64_t multiplicity = f1_pair.second;
-            designFileOutput.matrix[f1].emplace(kmer_id, multiplicity);
+            for (const auto & f1_pair : fasta_ids_matching_kmer_with_multiplicity)
+            {
+                const uint64_t f1 = f1_pair.first;
+                const uint64_t multiplicity = f1_pair.second;
+                designFileOutput.matrix[f1].emplace(kmer_id, multiplicity);
+            }
+            return true;
         }
-        return true;
     }
 
     return false;
@@ -416,7 +415,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
         all_min_pos.clear();
         all_min_pos_prefilter.clear();
 
-        std::vector<std::vector<bool> > discriminating_kmers(nbr_of_genomes, std::vector<bool>(nbr_of_genomes, 0));
+        std::vector<bool> discriminating_kmers(nbr_of_genomes, false);
 
         uint64_t old_i = i;
 
@@ -517,10 +516,10 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
 
             // add matches to genomes in matrix
             auto location = *location_it;
-            add_kmer_to_design(location, kmer_id, designFileOutput, discriminating_kmers, true /* add k-mer always */, searchParams, fastaFiles);
+            add_kmer_to_design(location, kmer_id, designFileOutput, discriminating_kmers, true /* add k-mer always */, searchParams, fastaFiles, opt);
         }
 
-        for (uint64_t j = 1; j <= opt.designWindowSize && old_i < c.size(); old_i += opt.designStepSizeDiscriminatingKmers, j += opt.designStepSizeDiscriminatingKmers)
+        for (uint64_t j = 1; j <= opt.designWindowSize && old_i < c.size(); ++old_i, ++j)
         {
             const uint64_t kmer_id = designFileOutput.kmer_id.size() + 1;
 
@@ -533,7 +532,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
             });
 
             auto location = *location_it2;
-            if (add_kmer_to_design(location, kmer_id, designFileOutput, discriminating_kmers, false /* only add k-mer if it is a k-mer discriminating a new pair of genomes */, searchParams, fastaFiles))
+            if (add_kmer_to_design(location, kmer_id, designFileOutput, discriminating_kmers, false /* only add k-mer if it is a k-mer discriminating a new pair of genomes */, searchParams, fastaFiles, opt))
             {
                 // extract kmer at position and make it canonical
                 Dna5String kmer = infixWithLength(text, old_i, searchParams.length);

@@ -47,7 +47,7 @@ struct Options
     float designMaxPercPerWindow;
     uint32_t designAllKmersNbr;
     float designAllKmersThreshold;
-    uint32_t designStepSizeDiscriminatingKmers;
+    uint32_t designPercentageDisk;
 };
 
 struct DesignFileOutput
@@ -595,13 +595,15 @@ int mappabilityMain(int argc, char const ** argv)
     addOption(parser, ArgParseOption("Y", "design-nbr-all-kmers", "Nbr. of randomly picked very frequent k-mers", ArgParseArgument::INTEGER, "INT"));
     setDefaultValue(parser, "design-nbr-all-kmers", 10000);
 
-    addOption(parser, ArgParseOption("A", "design-discriminating-step-size", "Step-size when looking for k-mers that can distinguish previously indistinguishable genomes within a window.", ArgParseArgument::INTEGER, "INT"));
-    setDefaultValue(parser, "design-discriminating-step-size", 1);
-
     addOption(parser, ArgParseOption("X", "design-nbr-all-kmers-threshold", "Threshold for very frequent k-mers", ArgParseArgument::DOUBLE, "DOUBLE"));
     setDefaultValue(parser, "design-nbr-all-kmers-threshold", 0.95);
     setMinValue(parser, "design-nbr-all-kmers-threshold", "0.000001");
     setMaxValue(parser, "design-nbr-all-kmers-threshold", "1.00");
+
+    addOption(parser, ArgParseOption("A", "design-disk-percentage", "Max. threshold for discriminating k-mers", ArgParseArgument::DOUBLE, "DOUBLE"));
+    setDefaultValue(parser, "design-rare-percentage", 0.6);
+    setMinValue(parser, "design-rare-percentage", "0.001");
+    setMaxValue(parser, "design-rare-percentage", "1.0");
 
     addOption(parser, ArgParseOption("m", "memory-mapping",
         "Turns memory-mapping on, i.e. the index is not loaded into RAM but accessed directly from secondary-memory. This may increase the overall running time, but do NOT use it if the index lies on network storage."));
@@ -642,7 +644,7 @@ int mappabilityMain(int argc, char const ** argv)
     getOptionValue(opt.designMaxPercPerWindow, parser, "design-max-perc-per-window");
     getOptionValue(opt.designAllKmersNbr, parser, "design-nbr-all-kmers");
     getOptionValue(opt.designAllKmersThreshold, parser, "design-nbr-all-kmers-threshold");
-    getOptionValue(opt.designStepSizeDiscriminatingKmers, parser, "design-discriminating-step-size");
+    getOptionValue(opt.designPercentageDisk, parser, "design-disk-percentage");
 
     if (!opt.wigFile && !opt.bedgraphFile && !opt.bedFile && !opt.rawFile && !opt.txtFile && !opt.csvFile && !opt.designFile)
     {
