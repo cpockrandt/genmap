@@ -47,7 +47,7 @@ struct Options
     float designMaxPercPerWindow;
     uint32_t designAllKmersNbr;
     float designAllKmersThreshold;
-    uint32_t designPercentageDisk;
+    float designPercentageDisk;
 };
 
 struct DesignFileOutput

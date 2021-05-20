@@ -526,10 +526,9 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
                 return l.first.i1 == min_pos_tuple.i1 && l.first.i2 == min_pos_tuple.i2;
             });
 
-            auto location = *location_it2;
-
-            if (c[old_i] <= opt.designPercentageDisk * nbr_of_genomes)
+            if (c[old_i] <= opt.designPercentageDisk * nbr_of_genomes && c[old_i] > 0)
             {
+                auto location = *location_it2;
                 if (add_kmer_to_design(location, kmer_id, designFileOutput, discriminating_kmers, false /* only add k-mer if it is a k-mer discriminating a new pair of genomes */, searchParams, fastaFiles))
                 {
                     // extract kmer at position and make it canonical
