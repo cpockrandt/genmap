@@ -601,9 +601,9 @@ int mappabilityMain(int argc, char const ** argv)
     setMaxValue(parser, "design-nbr-all-kmers-threshold", "1.00");
 
     addOption(parser, ArgParseOption("A", "design-disk-percentage", "Max. threshold for discriminating k-mers", ArgParseArgument::DOUBLE, "DOUBLE"));
-    setDefaultValue(parser, "design-rare-percentage", 0.6);
-    setMinValue(parser, "design-rare-percentage", "0.001");
-    setMaxValue(parser, "design-rare-percentage", "1.0");
+    setDefaultValue(parser, "design-disk-percentage", 0.6);
+    setMinValue(parser, "design-disk-percentage", "0.001");
+    setMaxValue(parser, "design-disk-percentage", "1.0");
 
     addOption(parser, ArgParseOption("m", "memory-mapping",
         "Turns memory-mapping on, i.e. the index is not loaded into RAM but accessed directly from secondary-memory. This may increase the overall running time, but do NOT use it if the index lies on network storage."));
