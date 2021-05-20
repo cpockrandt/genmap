@@ -528,7 +528,7 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
 
             auto location = *location_it2;
 
-            if (c[j] <= opt.designPercentageDisk * nbr_of_genomes)
+            if (c[old_i] <= opt.designPercentageDisk * nbr_of_genomes)
             {
                 if (add_kmer_to_design(location, kmer_id, designFileOutput, discriminating_kmers, false /* only add k-mer if it is a k-mer discriminating a new pair of genomes */, searchParams, fastaFiles))
                 {
