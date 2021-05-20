@@ -516,29 +516,44 @@ void saveDesignFile(std::vector<T> const & c, std::string const & /*output_path*
 
         for (uint64_t j = 1; j <= opt.designWindowSize && old_i < c.size(); ++old_i, ++j)
         {
-            const uint64_t kmer_id = designFileOutput.kmer_id.size() + 1;
-
-            // extract element from 'location'
-            // transform min_pos to tuple
-            Pair<uint64_t, uint64_t> min_pos_tuple;
-            myPosLocalize(min_pos_tuple, old_i, chromCumLengths);
-            location_it2 = std::find_if(location_it2, locations.end(), [&min_pos_tuple](auto const & l){
-                return l.first.i1 == min_pos_tuple.i1 && l.first.i2 == min_pos_tuple.i2;
-            });
-
             if (c[old_i] <= opt.designPercentageDisk * nbr_of_genomes && c[old_i] > 0)
             {
+                // extract element from 'location'
+                // transform min_pos to tuple
+                Pair<uint64_t, uint64_t> min_pos_tuple;
+                myPosLocalize(min_pos_tuple, old_i, chromCumLengths);
+                location_it2 = std::find_if(location_it2, locations.end(), [&min_pos_tuple](auto const & l){
+                    return l.first.i1 == min_pos_tuple.i1 && l.first.i2 == min_pos_tuple.i2;
+                });
                 auto location = *location_it2;
+
+                // extract kmer at position and make it canonical
+                Dna5String kmer = infixWithLength(text, old_i, searchParams.length);
+                Dna5String kmer_rc = kmer;
+                reverseComplement(kmer_rc);
+                if (kmer > kmer_rc)
+                    kmer = kmer_rc;
+
+                // extract kmer_id / store kmer in std::map
+                auto lb = designFileOutput.kmer_id.lower_bound(kmer);
+
+                uint64_t kmer_id = 0;
+                if(lb != designFileOutput.kmer_id.end() && !(designFileOutput.kmer_id.key_comp()(kmer, lb->first)))
+                {
+                    // key already exists
+                    kmer_id = lb->second;
+                }
+                else
+                {
+                    // the key does not exist in the map
+                    // add it to the map
+                    kmer_id = designFileOutput.kmer_id.size() + 1;
+                }
+
                 if (add_kmer_to_design(location, kmer_id, designFileOutput, discriminating_kmers, false /* only add k-mer if it is a k-mer discriminating a new pair of genomes */, searchParams, fastaFiles))
                 {
-                    // extract kmer at position and make it canonical
-                    Dna5String kmer = infixWithLength(text, old_i, searchParams.length);
-                    Dna5String kmer_rc = kmer;
-                    reverseComplement(kmer_rc);
-                    if (kmer > kmer_rc)
-                        kmer = kmer_rc;
-
-                    designFileOutput.kmer_id.insert({kmer, kmer_id});
+                    if (kmer_id == designFileOutput.kmer_id.size() + 1) // new k-mer
+                        designFileOutput.kmer_id.insert(lb, {kmer, kmer_id});
                 }
             }
         }
