@@ -1,5 +1,5 @@
 [submodule "include/seqan"]
 	path = include/seqan
-	url = git://github.com/seqan/seqan.git
+	url = git@github.com:seqan/seqan.git
 	branch = develop
 
