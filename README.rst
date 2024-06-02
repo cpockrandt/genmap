@@ -65,17 +65,25 @@ To verify whether your CPU supports these instructions sets you can check the ou
 .. Source of linux.svg: https://svgsilh.com/image/2025536.html
 .. Source of apple.svg: https://svgsilh.com/image/2962084.html
 
-+---------------------------------+---------------------------+--------------------------+-----------------------------+
-| **Platform**                    | **Download**              | **Version**              | **Additional requirements** |
-+---------------------------------+---------------------------+--------------------------+-----------------------------+
-| .. image:: .github/linux.svg    | `Linux 64 bit`_           | |VERSION| (|BUILD_DATE|) | \-                          |
-+   :alt: Download Linux binaries +---------------------------+--------------------------+-----------------------------+
-|   :height: 60px                 | `Linux 64 bit optimized`_ | |VERSION| (|BUILD_DATE|) | requires SSE4               |
-+---------------------------------+---------------------------+--------------------------+-----------------------------+
-| .. image:: .github/apple.svg    | `Mac 64 bit`_             | |VERSION| (|BUILD_DATE|) | \-                          |
-+   :alt: Download Mac binaries   +---------------------------+--------------------------+-----------------------------+
-|   :height: 60px                 | `Mac 64 bit optimized`_   | |VERSION| (|BUILD_DATE|) | requires SSE4               |
-+---------------------------------+---------------------------+--------------------------+-----------------------------+
++--------------------------------+---------------------------+--------------------------+-----------------------------+
+| **Platform**                   | **Download**              | **Version**              | **Additional requirements** |
++--------------------------------+---------------------------+--------------------------+-----------------------------+
+| .. image:: .github/linux.svg   | `Linux 64 bit`_           | |VERSION| (|BUILD_DATE|) | \-                          |
+|   :alt: Download Linux binaries|                           |                          |                             |
+|   :height: 60px                |                           |                          |                             |
++--------------------------------+---------------------------+--------------------------+-----------------------------+
+| .. image:: .github/linux.svg   | `Linux 64 bit optimized`_ | |VERSION| (|BUILD_DATE|) | requires SSE4               |
+|   :alt: Download Linux binaries|                           |                          |                             |
+|   :height: 60px                |                           |                          |                             |
++--------------------------------+---------------------------+--------------------------+-----------------------------+
+| .. image:: .github/apple.svg   | `Mac 64 bit`_             | |VERSION| (|BUILD_DATE|) | \-                          |
+|   :alt: Download Mac binaries  |                           |                          |                             |
+|   :height: 60px                |                           |                          |                             |
++--------------------------------+---------------------------+--------------------------+-----------------------------+
+| .. image:: .github/apple.svg   | `Mac 64 bit optimized`_   | |VERSION| (|BUILD_DATE|) | requires SSE4               |
+|   :alt: Download Mac binaries  |                           |                          |                             |
+|   :height: 60px                |                           |                          |                             |
++--------------------------------+---------------------------+--------------------------+-----------------------------+
 
 .. _Linux 64 bit: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.3.0/genmap-1.3.0-Linux-x86_64.zip
 .. _Linux 64 bit optimized: https://github.com/cpockrandt/genmap/releases/download/genmap-v1.3.0/genmap-1.3.0-Linux-x86_64-sse4.zip
