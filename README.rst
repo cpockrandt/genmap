@@ -21,6 +21,8 @@ GenMap: Ultra-fast Computation of Genome Mappability
 Introduction
 ^^^^^^^^^^^^
 
+**-- This project is not actively maintained anymore. --**
+
 GenMap computes the uniqueness of k-mers for each position in the genome while allowing for up to e mismatches.
 More formally, the uniqueness or (k,e)-mappability can be described for every position as the reciprocal value of how often each k-mer occurs approximately in the genome, i.e., with up to e mismatches.
 Hence, a mappability value of 1 at position i indicates that the k-mer in the sequence at position i occurs only once in the sequence with up to e errors.
